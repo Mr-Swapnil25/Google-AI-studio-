@@ -1,7 +1,9 @@
+
 import React, { useState, useMemo } from 'react';
-import { Product, CartItem, Negotiation, ProductType, NegotiationStatus, ProductCategory } from '../types';
+import { Product, CartItem, Negotiation, ProductType, NegotiationStatus, ProductCategory, Farmer } from '../types';
 import { ProductCard } from './ProductCard';
 import { ChatBubbleIcon, SearchIcon } from './icons';
+import { ProductCardSkeleton } from './ProductCardSkeleton';
 
 interface BuyerViewProps {
     products: Product[];
@@ -15,6 +17,8 @@ interface BuyerViewProps {
     onOpenChat: (negotiation: Negotiation) => void;
     wishlist: string[];
     onToggleWishlist: (productId: string) => void;
+    farmers: Farmer[];
+    onViewFarmerProfile: (farmerId: string) => void;
 }
 
 const getStatusChipClass = (status: NegotiationStatus) => {
@@ -27,11 +31,19 @@ const getStatusChipClass = (status: NegotiationStatus) => {
     }
 }
 
-export const BuyerView = ({ products, negotiations, onAddToCart, onStartNegotiation, onRespondToCounter, onOpenChat, wishlist, onToggleWishlist }: BuyerViewProps) => {
-    const noopProductHandler = (_product: Product) => {};
+export const BuyerView = ({ products, negotiations, onAddToCart, onStartNegotiation, onRespondToCounter, onOpenChat, wishlist, onToggleWishlist, farmers, onViewFarmerProfile }: BuyerViewProps) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterCategory, setFilterCategory] = useState<ProductCategory | 'All'>('All');
     const [sortOrder, setSortOrder] = useState<'default' | 'price-asc' | 'price-desc'>('default');
+    const [isLoading, setIsLoading] = useState(true);
+
+    // Simulate loading
+    React.useEffect(() => {
+        const timer = setTimeout(() => setIsLoading(false), 1000);
+        return () => clearTimeout(timer);
+    }, []);
+
+    const farmerMap = useMemo(() => new Map(farmers.map(f => [f.id, f])), [farmers]);
 
     const displayedProducts = useMemo(() => {
         let filtered = [...products];
@@ -63,6 +75,41 @@ export const BuyerView = ({ products, negotiations, onAddToCart, onStartNegotiat
     const retailProducts = displayedProducts.filter(p => p.type === ProductType.Retail);
     const bulkProducts = displayedProducts.filter(p => p.type === ProductType.Bulk);
     const wishlistedProducts = useMemo(() => products.filter(p => wishlist.includes(p.id)), [products, wishlist]);
+
+    const renderProductCard = (product: Product) => {
+        const farmer = farmerMap.get(product.farmerId);
+        if (!farmer) return null; // Or a fallback UI
+        
+        return (
+            <ProductCard 
+                key={product.id}
+                product={product} 
+                onAddToCart={onAddToCart} 
+                onNegotiate={onStartNegotiation}
+                isInWishlist={wishlist.includes(product.id)}
+                onToggleWishlist={onToggleWishlist} 
+                farmer={farmer}
+                onViewFarmerProfile={onViewFarmerProfile}
+            />
+        );
+    };
+
+    const renderProductGrid = (productList: Product[], title: string, emptyMessage: string) => (
+         <section>
+            <h2 className="text-3xl font-bold font-heading text-text-dark mb-6">{title}</h2>
+            {isLoading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                    {[...Array(4)].map((_, i) => <ProductCardSkeleton key={i} />)}
+                </div>
+            ) : productList.length > 0 ? (
+                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                    {productList.map(renderProductCard)}
+                </div>
+            ) : (
+                <p className="text-text-light">{emptyMessage}</p>
+            )}
+        </section>
+    );
 
     return (
         <div className="space-y-16">
@@ -117,60 +164,11 @@ export const BuyerView = ({ products, negotiations, onAddToCart, onStartNegotiat
                 </div>
             </div>
 
-            {wishlistedProducts.length > 0 && (
-                <section>
-                    <h2 className="text-3xl font-bold font-heading text-text-dark mb-6">My Wishlist</h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                        {wishlistedProducts.map(p => (
-                            <div key={p.id}>
-                                <ProductCard 
-                                    product={p} 
-                                    onAddToCart={onAddToCart} 
-                                    onNegotiate={p.type === ProductType.Bulk ? onStartNegotiation : noopProductHandler}
-                                    isInWishlist={true}
-                                    onToggleWishlist={onToggleWishlist}
-                                />
-                            </div>
-                        ))}
-                    </div>
-                </section>
-            )}
+            {wishlistedProducts.length > 0 && renderProductGrid(wishlistedProducts, "My Wishlist", "")}
 
-            <section>
-                <h2 className="text-3xl font-bold font-heading text-text-dark mb-6">Retail Products</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                    {retailProducts.map(p => (
-                        <div key={p.id}>
-                            <ProductCard 
-                                product={p} 
-                                onAddToCart={onAddToCart} 
-                                onNegotiate={noopProductHandler}
-                                isInWishlist={wishlist.includes(p.id)}
-                                onToggleWishlist={onToggleWishlist} 
-                            />
-                        </div>
-                    ))}
-                </div>
-                {retailProducts.length === 0 && <p className="text-text-light">No retail products match the current filters.</p>}
-            </section>
+            {renderProductGrid(retailProducts, "Retail Products", "No retail products match the current filters.")}
             
-            <section>
-                <h2 className="text-3xl font-bold font-heading text-text-dark mb-6">Bulk Products (Negotiable)</h2>
-                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                    {bulkProducts.map(p => (
-                        <div key={p.id}>
-                            <ProductCard 
-                                product={p} 
-                                onAddToCart={noopProductHandler} 
-                                onNegotiate={onStartNegotiation}
-                                isInWishlist={wishlist.includes(p.id)}
-                                onToggleWishlist={onToggleWishlist} 
-                            />
-                        </div>
-                    ))}
-                </div>
-                {bulkProducts.length === 0 && <p className="text-text-light">No bulk products match the current filters.</p>}
-            </section>
+            {renderProductGrid(bulkProducts, "Bulk Products (Negotiable)", "No bulk products match the current filters.")}
             
             {negotiations.length > 0 &&
             <section>

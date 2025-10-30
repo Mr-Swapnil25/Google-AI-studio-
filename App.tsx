@@ -1,7 +1,6 @@
-
-import React, { useState, useMemo } from 'react';
-import { UserRole, Product, CartItem, Negotiation, NegotiationStatus, ProductType, ChatMessage, BotChatMessage } from './types';
-import { initialProducts, initialNegotiations, initialMessages } from './data';
+import React, { useState, useMemo, useEffect } from 'react';
+import { UserRole, Product, CartItem, Negotiation, NegotiationStatus, ProductType, ChatMessage, BotChatMessage, Farmer, User } from './types';
+import { initialProducts, initialNegotiations, initialMessages, initialFarmers } from './data';
 import { getChatResponse } from './services/geminiService';
 import { Header } from './components/Header';
 import { BuyerView } from './components/BuyerView';
@@ -11,11 +10,20 @@ import { ChatModal } from './components/ChatModal';
 import { ChatBot } from './components/ChatBot';
 import { ChatBotIcon } from './components/icons';
 import { CartView } from './components/CartView';
+import { FarmerProfile } from './components/FarmerProfile';
+import { LandingPage } from './components/LandingPage';
+import { AuthModal } from './components/AuthModal';
 import { Content } from "@google/genai";
 
 export default function App() {
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [userRole, setUserRole] = useState<UserRole>(UserRole.Buyer);
+    
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+    const [initialRoleForAuth, setInitialRoleForAuth] = useState<UserRole>(UserRole.Buyer);
+    
     const [products, setProducts] = useState<Product[]>(initialProducts);
+    const [farmers, setFarmers] = useState<Farmer[]>(initialFarmers);
     const [cart, setCart] = useState<CartItem[]>([]);
     const [negotiations, setNegotiations] = useState<Negotiation[]>(initialNegotiations);
     const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
@@ -25,6 +33,7 @@ export default function App() {
     const [activeChat, setActiveChat] = useState<Negotiation | null>(null);
 
     const [isCartViewOpen, setIsCartViewOpen] = useState(false);
+    const [viewingFarmerId, setViewingFarmerId] = useState<string | null>(null);
 
     const [isChatBotOpen, setIsChatBotOpen] = useState(false);
     const [botMessages, setBotMessages] = useState<BotChatMessage[]>([
@@ -32,9 +41,45 @@ export default function App() {
     ]);
     const [botIsLoading, setBotIsLoading] = useState(false);
 
+    useEffect(() => {
+        try {
+            const savedUser = localStorage.getItem('anna-bazaar-user');
+            if (savedUser) {
+                const user: User = JSON.parse(savedUser);
+                setCurrentUser(user);
+                setUserRole(user.role);
+            }
+        } catch (error) {
+            console.error("Failed to parse user from localStorage", error);
+            localStorage.removeItem('anna-bazaar-user');
+        }
+    }, []);
+
     const cartTotal = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.cartQuantity, 0), [cart]);
     const MIN_CART_VALUE = 199;
-    const MOCK_USER_ID = userRole === UserRole.Buyer ? 'b1' : 'f1';
+    const MOCK_USER_ID = currentUser ? currentUser.id : (userRole === UserRole.Buyer ? 'b1' : 'f1');
+
+    const handleOpenAuthModal = (role: UserRole) => {
+        setInitialRoleForAuth(role);
+        setIsAuthModalOpen(true);
+    };
+
+    const handleLogin = (user: Omit<User, 'id'>) => {
+        const newUser: User = { ...user, id: `u_${Date.now()}` };
+        localStorage.setItem('anna-bazaar-user', JSON.stringify(newUser));
+        setCurrentUser(newUser);
+        setUserRole(newUser.role);
+        setIsAuthModalOpen(false);
+    };
+
+    const handleLogout = () => {
+        localStorage.removeItem('anna-bazaar-user');
+        setCurrentUser(null);
+        // Optionally reset other state
+        setCart([]);
+        setNegotiations(initialNegotiations);
+        setUserRole(UserRole.Buyer); // Reset to default
+    };
 
     const handleAddToCart = (product: Product, quantity: number = 1) => {
         setCart(prevCart => {
@@ -61,7 +106,7 @@ export default function App() {
         const product: Product = {
             ...newProduct,
             id: `p${Date.now()}`,
-            farmerId: 'f1', // Mock farmer ID
+            farmerId: MOCK_USER_ID,
         };
         setProducts(prev => [product, ...prev]);
     };
@@ -78,6 +123,15 @@ export default function App() {
         );
     };
 
+    // --- View Handlers ---
+    const handleViewFarmerProfile = (farmerId: string) => {
+        setIsCartViewOpen(false); // Close cart if open
+        setViewingFarmerId(farmerId);
+    };
+
+    const handleBackToProducts = () => {
+        setViewingFarmerId(null);
+    };
 
     // --- Negotiation Handlers ---
     const handleOpenNegotiation = (item: Product | Negotiation) => {
@@ -97,7 +151,7 @@ export default function App() {
                 productId: activeNegotiation.id,
                 productName: activeNegotiation.name,
                 productImageUrl: activeNegotiation.imageUrl,
-                buyerId: 'b1',
+                buyerId: MOCK_USER_ID,
                 farmerId: activeNegotiation.farmerId,
                 initialPrice: activeNegotiation.price,
                 offeredPrice: values.price,
@@ -184,12 +238,51 @@ export default function App() {
             setBotIsLoading(false);
         }
     };
+
+    if (!currentUser) {
+        return (
+            <>
+                <LandingPage onStartAuth={handleOpenAuthModal} />
+                <AuthModal 
+                    isOpen={isAuthModalOpen}
+                    onClose={() => setIsAuthModalOpen(false)}
+                    onAuthSuccess={handleLogin}
+                    initialRole={initialRoleForAuth}
+                />
+            </>
+        );
+    }
     
     const appClasses = userRole === UserRole.Farmer 
         ? 'theme-farmer bg-farmer-background text-farmer-text-dark' 
         : 'theme-buyer bg-background text-text-dark';
 
     const renderMainContent = () => {
+        if (viewingFarmerId) {
+            const farmer = farmers.find(f => f.id === viewingFarmerId);
+            if (!farmer) {
+                return (
+                    <div className="text-center py-10">
+                        <p className="text-xl text-text-light">Farmer not found.</p>
+                        <button onClick={handleBackToProducts} className="mt-4 bg-primary text-white px-6 py-2 rounded-full font-semibold">Go Back</button>
+                    </div>
+                );
+            }
+            const farmerProducts = products.filter(p => p.farmerId === viewingFarmerId);
+            return (
+                <FarmerProfile
+                    farmer={farmer}
+                    products={farmerProducts}
+                    onBack={handleBackToProducts}
+                    onAddToCart={handleAddToCart}
+                    onNegotiate={handleOpenNegotiation}
+                    wishlist={wishlist}
+                    onToggleWishlist={handleToggleWishlist}
+                    onViewFarmerProfile={handleViewFarmerProfile}
+                />
+            );
+        }
+        
         if (isCartViewOpen && userRole === UserRole.Buyer) {
             return (
                 <CartView
@@ -204,8 +297,8 @@ export default function App() {
         if (userRole === UserRole.Farmer) {
              return (
                 <FarmerView 
-                    products={products.filter(p => p.farmerId === 'f1')}
-                    negotiations={negotiations.filter(n => n.farmerId === 'f1')}
+                    products={products.filter(p => p.farmerId === currentUser.id)}
+                    negotiations={negotiations.filter(n => n.farmerId === currentUser.id)}
                     onAddNewProduct={handleAddNewProduct}
                     onUpdateProduct={handleUpdateProduct}
                     onRespond={handleNegotiationResponse}
@@ -221,13 +314,15 @@ export default function App() {
                 cart={cart}
                 cartTotal={cartTotal}
                 minCartValue={MIN_CART_VALUE}
-                negotiations={negotiations.filter(n => n.buyerId === 'b1')}
+                negotiations={negotiations.filter(n => n.buyerId === currentUser.id)}
                 onAddToCart={handleAddToCart}
                 onStartNegotiation={handleOpenNegotiation}
                 onRespondToCounter={handleNegotiationResponse}
                 onOpenChat={handleOpenChat}
                 wishlist={wishlist}
                 onToggleWishlist={handleToggleWishlist}
+                farmers={farmers}
+                onViewFarmerProfile={handleViewFarmerProfile}
             />
         );
     }
@@ -235,8 +330,8 @@ export default function App() {
     return (
         <div className={`min-h-screen font-sans transition-colors duration-300 ${appClasses}`}>
             <Header 
-                userRole={userRole} 
-                setUserRole={setUserRole} 
+                user={currentUser}
+                onLogout={handleLogout} 
                 cartItemCount={cart.length}
                 onCartClick={() => setIsCartViewOpen(true)}
             />
@@ -266,7 +361,7 @@ export default function App() {
                 />
             )}
             
-            {userRole === UserRole.Buyer && cart.length > 0 && !isCartViewOpen &&
+            {userRole === UserRole.Buyer && cart.length > 0 && !isCartViewOpen && !viewingFarmerId &&
                 <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-sm p-4 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">
                     <div className="container mx-auto flex justify-between items-center">
                         <div>

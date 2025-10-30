@@ -1,17 +1,52 @@
-
-import React from 'react';
-import { UserRole } from '../types';
-import { ShoppingCartIcon } from './icons';
+import React, { useState } from 'react';
+import { User, UserRole } from '../types';
+import { ShoppingCartIcon, UserIcon } from './icons';
 
 interface HeaderProps {
-    userRole: UserRole;
-    setUserRole: (role: UserRole) => void;
+    user: User;
+    onLogout: () => void;
     cartItemCount: number;
     onCartClick: () => void;
 }
 
-export const Header = ({ userRole, setUserRole, cartItemCount, onCartClick }: HeaderProps) => {
-    const isFarmer = userRole === UserRole.Farmer;
+const UserMenu = ({ user, onLogout }: { user: User, onLogout: () => void }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const initials = user.name.split(' ').map(n => n[0]).join('').toUpperCase();
+
+    return (
+        <div className="relative">
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-primary font-bold focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+            >
+                {user.avatarUrl ? <img src={user.avatarUrl} alt="User" className="w-full h-full rounded-full" /> : <span>{initials}</span>}
+            </button>
+            {isOpen && (
+                <div 
+                    className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none" 
+                    role="menu" 
+                    aria-orientation="vertical" 
+                    aria-labelledby="user-menu-button"
+                >
+                    <div className="px-4 py-2 border-b">
+                        <p className="text-sm text-gray-700" role="none">Signed in as</p>
+                        <p className="text-sm font-medium text-gray-900 truncate" role="none">{user.name}</p>
+                    </div>
+                    <button
+                        onClick={onLogout}
+                        className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        role="menuitem"
+                    >
+                        Logout
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export const Header = ({ user, onLogout, cartItemCount, onCartClick }: HeaderProps) => {
+    const isFarmer = user.role === UserRole.Farmer;
     
     return (
         <header className={`bg-white/80 backdrop-blur-sm shadow-sm sticky top-0 z-20 transition-colors duration-300 ${isFarmer ? 'theme-farmer' : 'theme-buyer'}`}>
@@ -23,28 +58,14 @@ export const Header = ({ userRole, setUserRole, cartItemCount, onCartClick }: He
                         </h1>
                     </div>
                     <div className="flex items-center space-x-6">
-                        {userRole === UserRole.Buyer && (
+                        {user.role === UserRole.Buyer && (
                              <button onClick={onCartClick} className="relative group" aria-label={`View cart with ${cartItemCount} items`}>
                                 <ShoppingCartIcon className="h-7 w-7 text-text-dark group-hover:text-primary transition-colors"/>
                                 {cartItemCount > 0 && <span className="absolute -top-2 -right-2 bg-secondary text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{cartItemCount}</span>}
                             </button>
                         )}
                        
-                        <div className="flex items-center bg-gray-100 rounded-full p-1 relative">
-                             <div className={`absolute top-1 left-1 h-[calc(100%-0.5rem)] w-[calc(50%-0.25rem)] rounded-full transition-transform duration-300 ease-in-out ${isFarmer ? 'translate-x-full bg-farmer-primary' : 'translate-x-0 bg-primary'}`}></div>
-                             <button 
-                                 onClick={() => setUserRole(UserRole.Buyer)} 
-                                 className={`relative px-5 py-2 text-sm font-semibold rounded-full z-10 transition-colors duration-300 ${!isFarmer ? 'text-white' : 'text-gray-600'}`}
-                             >
-                                 Buyer
-                             </button>
-                             <button 
-                                 onClick={() => setUserRole(UserRole.Farmer)} 
-                                 className={`relative px-5 py-2 text-sm font-semibold rounded-full z-10 transition-colors duration-300 ${isFarmer ? 'text-white' : 'text-gray-600'}`}
-                             >
-                                 Farmer
-                             </button>
-                        </div>
+                       <UserMenu user={user} onLogout={onLogout} />
                     </div>
                 </div>
             </div>

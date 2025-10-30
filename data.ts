@@ -1,4 +1,27 @@
-import { Product, Negotiation, ProductCategory, ProductType, NegotiationStatus, ChatMessage } from './types';
+import { Product, Negotiation, ProductCategory, ProductType, NegotiationStatus, ChatMessage, Farmer } from './types';
+
+export const initialFarmers: Farmer[] = [
+    {
+        id: 'f1',
+        name: 'Rajesh Kumar',
+        profileImageUrl: 'https://picsum.photos/seed/farmer1/200/200',
+        isVerified: true,
+        rating: 4.8,
+        bio: 'A passionate farmer from Punjab, specializing in organic grains and vegetables for over 20 years. My goal is to bring the freshest produce directly to your table.',
+        yearsFarming: 22,
+        location: 'Punjab, India',
+    },
+    {
+        id: 'f2',
+        name: 'Sunita Devi',
+        profileImageUrl: 'https://picsum.photos/seed/farmer2/200/200',
+        isVerified: false,
+        rating: 4.6,
+        bio: 'Based in the beautiful orchards of Maharashtra, I cultivate world-famous Alphonso mangoes and a variety of other tropical fruits with sustainable farming practices.',
+        yearsFarming: 15,
+        location: 'Maharashtra, India',
+    }
+];
 
 export const initialProducts: Product[] = [
   { id: 'p1', name: 'Organic Tomatoes', description: 'Fresh, juicy tomatoes from local farms.', price: 150, quantity: 100, category: ProductCategory.Vegetable, imageUrl: 'https://picsum.photos/seed/tomatoes/400/300', farmerId: 'f1', type: ProductType.Retail },

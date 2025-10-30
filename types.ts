@@ -71,3 +71,23 @@ export interface BotChatMessage {
   role: 'user' | 'model' | 'error';
   text: string;
 }
+
+export interface Farmer {
+  id: string;
+  name: string;
+  profileImageUrl: string;
+  isVerified: boolean;
+  rating: number;
+  bio: string;
+  yearsFarming: number;
+  location: string;
+}
+
+export interface User {
+  id: string;
+  name: string;
+  avatarUrl?: string;
+  phone?: string;
+  email?: string;
+  role: UserRole;
+}
