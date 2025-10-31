@@ -25,7 +25,7 @@ export const NegotiationModal = ({ isOpen, onClose, item, userRole, onSubmit }: 
     useEffect(() => {
         if (item) {
            const isNew = 'type' in item;
-           setQuantity(isNew ? 1 : item.quantity);
+           setQuantity(isNew ? 10 : item.quantity); // Default bulk quantity
            setPrice(isNew ? item.price : item.offeredPrice);
            setNotes(isNew ? '' : item.notes);
         }
@@ -40,46 +40,48 @@ export const NegotiationModal = ({ isOpen, onClose, item, userRole, onSubmit }: 
     };
 
     const isFarmerCountering = userRole === UserRole.Farmer && 'status' in item;
-    const theme = userRole === UserRole.Farmer ? 'farmer' : 'buyer';
     
-    const primaryButtonClass = theme === 'farmer' 
-        ? 'bg-farmer-primary text-white hover:bg-blue-800' 
-        : 'bg-primary text-white hover:bg-green-700';
+    const primaryButtonClass = userRole === UserRole.Farmer 
+        ? 'bg-farmer-primary text-white hover:bg-farmer-primary-dark' 
+        : 'bg-primary text-white hover:bg-primary-dark';
+
+    const ringColorClass = userRole === UserRole.Farmer ? 'focus:ring-farmer-accent' : 'focus:ring-primary';
+    const inputClasses = `mt-1 block w-full rounded-xl bg-stone-100 text-stone-900 placeholder-stone-500 px-4 py-3 border border-stone-200 focus:outline-none focus:ring-2 ${ringColorClass}`;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-30 flex justify-center items-center" onClick={onClose}>
-            <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md m-4 font-sans" onClick={e => e.stopPropagation()}>
-                <div className="flex justify-between items-start">
-                    <h2 className="text-xl font-bold font-heading text-gray-800">
+        <div className="fixed inset-0 bg-black bg-opacity-60 z-30 flex justify-center items-center p-4" onClick={onClose}>
+            <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md font-sans animate-fade-in" style={{ animationDuration: '200ms' }} onClick={e => e.stopPropagation()}>
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-bold font-heading text-stone-900">
                         {isFarmerCountering ? 'Make Counter-Offer' : 'Negotiate Price'}
                     </h2>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><XIcon className="h-6 w-6" /></button>
+                    <button onClick={onClose} className="text-stone-400 hover:text-stone-600"><XIcon className="h-6 w-6" /></button>
                 </div>
                 
-                <div className="mt-4 flex items-center space-x-4 border-b pb-4">
-                    <img src={productImageUrl} alt={productName} className="w-24 h-24 rounded-lg object-cover" />
+                <div className="flex items-center space-x-4 mb-6">
+                    <img src={productImageUrl} alt={productName} className="w-20 h-20 rounded-lg object-cover" />
                     <div>
-                        <h3 className="font-semibold font-heading text-lg text-gray-900">{productName}</h3>
-                        <p className="text-gray-600">Original Price: <span className="font-bold">₹{initialPrice}</span></p>
-                        {buyerOffer && <p className="text-secondary">Buyer's Offer: <span className="font-bold">₹{buyerOffer}</span></p>}
+                        <h3 className="font-bold font-heading text-lg text-stone-900">{productName}</h3>
+                        <p className="text-stone-500 text-sm">Original Price: <span className="font-bold">₹{initialPrice}</span></p>
+                        {buyerOffer && <p className="text-sm text-primary">Buyer's Offer: <span className="font-bold">₹{buyerOffer}</span></p>}
                     </div>
                 </div>
 
-                <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label htmlFor="quantity" className="block text-sm font-medium text-gray-700">Quantity</label>
+                        <label htmlFor="quantity" className="block text-sm font-semibold text-stone-700">Quantity</label>
                         <input
                             id="quantity"
                             type="number"
                             value={quantity}
                             onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value, 10)))}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-1 focus:ring-primary sm:text-sm"
+                            className={`${inputClasses} disabled:bg-stone-300 disabled:cursor-not-allowed`}
                             min="1"
                             disabled={isFarmerCountering}
                         />
                     </div>
                      <div>
-                        <label htmlFor="price" className="block text-sm font-medium text-gray-700">
+                        <label htmlFor="price" className="block text-sm font-semibold text-stone-700">
                            {isFarmerCountering ? 'Your Counter Price (per item)' : 'Your Offer Price (per item)'}
                         </label>
                         <input
@@ -87,24 +89,25 @@ export const NegotiationModal = ({ isOpen, onClose, item, userRole, onSubmit }: 
                             type="number"
                             value={price}
                             onChange={(e) => setPrice(parseFloat(e.target.value))}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-1 focus:ring-primary sm:text-sm"
+                            className={inputClasses}
+                            step="0.01"
                         />
                     </div>
                      <div>
-                        <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
-                           {isFarmerCountering ? 'Update Notes (optional)' : 'Additional Notes (optional)'}
+                        <label htmlFor="notes" className="block text-sm font-semibold text-stone-700">
+                           Additional Notes (optional)
                         </label>
                         <textarea
                             id="notes"
-                            rows={3}
+                            rows={4}
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-1 focus:ring-primary sm:text-sm"
+                            className={inputClasses}
                         />
                     </div>
                     <div className="flex justify-end space-x-3 pt-4">
-                        <button type="button" onClick={onClose} className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-semibold hover:bg-gray-300 transition-colors">Cancel</button>
-                        <button type="submit" className={`px-4 py-2 rounded-lg font-semibold transition-colors ${primaryButtonClass}`}>
+                        <button type="button" onClick={onClose} className="bg-stone-200 text-stone-800 px-5 py-2.5 rounded-lg font-bold hover:bg-stone-300 transition-colors">Cancel</button>
+                        <button type="submit" className={`px-5 py-2.5 rounded-lg font-bold transition-colors ${primaryButtonClass}`}>
                             {isFarmerCountering ? 'Submit Counter' : 'Submit Offer'}
                         </button>
                     </div>

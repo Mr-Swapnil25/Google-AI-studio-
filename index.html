@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -8,7 +7,7 @@
     <title>Anna Bazaar</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -19,22 +18,90 @@
               heading: ['Poppins', 'sans-serif'],
             },
             colors: {
-              // Buyer Theme (Default)
-              primary: '#556B2F', // Dark Olive Green
-              secondary: '#D2691E', // Chocolate / Terracotta
-              accent: '#FFC107', // Sunny Yellow
-              background: '#FCFBF4', // Soft Cream
-              'text-dark': '#2F2F2F',
-              'text-light': '#6c757d',
+              stone: {
+                50: '#fafaf9',
+                100: '#f5f5f4',
+                200: '#e7e5e4',
+                300: '#d6d3d1',
+                400: '#a8a29e',
+                500: '#78716c',
+                600: '#57534e',
+                700: '#44403c',
+                800: '#292524',
+                900: '#1c1917',
+              },
+              // Buyer Theme (Indian Spices & Textiles)
+              primary: {
+                DEFAULT: '#F97316', // Saffron Orange
+                light: '#FB923C',
+                dark: '#EA580C',
+              },
+              secondary: {
+                DEFAULT: '#14B8A6', // Vibrant Teal
+                light: '#2DD4BF',
+                dark: '#0D9488',
+              },
+              accent: {
+                DEFAULT: '#FACC15', // Turmeric Yellow
+                light: '#FDE047',
+                dark: '#EAB308',
+              },
+              background: {
+                DEFAULT: '#fafaf9', // stone-50
+                alt: '#ffffff',
+              },
 
-              // Farmer Theme
-              'farmer-primary': '#2C3E50', // Midnight Blue
-              'farmer-secondary': '#7f8c8d', // Cool Gray
-              'farmer-accent': '#27AE60', // Action Green
-              'farmer-background': '#F4F6F8', // Light Cool Gray
-              'farmer-text-dark': '#2C3E50',
-              'farmer-text-light': '#7f8c8d',
+              // Farmer Theme (Earthy & Trustworthy)
+              'farmer-primary': {
+                DEFAULT: '#E53E3E', // Terracotta Red
+                light: '#F56565',
+                dark: '#C53030',
+              },
+              'farmer-secondary': {
+                DEFAULT: '#475569', // Slate Gray
+                light: '#64748B',
+                dark: '#334155',
+              },
+              'farmer-accent': {
+                DEFAULT: '#3B82F6', // Indigo Blue
+                light: '#60A5FA',
+                dark: '#2563EB',
+              },
+              'farmer-background': {
+                DEFAULT: '#F8FAFC', // Very light cool gray
+                alt: '#ffffff',
+              },
             },
+            keyframes: {
+              'fade-in': {
+                '0%': { opacity: '0', transform: 'translateY(10px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              },
+              'slide-in-up': {
+                  '0%': { opacity: '0', transform: 'translateY(20px)' },
+                  '100%': { opacity: '1', transform: 'translateY(0)' },
+              },
+              'slide-in-left': {
+                  '0%': { transform: 'translateX(-100%)' },
+                  '100%': { transform: 'translateX(0)' },
+              },
+              'pulse-strong': {
+                '0%, 100%': { transform: 'scale(1)', opacity: '1' },
+                '50%': { transform: 'scale(1.05)', opacity: '0.9' },
+              },
+              'pulse-ring': {
+                '0%': { transform: 'scale(0.8)', opacity: '0.8' },
+                '70%': { transform: 'scale(1.5)', opacity: '0' },
+                '100%': { transform: 'scale(1.5)', opacity: '0' },
+              }
+            },
+            animation: {
+              'fade-in': 'fade-in 0.3s ease-out forwards',
+              'slide-in-up': 'slide-in-up 0.4s ease-out forwards',
+              'slide-in-left': 'slide-in-left 0.3s ease-out forwards',
+              'pulse-strong': 'pulse-strong 2s ease-in-out infinite',
+              'pulse-ring': 'pulse-ring 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite',
+            }
           }
         }
       }
@@ -45,13 +112,15 @@
     "@google/genai": "https://aistudiocdn.com/@google/genai@^1.28.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0"
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "firebase/": "https://aistudiocdn.com/firebase@^12.5.0/"
   }
 }
 </script>
 </head>
-  <body class="bg-background">
+  <body class="bg-background text-stone-800">
     <div id="root"></div>
+    <div id="recaptcha-container"></div>
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>

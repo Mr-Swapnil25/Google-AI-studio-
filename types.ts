@@ -25,6 +25,8 @@ export interface Product {
   imageUrl: string;
   farmerId: string;
   type: ProductType;
+  isVerified: boolean;
+  verificationFeedback?: string;
 }
 
 export interface CartItem extends Product {
@@ -81,13 +83,19 @@ export interface Farmer {
   bio: string;
   yearsFarming: number;
   location: string;
+  verificationFeedback?: string;
 }
 
 export interface User {
-  id: string;
+  uid: string;
   name: string;
   avatarUrl?: string;
   phone?: string;
   email?: string;
   role: UserRole;
+}
+
+export interface LiveTranscript {
+    role: 'user' | 'model';
+    text: string;
 }

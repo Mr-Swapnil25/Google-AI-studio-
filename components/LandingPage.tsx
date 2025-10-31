@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { UserRole } from '../types';
 import { ShoppingCartIcon, LeafIcon, SparklesIcon, ChatBubbleIcon, PackageIcon } from './icons';
@@ -7,21 +8,21 @@ interface LandingPageProps {
 }
 
 const FeatureCard = ({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) => (
-    <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200/50 text-center transform hover:-translate-y-2 transition-transform duration-300">
-        <div className="mx-auto bg-primary/10 text-primary w-16 h-16 rounded-full flex items-center justify-center mb-4">
+    <div className="bg-background-alt p-6 rounded-xl shadow-md border border-stone-200/50 text-center transform hover:-translate-y-2 transition-transform duration-300">
+        <div className="mx-auto bg-primary/10 text-primary w-16 h-16 rounded-2xl flex items-center justify-center mb-4">
             {icon}
         </div>
-        <h3 className="text-xl font-bold font-heading text-text-dark mb-2">{title}</h3>
-        <p className="text-text-light text-sm">{description}</p>
+        <h3 className="text-xl font-bold font-heading text-stone-800 mb-2">{title}</h3>
+        <p className="text-stone-500 text-sm">{description}</p>
     </div>
 );
 
 export const LandingPage = ({ onStartAuth }: LandingPageProps) => {
     return (
-        <div className="bg-background min-h-screen text-text-dark">
+        <div className="bg-background min-h-screen text-stone-800">
             {/* Hero Section */}
-            <div className="relative text-white text-center py-20 md:py-32 bg-gradient-to-br from-primary via-green-800 to-secondary overflow-hidden">
-                <div className="absolute inset-0 bg-black/30"></div>
+            <div className="relative text-white text-center py-20 md:py-32 bg-gradient-to-br from-primary via-orange-700 to-secondary overflow-hidden">
+                 <div className="absolute inset-0 h-full w-full bg-background bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:32px_32px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_10%,transparent_100%)] opacity-10"></div>
                 <div className="container mx-auto px-4 relative z-10">
                     <h1 className="text-4xl md:text-6xl font-extrabold font-heading mb-4 leading-tight">
                         Connect Farmers Directly with Buyers
@@ -32,14 +33,14 @@ export const LandingPage = ({ onStartAuth }: LandingPageProps) => {
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                         <button
                             onClick={() => onStartAuth(UserRole.Buyer)}
-                            className="w-full sm:w-auto flex items-center justify-center bg-accent text-gray-900 px-8 py-4 rounded-full font-bold text-lg hover:bg-yellow-400 hover:shadow-xl transform hover:scale-105 transition-all duration-300 shadow-lg"
+                            className="w-full sm:w-auto flex items-center justify-center bg-accent text-stone-900 px-8 py-4 rounded-full font-bold text-lg hover:bg-yellow-400 hover:shadow-xl transform hover:scale-105 transition-all duration-300 shadow-lg"
                         >
                             <ShoppingCartIcon className="h-6 w-6 mr-3" />
                             I'm a Buyer
                         </button>
                         <button
                             onClick={() => onStartAuth(UserRole.Farmer)}
-                            className="w-full sm:w-auto flex items-center justify-center bg-farmer-primary text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-blue-800 hover:shadow-xl transform hover:scale-105 transition-all duration-300 shadow-lg"
+                            className="w-full sm:w-auto flex items-center justify-center bg-farmer-primary text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-farmer-primary-dark hover:shadow-xl transform hover:scale-105 transition-all duration-300 shadow-lg"
                         >
                             <LeafIcon className="h-6 w-6 mr-3" />
                             I'm a Farmer
@@ -75,8 +76,8 @@ export const LandingPage = ({ onStartAuth }: LandingPageProps) => {
             </section>
             
             {/* Footer */}
-            <footer className="bg-white/50 py-6">
-                <div className="container mx-auto px-4 text-center text-text-light text-sm">
+            <footer className="bg-white/50 py-6 border-t border-stone-200/80">
+                <div className="container mx-auto px-4 text-center text-stone-500 text-sm">
                     &copy; {new Date().getFullYear()} Anna Bazaar. All Rights Reserved.
                 </div>
             </footer>
