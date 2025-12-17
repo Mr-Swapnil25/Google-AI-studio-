@@ -337,7 +337,10 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
     // Show Wallet when Wallet is clicked
     if (activeNav === 'wallet') {
         return (
-            <FarmerWallet farmerId={currentUserId} />
+            <FarmerWallet 
+                farmerId={currentUserId}
+                onNavigate={(section) => setActiveNav(section)}
+            />
         );
     }
 
