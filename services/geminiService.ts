@@ -3,14 +3,15 @@
 import { GoogleGenAI, Type, Content } from "@google/genai";
 import { ProductCategory, Product, Farmer } from "../types";
 
-const API_KEY = process.env.API_KEY;
+const API_KEY = process.env.API_KEY || "";
 
 if (!API_KEY) {
   console.warn("API_KEY environment variable not set. AI features will be disabled.");
 }
 
 // FIX: Initialize GoogleGenAI with a named apiKey parameter.
-const ai = new GoogleGenAI({ apiKey: API_KEY! });
+// Provide a dummy key if missing to prevent crash on initialization, but API calls will fail.
+const ai = new GoogleGenAI({ apiKey: API_KEY || "dummy_key" });
 
 const fileToGenerativePart = (base64: string, mimeType: string) => {
   return {

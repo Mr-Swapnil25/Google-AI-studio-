@@ -35,7 +35,10 @@ export interface CartItem extends Product {
 
 export enum NegotiationStatus {
   Pending = 'Pending',
+  /** @deprecated Use CounterByFarmer or CounterByBuyer instead. Kept for legacy Firestore data compatibility. */
   CounterOffer = 'Counter-Offer',
+  CounterByFarmer = 'Counter-By-Farmer',
+  CounterByBuyer = 'Counter-By-Buyer',
   Accepted = 'Accepted',
   Rejected = 'Rejected',
 }
@@ -59,6 +62,7 @@ export interface Negotiation {
   quantity: number;
   status: NegotiationStatus;
   notes: string;
+  lastUpdated: Date;
 }
 
 export interface ChatMessage {
@@ -92,10 +96,32 @@ export interface User {
   avatarUrl?: string;
   phone?: string;
   email?: string;
+  location?: string;
   role: UserRole;
 }
 
 export interface LiveTranscript {
     role: 'user' | 'model';
     text: string;
+}
+
+export type MarketTrend = 'up' | 'flat' | 'down';
+
+export interface MarketRate {
+  id: string;
+  crop: string;
+  pricePerQuintal: number;
+  changePct: number;
+  trend: MarketTrend;
+  updatedAt: Date;
+}
+
+export interface FarmerDashboardWeather {
+  locationLabel: string;
+  temperatureC: number;
+  conditionLabel: string;
+  humidityPct: number;
+  windKmh: number;
+  rainPct: number;
+  updatedAt: Date;
 }

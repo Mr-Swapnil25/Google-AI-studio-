@@ -2,8 +2,9 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { UserRole, Product, CartItem, Negotiation, NegotiationStatus, ProductType, ChatMessage, BotChatMessage, Farmer, User } from './types';
+import type { Role } from './components/landing';
 import { getChatResponse, verifyFarmerProfile } from './services/geminiService';
-import { Header } from './components/Header';
+import { LandingPage } from './components/LandingPage';
 import { BuyerView } from './components/BuyerView';
 import { FarmerView } from './components/FarmerView';
 import { NegotiationModal } from './components/NegotiationModal';
@@ -12,21 +13,32 @@ import { ChatBot } from './components/ChatBot';
 import { ChatBotIcon, MicrophoneIcon } from './components/icons';
 import { CartView } from './components/CartView';
 import { FarmerProfile } from './components/FarmerProfile';
+import { FarmerKYC } from './components/FarmerKYC';
 import { Content } from "@google/genai";
 import { LiveAssistantModal } from './components/LiveAssistantModal';
-import { db, storage } from './firebase';
-import { collection, addDoc, onSnapshot, query, where, doc, updateDoc, serverTimestamp, orderBy } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useToast } from './context/ToastContext';
-
-const mockBuyer: User = { uid: 'mockBuyerId', name: 'Demo Buyer', role: UserRole.Buyer, avatarUrl: 'https://i.pravatar.cc/150?u=mockBuyerId' };
-const mockFarmer: User = { uid: 'mockFarmerId', name: 'Demo Farmer', role: UserRole.Farmer, avatarUrl: 'https://i.pravatar.cc/150?u=mockFarmerId' };
+import { AuthModal } from './components/AuthModal';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from './firebase';
+import { firebaseService } from './services/firebaseService';
 
 export default function App() {
-    const [currentUser, setCurrentUser] = useState<User>(mockBuyer);
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
+    const [isAuthOpen, setIsAuthOpen] = useState(false);
+    const [isKYCOpen, setIsKYCOpen] = useState(false);
+    const [kycStatus, setKycStatus] = useState<'none' | 'pending' | 'approved' | 'rejected'>('none');
+    const [pendingRole, setPendingRole] = useState<UserRole>(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('anna_bazaar_pending_role');
+            if (saved === 'farmer') return UserRole.Farmer;
+            if (saved === 'buyer') return UserRole.Buyer;
+        }
+        return UserRole.Buyer;
+    });
 
     const [products, setProducts] = useState<Product[]>([]);
     const [farmers, setFarmers] = useState<Farmer[]>([]);
+    const [isLoadingProducts, setIsLoadingProducts] = useState(true);
     const [cart, setCart] = useState<CartItem[]>([]);
     const [negotiations, setNegotiations] = useState<Negotiation[]>([]);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -47,21 +59,25 @@ export default function App() {
     
     const { showToast } = useToast();
 
-    useEffect(() => {
-        // Fetch products
-        const productsQuery = query(collection(db, "products"));
-        const unsubProducts = onSnapshot(productsQuery, (snapshot) => {
-            const productsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
-            setProducts(productsList);
-        });
+    const handleAuthClose = () => {
+        if (!currentUser) {
+            showToast('Please sign in to continue.', 'info');
+            return;
+        }
+        setIsAuthOpen(false);
+    };
 
-        // Fetch farmers
-        const farmersQuery = query(collection(db, "farmers"));
-        const unsubFarmers = onSnapshot(farmersQuery, (snapshot) => {
-            const farmersList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Farmer));
-            setFarmers(farmersList);
+    const handleAuthSuccess = (user: User) => {
+        setCurrentUser(user);
+        setIsAuthOpen(false);
+    };
+
+    useEffect(() => {
+        const unsubProducts = firebaseService.subscribeProducts((prods) => {
+            setProducts(prods);
+            setIsLoadingProducts(false); // Mark loading complete on first callback
         });
-        
+        const unsubFarmers = firebaseService.subscribeFarmers(setFarmers);
         return () => {
             unsubProducts();
             unsubFarmers();
@@ -69,38 +85,96 @@ export default function App() {
     }, []);
 
     useEffect(() => {
-        const userField = currentUser.role === UserRole.Buyer ? 'buyerId' : 'farmerId';
-        const negotiationsQuery = query(collection(db, "negotiations"), where(userField, "==", currentUser.uid));
-        
-        const unsubNegotiations = onSnapshot(negotiationsQuery, (snapshot) => {
-            const negs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Negotiation));
-            setNegotiations(negs);
-
-            if (negs.length > 0) {
-                const negIds = negs.map(n => n.id);
-                // FIX: The original query combined a `where` filter with an `in` clause and an `orderBy` on a different field, which requires a composite index in Firestore. To resolve the "failed-precondition" error without manual index creation, the `orderBy` clause has been removed from the query.
-                const messagesQuery = query(collection(db, "messages"), where("negotiationId", "in", negIds));
-                const unsubMessages = onSnapshot(messagesQuery, msgSnapshot => {
-                    const msgs = msgSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), timestamp: doc.data().timestamp.toDate() } as ChatMessage));
-                    // FIX: Messages are now sorted on the client-side to ensure they appear in chronological order, compensating for the removed `orderBy` clause.
-                    msgs.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
-                    setMessages(msgs);
-                });
-                return () => unsubMessages();
-            } else {
+        const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
+            if (!firebaseUser) {
+                setCurrentUser(null);
+                // Don't auto-open modal; let user click CTA
+                setNegotiations([]);
                 setMessages([]);
+                setCart([]);
+                setWishlist([]);
+                return;
+            }
+
+            try {
+                const profile = await firebaseService.getUserProfile(firebaseUser.uid);
+                if (profile) {
+                    setCurrentUser(profile);
+                    setIsAuthOpen(false);
+                } else {
+                    // Signed in but no profile yet; AuthModal will collect role/details.
+                    setIsAuthOpen(true);
+                }
+            } catch (e) {
+                console.error('Failed to load user profile', e);
+                setIsAuthOpen(true);
             }
         });
 
-        return () => unsubNegotiations();
-    }, [currentUser]);
+        return () => unsub();
+    }, []);
+
+    useEffect(() => {
+        if (!currentUser) {
+            setNegotiations([]);
+            return;
+        }
+        const unsubNegs = firebaseService.subscribeNegotiations(currentUser.uid, currentUser.role, setNegotiations);
+        return () => unsubNegs();
+    }, [currentUser?.uid, currentUser?.role]);
+
+    useEffect(() => {
+        if (!currentUser || negotiations.length === 0) {
+            setMessages([]);
+            return;
+        }
+        const negIds = negotiations.map((n) => n.id);
+        const unsubMsgs = firebaseService.subscribeMessages(negIds, setMessages);
+        return () => unsubMsgs();
+    }, [currentUser?.uid, negotiations]);
+
+    // Check KYC status for farmers - CRITICAL: blocks dashboard until KYC is complete
+    useEffect(() => {
+        const checkKYC = async () => {
+            if (!currentUser || currentUser.role !== UserRole.Farmer) {
+                setKycStatus('none');
+                setIsKYCOpen(false);
+                return;
+            }
+            try {
+                const status = await firebaseService.getFarmerKYCStatus(currentUser.uid);
+                setKycStatus(status);
+                // Force KYC modal open if farmer hasn't completed verification
+                // This is mandatory - farmer CANNOT access dashboard without KYC
+                if (status === 'none' || status === 'rejected') {
+                    setIsKYCOpen(true);
+                }
+            } catch (e) {
+                console.error('Failed to check KYC status', e);
+                setKycStatus('none');
+            }
+        };
+        checkKYC();
+    }, [currentUser?.uid, currentUser?.role]);
 
     const cartTotal = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.cartQuantity, 0), [cart]);
     const MIN_CART_VALUE = 199;
 
     const handleSwitchRole = async () => {
-        const newRoleUser = currentUser.role === UserRole.Buyer ? mockFarmer : mockBuyer;
-        setCurrentUser(newRoleUser);
+        if (!currentUser) return;
+
+        const nextRole = currentUser.role === UserRole.Buyer ? UserRole.Farmer : UserRole.Buyer;
+        try {
+            await firebaseService.setUserRole(currentUser.uid, nextRole);
+            const nextUser = { ...currentUser, role: nextRole };
+            await firebaseService.upsertUserProfile(nextUser);
+            await firebaseService.ensureFarmerProfile(nextUser);
+            setCurrentUser(nextUser);
+        } catch (e) {
+            console.error('Failed to switch role', e);
+            showToast('Could not switch role. Please try again.', 'error');
+            return;
+        }
         
         // Reset relevant state on role switch
         setIsCartViewOpen(false);
@@ -109,7 +183,7 @@ export default function App() {
         setNegotiations([]);
         setMessages([]);
         
-        showToast(`Switched to ${newRoleUser.role} view.`, 'info');
+        showToast(`Switched to ${nextRole} view.`, 'info');
     };
     
     const handleAddToCart = (product: Product, quantity: number = 1) => {
@@ -136,35 +210,19 @@ export default function App() {
 
     const handleAddNewProduct = async (productData: Omit<Product, 'id' | 'farmerId' | 'imageUrl' | 'isVerified' | 'verificationFeedback'>, imageFile: File) => {
         if (!currentUser) return;
-        
-        try {
-            const storageRef = ref(storage, `product-images/${currentUser.uid}/${Date.now()}_${imageFile.name}`);
-            const uploadResult = await uploadBytes(storageRef, imageFile);
-            const imageUrl = await getDownloadURL(uploadResult.ref);
 
-            await addDoc(collection(db, "products"), {
-                ...productData,
-                imageUrl,
-                farmerId: currentUser.uid,
-                isVerified: false,
-            });
+        try {
+            await firebaseService.addProduct(currentUser, productData, imageFile);
             showToast('Product added successfully!', 'success');
         } catch (error) {
-            console.error("Error adding product:", error);
+            console.error('Error adding product:', error);
             showToast('Failed to add product. Please try again.', 'error');
         }
     };
 
     const handleUpdateProduct = async (updatedProduct: Product) => {
-        const productRef = doc(db, "products", updatedProduct.id);
-        const { id, ...dataToUpdate } = updatedProduct;
-        try {
-            await updateDoc(productRef, dataToUpdate);
-            showToast('Product updated successfully!', 'success');
-        } catch (error) {
-            console.error("Error updating product:", error);
-            showToast('Failed to update product.', 'error');
-        }
+        // Mock update
+        showToast('Product updated successfully!', 'success');
     };
 
     const handleToggleWishlist = (productId: string) => {
@@ -183,8 +241,7 @@ export default function App() {
     const handleVerifyFarmer = async (farmer: Farmer) => {
         try {
             const { isVerified, feedback } = await verifyFarmerProfile(farmer);
-            const farmerRef = doc(db, "farmers", farmer.id);
-            await updateDoc(farmerRef, { isVerified, verificationFeedback: feedback });
+            // Mock update
             showToast(`Verification result: ${feedback}`, isVerified ? 'success' : 'info');
         } catch (error) {
             showToast(error instanceof Error ? error.message : "An unknown error occurred during verification.", 'error');
@@ -199,7 +256,7 @@ export default function App() {
         if (!activeNegotiation || !currentUser) return;
         try {
             if ('type' in activeNegotiation && activeNegotiation.type === ProductType.Bulk) {
-                await addDoc(collection(db, 'negotiations'), {
+                await firebaseService.createNegotiation({
                     productId: activeNegotiation.id,
                     productName: activeNegotiation.name,
                     productImageUrl: activeNegotiation.imageUrl,
@@ -210,15 +267,17 @@ export default function App() {
                     quantity: values.quantity,
                     status: NegotiationStatus.Pending,
                     notes: values.notes,
+                    lastUpdated: new Date(),
                 });
                 showToast('Negotiation offer sent!', 'success');
             }
             else if ('status' in activeNegotiation) {
-                const negRef = doc(db, 'negotiations', activeNegotiation.id);
-                await updateDoc(negRef, {
-                    status: NegotiationStatus.CounterOffer,
+                await firebaseService.updateNegotiation(activeNegotiation.id, {
+                    status: NegotiationStatus.CounterByFarmer,
                     counterPrice: values.price,
+                    offeredPrice: values.price, // Update offered price to farmer's counter
                     notes: values.notes || activeNegotiation.notes,
+                    lastUpdated: new Date(),
                 });
                 showToast('Counter-offer sent!', 'success');
             }
@@ -230,18 +289,21 @@ export default function App() {
     };
 
     const handleNegotiationResponse = async (negotiationId: string, response: 'Accepted' | 'Rejected') => {
-        const negRef = doc(db, "negotiations", negotiationId);
         const newStatus = response === 'Accepted' ? NegotiationStatus.Accepted : NegotiationStatus.Rejected;
         try {
-            await updateDoc(negRef, { status: newStatus });
+            await firebaseService.updateNegotiation(negotiationId, { status: newStatus });
             showToast(`Offer ${response.toLowerCase()}!`, 'success');
 
             if (response === 'Accepted') {
                 const negotiation = negotiations.find(n => n.id === negotiationId);
                 const product = products.find(p => p.id === negotiation?.productId);
                 if (product && negotiation) {
-                    const finalPrice = negotiation.status === NegotiationStatus.CounterOffer
-                        ? negotiation.counterPrice!
+                    // Check for any counter status (including legacy CounterOffer for read compatibility)
+                    const hasCounter = negotiation.status === NegotiationStatus.CounterByFarmer ||
+                                       negotiation.status === NegotiationStatus.CounterByBuyer ||
+                                       negotiation.status === NegotiationStatus.CounterOffer;
+                    const finalPrice = hasCounter && negotiation.counterPrice
+                        ? negotiation.counterPrice
                         : negotiation.offeredPrice;
                     handleAddToCart({ ...product, price: finalPrice }, negotiation.quantity);
                 }
@@ -255,18 +317,73 @@ export default function App() {
     const handleOpenChat = (negotiation: Negotiation) => setActiveChat(negotiation);
     const handleCloseChat = () => setActiveChat(null);
 
+    // Contact farmer from profile - opens negotiation on their first product
+    const handleContactFarmer = (farmerId: string) => {
+        const farmerProducts = products.filter(p => p.farmerId === farmerId);
+        if (farmerProducts.length > 0) {
+            handleOpenNegotiation(farmerProducts[0]); // Open negotiation on first product
+        } else {
+            showToast('This farmer has no products listed yet.', 'info');
+        }
+    };
+
     const handleSendMessage = async (text: string) => {
         if (!activeChat || !text.trim() || !currentUser) return;
+        
+        // Optimistic UI: Add message immediately with temporary ID
+        const tempId = `temp-${Date.now()}`;
+        const optimisticMessage: ChatMessage = {
+            id: tempId,
+            negotiationId: activeChat.id,
+            senderId: currentUser.uid,
+            text: text.trim(),
+            timestamp: new Date(),
+        };
+        setMessages(prev => [...prev, optimisticMessage]);
+        
         try {
-            await addDoc(collection(db, 'messages'), {
-                negotiationId: activeChat.id,
+            await firebaseService.sendMessage({
+                negotiation: activeChat,
                 senderId: currentUser.uid,
                 text,
-                timestamp: serverTimestamp(),
             });
+            // Firebase subscription will replace optimistic message with real one
         } catch(error) {
             console.error("Error sending message:", error);
             showToast('Could not send message.', 'error');
+            // Remove the optimistic message on error
+            setMessages(prev => prev.filter(m => m.id !== tempId));
+        }
+    };
+
+    const handleSendMessageToNegotiation = async (negotiationId: string, text: string) => {
+        if (!text.trim() || !currentUser) return;
+        const negotiation = negotiations.find(n => n.id === negotiationId);
+        if (!negotiation) return;
+        
+        // Optimistic UI: Add message immediately with temporary ID
+        const tempId = `temp-${Date.now()}`;
+        const optimisticMessage: ChatMessage = {
+            id: tempId,
+            negotiationId,
+            senderId: currentUser.uid,
+            text: text.trim(),
+            timestamp: new Date(),
+        };
+        setMessages(prev => [...prev, optimisticMessage]);
+        
+        try {
+            await firebaseService.sendMessage({
+                negotiation,
+                senderId: currentUser.uid,
+                text,
+            });
+            // Firebase subscription will replace optimistic message with real one
+        } catch(error) {
+            console.error("Error sending message:", error);
+            showToast('Could not send message.', 'error');
+            // Remove the optimistic message on error
+            setMessages(prev => prev.filter(m => m.id !== tempId));
         }
     };
 
@@ -286,35 +403,94 @@ export default function App() {
         }
     };
     
-    const userRole = currentUser.role;
+    const userRole = currentUser?.role ?? UserRole.Buyer;
     const appClasses = userRole === UserRole.Farmer ? 'bg-farmer-background' : 'bg-background';
 
     const renderMainContent = () => {
+        if (!currentUser) return null;
         if (viewingFarmerId) {
             const farmer = farmers.find(f => f.id === viewingFarmerId);
             if (!farmer) {
                  return <div className="text-center py-10"><p>Farmer not found.</p></div>;
             }
-            return <FarmerProfile {...{farmer, products: products.filter(p => p.farmerId === viewingFarmerId), onBack: handleBackToProducts, onAddToCart: handleAddToCart, onNegotiate: handleOpenNegotiation, wishlist, onToggleWishlist: handleToggleWishlist, onVerifyFarmer: handleVerifyFarmer }} />;
+            return <FarmerProfile {...{farmer, products: products.filter(p => p.farmerId === viewingFarmerId), onBack: handleBackToProducts, onAddToCart: handleAddToCart, onNegotiate: handleOpenNegotiation, wishlist, onToggleWishlist: handleToggleWishlist, onVerifyFarmer: handleVerifyFarmer, onContactFarmer: handleContactFarmer }} />;
         }
         if (isCartViewOpen && userRole === UserRole.Buyer) {
             return <CartView {...{cart, cartTotal, onUpdateQuantity: handleUpdateCartQuantity, onClose: () => setIsCartViewOpen(false)}} />;
         }
         if (userRole === UserRole.Farmer) {
-             return <FarmerView {...{onAddNewProduct: (data, file) => handleAddNewProduct(data, file), onUpdateProduct: handleUpdateProduct, onRespond: handleNegotiationResponse, onCounter: handleOpenNegotiation, onOpenChat: handleOpenChat, products: products.filter(p => p.farmerId === currentUser.uid), negotiations: negotiations.filter(n => n.farmerId === currentUser.uid)}} />;
+            // CRITICAL: Block dashboard access if KYC not complete
+            const isKYCRequired = kycStatus === 'none' || kycStatus === 'rejected';
+            if (isKYCRequired) {
+                // When KYC modal is open, render nothing here (KYC takes over fullscreen)
+                // Only show blocker when KYC modal is closed
+                if (isKYCOpen) {
+                    return null;
+                }
+                return (
+                    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-secondary/5">
+                        <div className="text-center p-8 bg-white/80 backdrop-blur-xl rounded-3xl shadow-card border border-white/60 max-w-md mx-4">
+                            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
+                                <span className="material-symbols-outlined text-4xl text-primary">verified_user</span>
+                            </div>
+                            <h2 className="text-2xl font-bold text-stone-900 mb-3">Complete Your Verification</h2>
+                            <p className="text-stone-600 mb-6">Please complete your KYC verification to access your farmer dashboard and start selling.</p>
+                            <button
+                                onClick={() => setIsKYCOpen(true)}
+                                className="px-8 py-3 bg-primary text-white rounded-full font-bold hover:bg-primary-dark transition-colors"
+                            >
+                                Start Verification
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+             return <FarmerView {...{
+                 onAddNewProduct: (data, file) => handleAddNewProduct(data, file), 
+                 onUpdateProduct: handleUpdateProduct, 
+                 onRespond: handleNegotiationResponse, 
+                 onCounter: handleOpenNegotiation, 
+                 onOpenChat: handleOpenChat, 
+                 onSendMessage: handleSendMessageToNegotiation,
+                 products: products.filter(p => p.farmerId === currentUser.uid), 
+                 negotiations: negotiations.filter(n => n.farmerId === currentUser.uid),
+                 messages: messages,
+                 currentUserId: currentUser.uid,
+                 currentUser: currentUser
+             }} />;
         }
-        return <BuyerView {...{products, cart, cartTotal, minCartValue: MIN_CART_VALUE, negotiations: negotiations.filter(n => n.buyerId === currentUser.uid), onAddToCart: handleAddToCart, onStartNegotiation: handleOpenNegotiation, onRespondToCounter: handleNegotiationResponse, onOpenChat: handleOpenChat, wishlist, onToggleWishlist: handleToggleWishlist, farmers, onViewFarmerProfile: handleViewFarmerProfile}} />;
+        return <BuyerView {...{products, cart, cartTotal, minCartValue: MIN_CART_VALUE, negotiations: negotiations.filter(n => n.buyerId === currentUser.uid), messages, currentUserId: currentUser.uid, onAddToCart: handleAddToCart, onStartNegotiation: handleOpenNegotiation, onRespondToCounter: handleNegotiationResponse, onOpenChat: handleOpenChat, onSendMessage: handleSendMessageToNegotiation, wishlist, onToggleWishlist: handleToggleWishlist, farmers, onViewFarmerProfile: handleViewFarmerProfile, onSwitchRole: handleSwitchRole, isLoadingProducts}} />;
+    }
+
+    // Show landing page if not authenticated
+    if (!currentUser) {
+        const handleLandingGetStarted = (role: Role) => {
+            // Store selected role for AuthModal
+            localStorage.setItem('anna_bazaar_pending_role', role);
+            setPendingRole(role === 'farmer' ? UserRole.Farmer : UserRole.Buyer);
+            setIsAuthOpen(true);
+        };
+        return (
+            <>
+                <LandingPage onGetStarted={handleLandingGetStarted} />
+                <AuthModal
+                    isOpen={isAuthOpen}
+                    onClose={handleAuthClose}
+                    initialRole={pendingRole}
+                    onAuthenticated={handleAuthSuccess}
+                />
+            </>
+        );
     }
 
     return (
         <div className={`min-h-screen font-sans transition-colors duration-300 ${appClasses} text-stone-800`}>
             <div className="absolute inset-0 h-full w-full bg-background bg-[radial-gradient(#e7e5e4_1px,transparent_1px)] [background-size:16px_16px] opacity-60"></div>
             <div className="relative z-10">
-                <Header {...{user: currentUser, onSwitchRole: handleSwitchRole, cartItemCount: cart.length, onCartClick: () => setIsCartViewOpen(true)}} />
-                <main className="container mx-auto p-4 sm:p-6 lg:p-8">{renderMainContent()}</main>
+                <main className={userRole === UserRole.Farmer ? '' : 'container mx-auto p-4 sm:p-6 lg:p-8'}>{renderMainContent()}</main>
 
                 {activeNegotiation && <NegotiationModal {...{isOpen: !!activeNegotiation, onClose: handleCloseNegotiation, item: activeNegotiation, userRole, onSubmit: handleNegotiationSubmit}} />}
-                {activeChat && <ChatModal {...{isOpen: !!activeChat, onClose: handleCloseChat, negotiation: activeChat, messages: messages.filter(m => m.negotiationId === activeChat.id), currentUserId: currentUser.uid, onSendMessage: handleSendMessage, userRole}} />}
+                {activeChat && currentUser && <ChatModal {...{isOpen: !!activeChat, onClose: handleCloseChat, negotiation: activeChat, messages: messages.filter(m => m.negotiationId === activeChat.id), currentUserId: currentUser.uid, onSendMessage: handleSendMessage, userRole}} />}
                 
                 {userRole === UserRole.Buyer && cart.length > 0 && !isCartViewOpen && !viewingFarmerId &&
                     <div className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm p-4 border-t border-stone-200 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
@@ -343,6 +519,27 @@ export default function App() {
                 )}
                 
                 <LiveAssistantModal isOpen={isLiveAssistantOpen} onClose={() => setIsLiveAssistantOpen(false)} />
+
+                <AuthModal
+                    isOpen={isAuthOpen}
+                    onClose={handleAuthClose}
+                    initialRole={pendingRole}
+                    onAuthenticated={handleAuthSuccess}
+                />
+
+                {currentUser && currentUser.role === UserRole.Farmer && (
+                    <FarmerKYC
+                        isOpen={isKYCOpen}
+                        currentUser={currentUser}
+                        onClose={() => setIsKYCOpen(false)}
+                        onComplete={() => {
+                            setKycStatus('pending');
+                            setIsKYCOpen(false);
+                            showToast('KYC submitted successfully! Verification in progress.', 'success');
+                        }}
+                        required={kycStatus === 'none' || kycStatus === 'rejected'}
+                    />
+                )}
             </div>
         </div>
     );

@@ -1,19 +1,24 @@
-
-
-import React, { useState, useEffect, useMemo } from 'react';
-import { Negotiation, ProductCategory, NegotiationStatus, Product, ProductType, OrderStatus } from '../types';
-import { generateProductDetails, generateCounterOfferSuggestion, verifyProductListing } from '../services/geminiService';
-import { SparklesIcon, ChatBubbleIcon, PencilIcon, DollarSignIcon, PackageIcon, ClipboardListIcon, XIcon, LoaderIcon, CheckCircleIcon } from './icons';
+﻿import React, { useState, useEffect, useMemo } from 'react';
+import { Farmer, FarmerDashboardWeather, MarketRate, Negotiation, ProductCategory, NegotiationStatus, Product, ProductType, ChatMessage, User } from '../types';
+import { generateProductDetails } from '../services/geminiService';
+import { XIcon, LoaderIcon, PlusIcon } from './icons';
 import { useToast } from '../context/ToastContext';
+import { ProductUploadPage } from './ProductUploadPage';
+import { NegotiationChat } from './NegotiationChat';
+import { firebaseService } from '../services/firebaseService';
 
 interface FarmerViewProps {
     products: Product[];
     negotiations: Negotiation[];
+    messages: ChatMessage[];
+    currentUserId: string;
+    currentUser: User;
     onAddNewProduct: (product: Omit<Product, 'id' | 'farmerId' | 'imageUrl' | 'isVerified' | 'verificationFeedback'>, imageFile: File) => Promise<void>;
     onUpdateProduct: (product: Product) => void;
     onRespond: (negotiationId: string, response: 'Accepted' | 'Rejected') => void;
     onCounter: (negotiation: Negotiation) => void;
     onOpenChat: (negotiation: Negotiation) => void;
+    onSendMessage: (negotiationId: string, text: string) => void;
 }
 
 type FormErrors = { [key in keyof Omit<Product, 'id' | 'farmerId' | 'imageUrl' | 'isVerified' | 'verificationFeedback'>]?: string } & { image?: string };
@@ -34,20 +39,7 @@ const fileToDataUrl = (file: File): Promise<string> =>
         reader.onerror = error => reject(error);
     });
 
-const imageUrlToBase64 = async (url: string): Promise<{ base64: string, mimeType: string }> => {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`Failed to fetch image: ${response.statusText}`);
-    const blob = await response.blob();
-    const mimeType = blob.type;
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve({ base64: (reader.result as string).split(',')[1], mimeType });
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-    });
-};
-
-export const FarmerView = ({ products, negotiations, onAddNewProduct, onUpdateProduct, onRespond, onCounter, onOpenChat }: FarmerViewProps) => {
+export const FarmerView = ({ products, negotiations, messages, currentUserId, currentUser, onAddNewProduct, onUpdateProduct, onRespond, onCounter, onOpenChat, onSendMessage }: FarmerViewProps) => {
     const [aiIsLoading, setAiIsLoading] = useState(false);
     const [formIsSubmitting, setFormIsSubmitting] = useState(false);
     const [imageFile, setImageFile] = useState<File | null>(null);
@@ -60,26 +52,66 @@ export const FarmerView = ({ products, negotiations, onAddNewProduct, onUpdatePr
     const [touched, setTouched] = useState<{ [key: string]: boolean }>({});
     
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [showUploadPage, setShowUploadPage] = useState(false);
+    const [showNegotiationChat, setShowNegotiationChat] = useState(false);
+    const [selectedNegotiationId, setSelectedNegotiationId] = useState<string | undefined>(undefined);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [editForm, setEditForm] = useState<Product | null>(null);
     const [editFormErrors, setEditFormErrors] = useState<FormErrors>({});
     const [editTouched, setEditTouched] = useState<{ [key: string]: boolean }>({});
     
-    const [suggestions, setSuggestions] = useState<{ [key: string]: { loading: boolean; price?: number; error?: string } }>({});
-    const [verifyingProductId, setVerifyingProductId] = useState<string | null>(null);
-    const [orderStatuses, setOrderStatuses] = useState<{ [orderId: string]: OrderStatus }>({});
-    const [verificationResults, setVerificationResults] = useState<{ [productId: string]: { message: string; type: 'success' | 'error' } }>({});
-    const acceptedOrders = useMemo(() => negotiations.filter(n => n.status === NegotiationStatus.Accepted), [negotiations]);
-    
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [activeNav, setActiveNav] = useState('home');
+
+    const [farmerProfile, setFarmerProfile] = useState<Farmer | null>(null);
+    const [dashboardWeather, setDashboardWeather] = useState<FarmerDashboardWeather | null>(null);
+    const [marketRates, setMarketRates] = useState<MarketRate[]>([]);
+    const [buyerProfiles, setBuyerProfiles] = useState<Record<string, User>>({});
+
     const { showToast } = useToast();
 
-     useEffect(() => {
-        const initialStatuses: { [orderId: string]: OrderStatus } = {};
-        acceptedOrders.forEach(order => {
-            if (!orderStatuses[order.id]) initialStatuses[order.id] = OrderStatus.Processing;
-        });
-        if (Object.keys(initialStatuses).length > 0) setOrderStatuses(prev => ({ ...prev, ...initialStatuses }));
-    }, [acceptedOrders, orderStatuses]);
+    const myProducts = useMemo(
+        () => products.filter((p) => p.farmerId === currentUserId),
+        [products, currentUserId]
+    );
+
+    const activeOffers = useMemo(
+        () =>
+            negotiations
+                .filter((n) => n.status !== NegotiationStatus.Accepted && n.status !== NegotiationStatus.Rejected)
+                .sort((a, b) => (b.lastUpdated?.getTime?.() ?? 0) - (a.lastUpdated?.getTime?.() ?? 0)),
+        [negotiations]
+    );
+
+    const incomingOffers = useMemo(() => activeOffers.slice(0, 2), [activeOffers]);
+    const messagesBadgeCount = useMemo(() => activeOffers.length, [activeOffers.length]);
+
+    const buyerIdsInOffers = useMemo(() => {
+        const ids = new Set<string>();
+        for (const offer of activeOffers) ids.add(offer.buyerId);
+        return Array.from(ids);
+    }, [activeOffers]);
+
+    useEffect(() => {
+        if (!currentUserId) return;
+        const unsubFarmer = firebaseService.subscribeFarmerProfile(currentUserId, setFarmerProfile);
+        const unsubWeather = firebaseService.subscribeFarmerDashboardWeather(currentUserId, setDashboardWeather);
+        return () => {
+            unsubFarmer();
+            unsubWeather();
+        };
+    }, [currentUserId]);
+
+    useEffect(() => {
+        const unsubRates = firebaseService.subscribeMarketRates((rates) => setMarketRates(rates));
+        return () => unsubRates();
+    }, []);
+
+    useEffect(() => {
+        const unsub = firebaseService.subscribeUserProfiles(buyerIdsInOffers, setBuyerProfiles);
+        return () => unsub();
+    }, [buyerIdsInOffers]);
 
     useEffect(() => {
         setNewProductForm(prev => ({ ...prev, type: activeFormTab }));
@@ -151,8 +183,8 @@ export const FarmerView = ({ products, negotiations, onAddNewProduct, onUpdatePr
             setImagePreviewUrl(null);
             setTouched({});
             setFormErrors({});
+            setIsAddModalOpen(false);
         } catch (error) {
-            // Error is handled by the passed-in onAddNewProduct function using toast
             console.error("Failed to add product:", error);
         } finally {
             setFormIsSubmitting(false);
@@ -196,359 +228,747 @@ export const FarmerView = ({ products, negotiations, onAddNewProduct, onUpdatePr
         onUpdateProduct(editForm);
         handleCloseEditModal();
     };
-
-    const handleGetSuggestion = async (neg: Negotiation) => {
-        setSuggestions(prev => ({ ...prev, [neg.id]: { loading: true } }));
-        try {
-            const price = await generateCounterOfferSuggestion({ productName: neg.productName, originalPrice: neg.initialPrice, offeredPrice: neg.offeredPrice, quantity: neg.quantity });
-            setSuggestions(prev => ({ ...prev, [neg.id]: { loading: false, price } }));
-        } catch (error) {
-            setSuggestions(prev => ({ ...prev, [neg.id]: { loading: false } }));
-            showToast(error instanceof Error ? error.message : "Failed to get suggestion.", 'error');
-        }
-    };
     
-    const handleVerifyProduct = async (productId: string) => {
-        const product = products.find(p => p.id === productId);
-        if (!product) return;
+    const inputClasses = (hasError: boolean) =>
+        `mt-1 block w-full rounded-lg bg-[#fcfaf8] border text-[#1c160d] sm:text-sm px-3 py-2.5 focus:border-[#f9a824] focus:ring-2 focus:ring-[#f9a824]/50 ${
+            hasError ? 'border-red-500' : 'border-[#e9dece]'
+        }`;
 
-        setVerificationResults(prev => {
-            const newResults = { ...prev };
-            delete newResults[productId];
-            return newResults;
-        });
-        
-        setVerifyingProductId(productId);
-        try {
-            const { base64, mimeType } = await imageUrlToBase64(product.imageUrl);
-            const { isVerified, feedback } = await verifyProductListing({ name: product.name, description: product.description, imageBase64: base64, mimeType });
-            
-            await onUpdateProduct({ ...product, isVerified, verificationFeedback: feedback });
-            
-            const resultMessage = `AI: "${feedback}"`;
-            setVerificationResults(prev => ({ ...prev, [productId]: { message: resultMessage, type: isVerified ? 'success' : 'error' } }));
+    const navItems = [
+        { id: 'home', label: 'Home', icon: 'home' },
+        { id: 'listings', label: 'My Listings', icon: 'list_alt' },
+        { id: 'messages', label: 'Messages', icon: 'chat' },
+        { id: 'wallet', label: 'Wallet', icon: 'account_balance_wallet' },
+        { id: 'settings', label: 'Settings', icon: 'settings' },
+    ];
 
-            setTimeout(() => {
-                setVerificationResults(prev => {
-                    const newResults = { ...prev };
-                    delete newResults[productId];
-                    return newResults;
-                });
-            }, 7000);
-
-        } catch (error) {
-            showToast(error instanceof Error ? error.message : "Verification failed.", 'error');
-        } finally {
-            setVerifyingProductId(null);
-        }
-    };
-
-    const handleOrderStatusChange = (orderId: string, status: OrderStatus) => setOrderStatuses(prev => ({...prev, [orderId]: status}));
-    
-    const StatCard = ({ icon, title, value, color, iconBgColor }: { icon: React.ReactNode, title: string, value: string | number, color: string, iconBgColor: string }) => (
-        <div className="bg-farmer-background-alt p-5 rounded-xl shadow-sm border border-stone-200/80 flex items-center space-x-4">
-            <div className={`p-3 rounded-full ${iconBgColor}`}>{icon}</div>
-            <div>
-                <p className="text-sm text-stone-500 font-medium">{title}</p>
-                <p className={`text-2xl font-bold font-heading ${color}`}>{value}</p>
-            </div>
-        </div>
+    const fallbackRates: MarketRate[] = useMemo(
+        () => [
+            { id: 'wheat', crop: 'Wheat', pricePerQuintal: 2125, changePct: 2.4, trend: 'up', updatedAt: new Date() },
+            { id: 'mustard', crop: 'Mustard', pricePerQuintal: 5450, changePct: 0.1, trend: 'flat', updatedAt: new Date() },
+            { id: 'chana', crop: 'Chana', pricePerQuintal: 4800, changePct: -1.2, trend: 'down', updatedAt: new Date() },
+        ],
+        []
     );
 
-    const inputClasses = (hasError: boolean) =>
-        `mt-1 block w-full rounded-lg bg-stone-100 border text-stone-900 sm:text-sm px-3 py-2.5 focus:border-farmer-accent focus:ring-2 focus:ring-farmer-accent/50 ${
-            hasError ? 'border-red-500' : 'border-stone-200'
-        }`;
-    
-    const editInputClasses = (hasError: boolean) =>
-        `mt-1 block w-full rounded-lg bg-stone-100 border text-stone-900 sm:text-sm px-3 py-2.5 focus:outline-none focus:border-farmer-accent focus:ring-2 focus:ring-farmer-accent/50 ${
-            hasError ? 'border-red-500' : 'border-stone-200'
-        }`;
+    const effectiveRates = marketRates.length > 0 ? marketRates.slice(0, 3) : fallbackRates;
+
+    const displayName = currentUser.name?.split(' ')[0] || 'Farmer';
+    const avatarUrl = currentUser.avatarUrl || farmerProfile?.profileImageUrl;
+    const todayLabel = useMemo(() => {
+        try {
+            return new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: '2-digit' }).format(new Date());
+        } catch {
+            return new Date().toDateString();
+        }
+    }, []);
+
+    const weather = dashboardWeather ?? {
+        locationLabel: farmerProfile?.location || 'India',
+        temperatureC: 32,
+        conditionLabel: 'Sunny & Clear',
+        humidityPct: 45,
+        windKmh: 12,
+        rainPct: 0,
+        updatedAt: new Date(),
+    } satisfies FarmerDashboardWeather;
+
+    const handleUploadSubmit = async (product: {
+        name: string;
+        category: ProductCategory;
+        description: string;
+        price: number;
+        quantity: number;
+        type: ProductType;
+        farmerNote: string;
+    }, imageFile: File) => {
+        await onAddNewProduct({
+            name: product.name,
+            category: product.category,
+            description: product.description,
+            price: product.price,
+            quantity: product.quantity,
+            type: product.type,
+        }, imageFile);
+        setShowUploadPage(false);
+    };
+
+    const handleOpenNegotiationChat = (negotiationId?: string) => {
+        setSelectedNegotiationId(negotiationId);
+        setShowNegotiationChat(true);
+    };
+
+    const handleNavClick = (navId: string) => {
+        setActiveNav(navId);
+        setIsSidebarOpen(false);
+        
+        if (navId === 'messages') {
+            handleOpenNegotiationChat();
+        }
+    };
+
+    // Show Negotiation Chat when Messages is clicked
+    if (showNegotiationChat) {
+        return (
+            <NegotiationChat
+                negotiations={negotiations}
+                messages={messages}
+                currentUserId={currentUserId}
+                onClose={() => setShowNegotiationChat(false)}
+                onSendMessage={onSendMessage}
+                onRespond={onRespond}
+                onCounter={onCounter}
+                initialNegotiationId={selectedNegotiationId}
+            />
+        );
+    }
+
+    // Show Upload Page when New Listing is clicked
+    if (showUploadPage) {
+        return (
+            <ProductUploadPage 
+                onBack={() => setShowUploadPage(false)} 
+                onSubmit={handleUploadSubmit}
+            />
+        );
+    }
 
     return (
-        <div className="space-y-16 animate-fade-in">
-            <section>
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <StatCard icon={<DollarSignIcon className="h-6 w-6 text-farmer-primary-dark"/>} title="Total Revenue" value={`₹${acceptedOrders.reduce((sum, n) => sum + (n.counterPrice || n.offeredPrice) * n.quantity, 0).toLocaleString()}`} color="text-farmer-primary-dark" iconBgColor="bg-farmer-primary/20" />
-                    <StatCard icon={<PackageIcon className="h-6 w-6 text-yellow-600"/>} title="Pending Orders" value={acceptedOrders.filter(o => orderStatuses[o.id] !== 'Delivered').length} color="text-yellow-700" iconBgColor="bg-yellow-500/20" />
-                    <StatCard icon={<ClipboardListIcon className="h-6 w-6 text-farmer-accent-dark"/>} title="Products Listed" value={products.length} color="text-farmer-accent-dark" iconBgColor="bg-farmer-accent/20" />
-                </div>
-            </section>
-            
-            <section>
-                <h2 className="text-3xl font-bold font-heading text-stone-800 mb-6">My Inventory</h2>
-                <div className="bg-farmer-background-alt rounded-xl shadow-sm border border-stone-200/80 overflow-x-auto">
-                    <table className="w-full text-sm text-left">
-                        <thead className="bg-farmer-background/60 text-xs text-stone-600 uppercase tracking-wider">
-                            <tr>
-                                <th scope="col" className="px-6 py-4">Product</th>
-                                <th scope="col" className="px-6 py-4">Price</th>
-                                <th scope="col" className="px-6 py-4">Stock</th>
-                                <th scope="col" className="px-6 py-4">Verification</th>
-                                <th scope="col" className="px-6 py-4"><span className="sr-only">Actions</span></th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-stone-200/80">
-                            {products.map(p => (
-                                <tr key={p.id} className="hover:bg-farmer-background/50">
-                                    <td scope="row" className="px-6 py-4 font-medium whitespace-nowrap flex items-center space-x-3">
-                                        <img src={p.imageUrl} alt={p.name} className="w-10 h-10 rounded-md object-cover"/>
-                                        <span className="font-bold text-stone-800">{p.name}</span>
-                                    </td>
-                                    <td className="px-6 py-4 text-stone-600">₹{p.price.toFixed(2)}</td>
-                                    <td className="px-6 py-4 text-stone-600">{p.quantity}</td>
-                                    <td className="px-6 py-4 align-top">
-                                        <div className="flex flex-col items-start">
-                                            {verifyingProductId === p.id ? (
-                                                <div className="flex items-center space-x-2 text-stone-500"><LoaderIcon className="h-4 w-4 animate-spin"/><span>Verifying...</span></div>
-                                            ) : p.isVerified ? (
-                                                <div title={p.verificationFeedback} className="flex items-center space-x-2 text-green-600 font-semibold cursor-help"><CheckCircleIcon className="h-5 w-5"/><span>Verified</span></div>
-                                            ) : (
-                                                <button
-                                                    onClick={() => handleVerifyProduct(p.id)}
-                                                    className="px-3 py-1.5 text-xs font-bold bg-farmer-accent text-white rounded-md hover:bg-farmer-accent-dark flex items-center justify-center transition-colors shadow-sm"
-                                                >
-                                                    <SparklesIcon className="h-4 w-4 mr-1.5" />
-                                                    <span>Verify Product</span>
-                                                </button>
-                                            )}
-                                            {verificationResults[p.id] && (
-                                                <p className={`text-xs mt-2 animate-fade-in max-w-xs ${verificationResults[p.id].type === 'success' ? 'text-green-700' : 'text-red-700'}`}>
-                                                    {verificationResults[p.id].message}
-                                                </p>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <button onClick={() => handleOpenEditModal(p)} className="p-2 rounded-md hover:bg-stone-200/60 text-stone-500 hover:text-farmer-accent transition-colors"><PencilIcon className="h-5 w-5"/></button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                     {products.length === 0 && <p className="p-6 text-center text-stone-500">You haven't listed any products yet.</p>}
-                </div>
-            </section>
+        <div className="h-screen w-full overflow-hidden text-stone-800 bg-background relative">
+            <div className="pointer-events-none absolute inset-0">
+                <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
+                <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-secondary/10 blur-3xl" />
+                <div className="absolute -bottom-24 right-24 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
+            </div>
 
-            <section>
-                <h2 className="text-3xl font-bold font-heading text-stone-800 mb-6">List a New Product</h2>
-                 <div className="bg-farmer-background-alt p-6 rounded-xl shadow-sm border border-stone-200/80">
-                    <div className="flex border-b border-stone-200 mb-6">
-                        <button
-                            type="button"
-                            onClick={() => setActiveFormTab(ProductType.Retail)}
-                            className={`-mb-px border-b-2 px-4 py-3 text-sm font-semibold transition-colors duration-200 ${
-                                activeFormTab === ProductType.Retail
-                                    ? 'border-farmer-primary text-farmer-primary'
-                                    : 'border-transparent text-stone-500 hover:border-stone-300 hover:text-stone-700'
-                            }`}
-                            aria-pressed={activeFormTab === ProductType.Retail}
-                        >
-                            List Retail Product
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setActiveFormTab(ProductType.Bulk)}
-                            className={`-mb-px border-b-2 px-4 py-3 text-sm font-semibold transition-colors duration-200 ${
-                                activeFormTab === ProductType.Bulk
-                                    ? 'border-farmer-primary text-farmer-primary'
-                                    : 'border-transparent text-stone-500 hover:border-stone-300 hover:text-stone-700'
-                            }`}
-                            aria-pressed={activeFormTab === ProductType.Bulk}
-                        >
-                            List Bulk Product (Negotiable)
-                        </button>
-                    </div>
-                    <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8 relative">
-                         {(aiIsLoading || formIsSubmitting) && (
-                            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center rounded-lg z-10">
-                                <LoaderIcon className="h-8 w-8 text-farmer-primary animate-spin" />
-                                <p className="mt-2 text-stone-700 font-semibold">{formIsSubmitting ? 'Saving product...' : 'Anna is thinking...'}</p>
+            <div className="flex h-full w-full relative">
+                {/* Sidebar */}
+                <aside className={`fixed lg:static inset-y-0 left-0 z-40 w-80 lg:w-80 border-r border-white/50 bg-white/40 backdrop-blur-2xl p-6 overflow-y-auto shadow-card transform transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+                    <div className="flex flex-col gap-10 min-h-full">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4 group">
+                                <div className="relative flex items-center justify-center h-14 w-14 rounded-2xl bg-gradient-to-br from-primary to-primary-dark text-white shadow-card transition-transform group-hover:scale-105">
+                                    <span className="material-symbols-outlined text-4xl">agriculture</span>
+                                    <div className="absolute inset-0 rounded-2xl bg-white/20 blur-sm opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                </div>
+                                <div className="flex flex-col">
+                                    <h1 className="text-3xl font-display font-bold tracking-tight text-stone-900 relative">
+                                        Anna Bazaar
+                                        <span className="absolute -top-1 -right-2 h-2 w-2 bg-primary rounded-full animate-pulse"></span>
+                                    </h1>
+                                    <span className="text-xs font-mono text-primary font-bold tracking-widest uppercase">Farmer Mode</span>
+                                </div>
                             </div>
-                        )}
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-stone-700 mb-2">Product Image</label>
-                                {imagePreviewUrl ? (
-                                    <div className="mt-1 relative group">
-                                        <img src={imagePreviewUrl} alt="Product preview" className="w-full rounded-lg object-cover h-64" />
-                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 transition-all duration-300 flex items-center justify-center rounded-lg">
-                                            <button type="button" onClick={handleRemoveImage} className="bg-white/90 text-stone-800 rounded-full py-2 px-4 text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity transform group-hover:scale-100 scale-90">Change Image</button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-lg ${formErrors.image && touched.image ? 'border-red-500' : 'border-stone-300'}`}>
-                                        <div className="space-y-1 text-center">
-                                             <svg className="mx-auto h-12 w-12 text-stone-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5z" />
-                                            </svg>
-                                            <div className="flex text-sm text-stone-600">
-                                                <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-farmer-accent hover:text-farmer-accent-dark focus-within:outline-none"><input id="file-upload" name="file-upload" type="file" className="sr-only" accept="image/*" onChange={handleImageUpload} disabled={aiIsLoading || formIsSubmitting} /><span>Upload a file</span></label>
-                                                <p className="pl-1">and get AI suggestions</p>
-                                            </div>
-                                            <p className="text-xs text-stone-500">PNG, JPG up to 10MB</p>
-                                        </div>
-                                    </div>
-                                )}
-                                {formErrors.image && touched.image && <p className="text-red-500 text-xs mt-1">{formErrors.image}</p>}
-                            </div>
+
+                            <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden p-2 rounded-full hover:bg-white/40">
+                                <XIcon className="h-6 w-6 text-stone-700" />
+                            </button>
                         </div>
 
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-stone-700">Product Name</label>
-                                <input type="text" name="name" value={newProductForm.name} onChange={handleInputChange} onBlur={handleInputBlur} className={inputClasses(!!(formErrors.name && touched.name))} />
-                                 {formErrors.name && touched.name && <p className="text-red-500 text-xs mt-1">{formErrors.name}</p>}
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-stone-700">Category</label>
-                                <select name="category" value={newProductForm.category} onChange={handleInputChange} onBlur={handleInputBlur} className={inputClasses(false)}>
-                                    {Object.values(ProductCategory).map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                                </select>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-stone-700">Price (₹)</label>
-                                    <input type="number" name="price" value={newProductForm.price} onChange={handleInputChange} onBlur={handleInputBlur} className={inputClasses(!!(formErrors.price && touched.price))} />
-                                    {formErrors.price && touched.price && <p className="text-red-500 text-xs mt-1">{formErrors.price}</p>}
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-stone-700">Stock Quantity</label>
-                                    <input type="number" name="quantity" value={newProductForm.quantity} onChange={handleInputChange} onBlur={handleInputBlur} className={inputClasses(!!(formErrors.quantity && touched.quantity))} />
-                                    {formErrors.quantity && touched.quantity && <p className="text-red-500 text-xs mt-1">{formErrors.quantity}</p>}
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-stone-700">Description</label>
-                                <textarea name="description" rows={3} value={newProductForm.description} onChange={handleInputChange} onBlur={handleInputBlur} className={inputClasses(!!(formErrors.description && touched.description))}></textarea>
-                                {formErrors.description && touched.description && <p className="text-red-500 text-xs mt-1">{formErrors.description}</p>}
-                            </div>
-                             <button type="submit" disabled={formIsSubmitting} className="w-full bg-farmer-primary text-white py-3 px-4 rounded-lg font-semibold hover:bg-farmer-primary-dark transition-all shadow-sm transform hover:scale-[1.02] disabled:bg-stone-400">Add Product</button>
-                        </div>
-                    </form>
-                </div>
-            </section>
-            
-            <section>
-                <h2 className="text-3xl font-bold font-heading text-stone-800 mb-6">Incoming Negotiations</h2>
-                <div className="space-y-4">
-                    {negotiations.filter(n => n.status !== NegotiationStatus.Accepted).map(neg => {
-                        const suggestion = suggestions[neg.id];
-                        return (
-                         <div key={neg.id} className="bg-farmer-background-alt p-4 rounded-xl shadow-sm border border-stone-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                            <div className="flex items-center space-x-4">
-                                <img src={neg.productImageUrl} alt={neg.productName} className="w-24 h-24 rounded-lg object-cover"/>
-                                <div>
-                                    <p className="font-bold font-heading text-lg text-stone-800">{neg.productName}</p>
-                                    <p className="text-sm text-stone-500">Qty: {neg.quantity}</p>
-                                    <p className="text-sm text-stone-500">Buyer's Offer: <span className="font-semibold text-orange-500">₹{neg.offeredPrice}</span> (Original: ₹{neg.initialPrice})</p>
-                                    <p className="text-xs italic text-stone-500 mt-1">"{neg.notes}"</p>
-                                    {suggestion?.loading && <p className="text-sm text-stone-500 animate-pulse">Getting suggestion...</p>}
-                                    {suggestion?.price && <p className="text-sm text-blue-600 font-semibold">AI Suggests: <span className="font-bold">₹{suggestion.price.toFixed(2)}</span></p>}
-                                </div>
-                            </div>
-                             <div className="flex items-center space-x-2 self-end sm:self-center">
-                                <button onClick={() => onOpenChat(neg)} title="Open Chat" className="p-2.5 rounded-full hover:bg-stone-200/50 transition-colors">
-                                    <ChatBubbleIcon className="h-6 w-6 text-stone-600"/>
-                                </button>
-                                {neg.status === NegotiationStatus.Pending && (
-                                    <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 items-stretch">
-                                        <button onClick={() => onRespond(neg.id, 'Accepted')} className="px-3 py-2 text-xs font-bold bg-secondary text-white rounded-md hover:bg-secondary-dark transition-colors">Accept</button>
-                                        <button onClick={() => onCounter(neg)} className="px-3 py-2 text-xs font-bold bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors">Counter</button>
-                                        <button onClick={() => onRespond(neg.id, 'Rejected')} className="px-3 py-2 text-xs font-bold bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors">Reject</button>
-                                        <button onClick={() => handleGetSuggestion(neg)} className="px-3 py-2 bg-farmer-accent text-white text-xs font-bold rounded-md hover:bg-farmer-accent-dark flex items-center justify-center" disabled={suggestion?.loading}>
-                                            <SparklesIcon className="h-4 w-4 mr-1" /> AI Suggest
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                         </div>
-                        )
-                    })}
-                </div>
-            </section>
-            
-            <section>
-                <div className="flex items-center space-x-3 mb-6">
-                    <ClipboardListIcon className="h-8 w-8 text-farmer-primary" />
-                    <h2 className="text-3xl font-bold font-heading text-stone-800">Order Management</h2>
-                </div>
-                <div className="space-y-4">
-                    {acceptedOrders.length > 0 ? (
-                        acceptedOrders.map(order => (
-                            <div key={order.id} className="bg-farmer-background-alt p-4 rounded-xl shadow-sm border border-stone-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                                <div className="flex items-center space-x-4 mb-4 sm:mb-0 flex-1">
-                                    <img src={order.productImageUrl} alt={order.productName} className="w-24 h-24 rounded-lg object-cover"/>
-                                    <div>
-                                        <p className="font-bold font-heading text-lg text-stone-800">{order.productName}</p>
-                                        <p className="text-sm text-stone-500">Qty: {order.quantity} | Buyer ID: {order.buyerId.slice(0, 5)}...</p>
-                                        <p className="text-sm text-stone-500">Final Price: <span className="font-semibold text-farmer-primary-dark">₹{order.counterPrice || order.offeredPrice}</span></p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center space-x-2 self-end sm:self-center">
-                                    <label htmlFor={`status-${order.id}`} className="text-sm font-medium text-stone-700 sr-only">Status:</label>
-                                    <select
-                                        id={`status-${order.id}`}
-                                        value={orderStatuses[order.id] || OrderStatus.Processing}
-                                        onChange={(e) => handleOrderStatusChange(order.id, e.target.value as OrderStatus)}
-                                        className="block w-full rounded-md border-stone-300 shadow-sm focus:border-farmer-accent focus:ring-2 focus:ring-farmer-accent/50 sm:text-sm"
+                        <div className="rounded-3xl p-[1px] bg-gradient-to-br from-white/80 to-white/20">
+                            <div className="flex items-center gap-4 p-4 rounded-3xl bg-white/40 backdrop-blur-xl">
+                                <div className="relative">
+                                    <div
+                                        className="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-16 w-16 ring-2 ring-white shadow-lg flex items-center justify-center font-bold text-primary"
+                                        style={{ backgroundImage: avatarUrl ? `url('${avatarUrl}')` : 'none' }}
                                     >
-                                        {Object.values(OrderStatus).map(status => (
-                                            <option key={status} value={status}>{status}</option>
-                                        ))}
-                                    </select>
-                                    {(orderStatuses[order.id] || OrderStatus.Processing) !== OrderStatus.Delivered && (
+                                        {!avatarUrl && (displayName?.charAt(0)?.toUpperCase() || 'F')}
+                                    </div>
+                                    {farmerProfile?.isVerified && (
+                                        <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white p-1 rounded-full border-2 border-white shadow-sm">
+                                            <span className="material-symbols-outlined text-sm">verified</span>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-xl font-bold font-display leading-tight text-stone-900">{currentUser.name || 'Farmer'}</span>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <span className="h-2 w-2 rounded-full bg-green-500"></span>
+                                        <span className="text-xs font-mono uppercase text-stone-500 font-bold">Online</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <nav className="flex flex-col gap-3">
+                            {navItems.map((item) => {
+                                const isActive = activeNav === item.id;
+                                return (
+                                    <a
+                                        key={item.id}
+                                        href="#"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            handleNavClick(item.id);
+                                        }}
+                                        className={
+                                            isActive
+                                                ? 'flex items-center gap-4 px-6 py-4 rounded-2xl bg-gradient-to-r from-primary/90 to-primary text-white shadow-card transition-all hover:scale-[1.02]'
+                                                : 'group flex items-center gap-4 px-6 py-4 rounded-2xl hover:bg-white/60 text-stone-600 hover:text-stone-900 transition-all hover:shadow-card border border-transparent hover:border-white/50'
+                                        }
+                                    >
+                                        <span className={`material-symbols-outlined text-2xl ${!isActive ? 'group-hover:scale-110 transition-transform' : ''}`}>{item.icon}</span>
+                                        <span className={`text-lg ${isActive ? 'font-bold' : 'font-medium'}`}>{item.label}</span>
+                                        {item.id === 'messages' && messagesBadgeCount > 0 && (
+                                            <span className="ml-auto bg-gradient-to-r from-farmer-primary to-red-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-card">
+                                                {messagesBadgeCount}
+                                            </span>
+                                        )}
+                                    </a>
+                                );
+                            })}
+                        </nav>
+
+                        <div className="mt-auto">
+                            <button className="w-full py-4 px-6 rounded-2xl bg-stone-900 text-white font-bold flex items-center justify-center gap-3 shadow-card hover:shadow-xl hover:-translate-y-0.5 transition-all">
+                                <span className="material-symbols-outlined">headset_mic</span>
+                                <span>Help Support</span>
+                            </button>
+                        </div>
+                    </div>
+                </aside>
+
+                {/* Mobile overlay */}
+                {isSidebarOpen && (
+                    <div className="fixed inset-0 bg-black/30 z-30 lg:hidden" onClick={() => setIsSidebarOpen(false)} />
+                )}
+
+                {/* Main */}
+                <main className="flex-1 flex flex-col h-full overflow-hidden relative lg:ml-0">
+                    <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 md:px-8 md:py-6 shrink-0 z-10 bg-gradient-to-b from-white/40 to-transparent backdrop-blur-sm">
+                        <div className="flex flex-col gap-2 relative">
+                            <div className="absolute -left-10 -top-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
+                            <div className="flex items-center gap-3">
+                                <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-3 rounded-2xl bg-white/60 backdrop-blur-md text-stone-900 shadow-card border border-white/50">
+                                    <span className="material-symbols-outlined text-3xl">menu</span>
+                                </button>
+                                <h2 className="text-3xl md:text-4xl font-display font-bold text-stone-900 tracking-tight">
+                                    Namaste, {displayName}
+                                </h2>
+                            </div>
+                            <div className="flex items-center gap-3 text-stone-600 font-medium text-base bg-white/30 w-fit px-4 py-1.5 rounded-full border border-white/40 backdrop-blur-sm">
+                                <span className="material-symbols-outlined text-primary">calendar_month</span>
+                                <span>{todayLabel}</span>
+                                <span className="w-1 h-4 bg-stone-300 rounded-full mx-1"></span>
+                                <span className="text-primary font-bold">Mandi Open</span>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-4">
+                            <button
+                                onClick={() => setShowUploadPage(true)}
+                                className="relative group overflow-hidden px-8 py-4 rounded-full bg-gradient-to-r from-primary to-primary-light text-white shadow-card transition-all duration-300 hover:-translate-y-0.5"
+                            >
+                                <div className="absolute inset-0 bg-white/20 group-hover:translate-x-full transition-transform duration-700 ease-in-out skew-x-12 -translate-x-full"></div>
+                                <div className="flex items-center gap-3 relative z-10">
+                                    <span className="material-symbols-outlined text-3xl font-bold">add_circle</span>
+                                    <span className="text-xl font-bold tracking-wide">New Listing</span>
+                                </div>
+                            </button>
+                        </div>
+                    </header>
+
+                    <div className="flex-1 overflow-y-auto p-4 md:px-8 md:pb-16 scroll-smooth">
+                        <div className="max-w-[1600px] mx-auto flex flex-col gap-8">
+                            {/* Top grid */}
+                            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+                                {/* Weather */}
+                                <div className="xl:col-span-4 relative group">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-secondary/40 to-primary/20 rounded-[2.5rem] blur-xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
+                                    <div className="relative h-full flex flex-col justify-between rounded-[2rem] p-8 overflow-hidden bg-white/50 backdrop-blur-xl border border-white/60 shadow-card">
+                                        <div className="absolute -top-10 -right-10 w-40 h-40 bg-accent/20 rounded-full blur-2xl"></div>
+                                        <div className="flex justify-between items-start z-10">
+                                            <div>
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <span className="material-symbols-outlined text-red-500 animate-pulse">location_on</span>
+                                                    <span className="text-lg font-bold text-stone-600 drop-shadow-sm">{weather.locationLabel}</span>
+                                                </div>
+                                                <h3 className="text-7xl font-display font-bold text-stone-900 tracking-tighter">{Math.round(weather.temperatureC)}°</h3>
+                                                <p className="text-xl font-medium text-stone-500 mt-1">{weather.conditionLabel}</p>
+                                            </div>
+                                            <div className="relative">
+                                                <span className="material-symbols-outlined text-[100px] leading-none text-accent animate-float drop-shadow-lg">sunny</span>
+                                                <span className="material-symbols-outlined text-[100px] leading-none text-accent/30 absolute top-0 left-0 blur-sm animate-pulse">sunny</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-3 gap-2 mt-6 pt-6 border-t border-white/50">
+                                            <div className="flex flex-col items-center gap-2">
+                                                <div className="relative h-14 w-14 rounded-full bg-white/60 border border-white/70 flex items-center justify-center shadow-soft">
+                                                    <span className="material-symbols-outlined text-secondary">water_drop</span>
+                                                </div>
+                                                <div className="text-center leading-none">
+                                                    <span className="block font-bold text-stone-700">{Math.round(weather.humidityPct)}%</span>
+                                                    <span className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">Humidity</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col items-center gap-2">
+                                                <div className="relative h-14 w-14 rounded-full bg-white/60 border border-white/70 flex items-center justify-center shadow-soft">
+                                                    <span className="material-symbols-outlined text-stone-600">air</span>
+                                                </div>
+                                                <div className="text-center leading-none">
+                                                    <span className="block font-bold text-stone-700">{Math.round(weather.windKmh)}km</span>
+                                                    <span className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">Wind</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col items-center gap-2">
+                                                <div className="relative h-14 w-14 rounded-full bg-white/60 border border-white/70 flex items-center justify-center shadow-soft">
+                                                    <span className="material-symbols-outlined text-blue-600">rainy</span>
+                                                </div>
+                                                <div className="text-center leading-none">
+                                                    <span className="block font-bold text-stone-700">{Math.round(weather.rainPct)}%</span>
+                                                    <span className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">Rain</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Live Mandi Rates (match screenshot style) */}
+                                <div className="xl:col-span-8 rounded-[2rem] p-5 md:p-6 overflow-hidden relative bg-white/70 backdrop-blur-xl border border-white/70 shadow-card">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                                                <span className="material-symbols-outlined text-green-700">trending_up</span>
+                                            </div>
+                                            <h3 className="text-xl font-bold text-stone-900">Mandi Rates (Live)</h3>
+                                        </div>
                                         <button
-                                            onClick={() => handleOrderStatusChange(order.id, OrderStatus.Delivered)}
-                                            className="px-3 py-2 text-xs font-bold bg-farmer-primary text-white rounded-md hover:bg-farmer-primary-dark transition-colors whitespace-nowrap"
+                                            onClick={() => showToast('View all rates coming soon!', 'info')}
+                                            className="text-sm font-bold text-primary hover:underline flex items-center gap-1"
                                         >
-                                            Mark Delivered
+                                            View All
+                                            <span className="material-symbols-outlined text-base">arrow_forward</span>
                                         </button>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 rounded-2xl overflow-hidden border border-stone-100 bg-white">
+                                        {effectiveRates.map((rate, idx) => {
+                                            const isUp = rate.trend === 'up';
+                                            const isDown = rate.trend === 'down';
+                                            const statusLabel = isUp ? 'Above MSP' : isDown ? 'Falling' : 'Stable';
+                                            const badgeClass = isUp
+                                                ? 'bg-green-50 text-green-700 border-green-100'
+                                                : isDown
+                                                    ? 'bg-red-50 text-red-600 border-red-100'
+                                                    : 'bg-amber-50 text-amber-700 border-amber-100';
+                                            const iconBoxClass = isUp
+                                                ? 'bg-green-100 text-green-700'
+                                                : isDown
+                                                    ? 'bg-red-100 text-red-600'
+                                                    : 'bg-amber-100 text-amber-700';
+                                            const icon = isUp ? 'arrow_upward' : isDown ? 'arrow_downward' : 'remove';
+
+                                            return (
+                                                <div
+                                                    key={rate.id}
+                                                    className={
+                                                        idx < effectiveRates.length - 1
+                                                            ? 'p-5 md:p-6 border-b md:border-b-0 md:border-r border-stone-100'
+                                                            : 'p-5 md:p-6'
+                                                    }
+                                                >
+                                                    <div className="flex items-start justify-between gap-3">
+                                                        <div>
+                                                            <p className="text-sm font-bold text-stone-500">{rate.crop}</p>
+                                                            <p className="mt-2 text-3xl font-extrabold text-stone-900">
+                                                                ₹{Math.round(rate.pricePerQuintal).toLocaleString()}
+                                                                <span className="text-sm font-bold text-stone-400">/q</span>
+                                                            </p>
+                                                        </div>
+                                                        <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${iconBoxClass}`}>
+                                                            <span className="material-symbols-outlined">{icon}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className={`mt-4 w-full py-2 rounded-xl border text-center text-sm font-bold ${badgeClass}`}>
+                                                        {statusLabel}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Incoming Orders */}
+                            <div className="flex flex-col gap-6">
+                                <div className="flex items-center gap-4">
+                                    <div className="p-3 bg-gradient-to-br from-secondary to-secondary-dark rounded-2xl text-white shadow-card">
+                                        <span className="material-symbols-outlined text-3xl">shopping_cart_checkout</span>
+                                    </div>
+                                    <h3 className="text-3xl font-display font-bold text-stone-900">Incoming Orders</h3>
+                                    <div className="ml-2">
+                                        <span className="bg-white/70 border border-white/70 text-stone-800 text-lg font-bold px-4 py-1 rounded-full shadow-soft">
+                                            {incomingOffers.length > 0 ? `${incomingOffers.length} New` : 'No New'}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                    {incomingOffers.map((offer) => (
+                                        <div key={offer.id} className="group relative rounded-[2.5rem] transition-all duration-300 hover:-translate-y-1">
+                                            <div className="absolute -inset-[2px] bg-gradient-to-r from-secondary/60 to-primary/40 rounded-[2.5rem] opacity-0 group-hover:opacity-100 blur-md transition-opacity duration-500"></div>
+                                            <div className="relative h-full bg-white/60 backdrop-blur-xl border border-white/70 rounded-[2.5rem] p-0 overflow-hidden shadow-card">
+                                                <div className="flex justify-between items-center p-6 border-b border-white/60 bg-white/30">
+                                                    <span className="px-4 py-1.5 rounded-full bg-white/60 border border-white/70 text-stone-800 text-sm font-bold uppercase tracking-wider backdrop-blur-sm shadow-soft">
+                                                        {offer.status === NegotiationStatus.Pending ? 'New Offer' : 'In Negotiation'}
+                                                    </span>
+                                                    <div className="flex items-center gap-2 text-stone-900 font-mono font-bold bg-white/60 px-3 py-1 rounded-lg">
+                                                        <span className="material-symbols-outlined text-lg">schedule</span>
+                                                        <span>
+                                                            {(() => {
+                                                                const mins = Math.max(0, Math.round((Date.now() - offer.lastUpdated.getTime()) / 60000));
+                                                                return mins <= 1 ? 'Just now' : `${mins}m ago`;
+                                                            })()}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="p-8 flex flex-col gap-6">
+                                                    <div className="flex flex-col gap-1">
+                                                        <h4 className="text-3xl font-display font-bold text-stone-900 flex items-center gap-2">
+                                                            {buyerProfiles[offer.buyerId]?.name || `Buyer #${offer.buyerId.slice(-4)}`}
+                                                            <span className="material-symbols-outlined text-blue-500 text-2xl" title="Verified Buyer">verified</span>
+                                                        </h4>
+                                                        <p className="text-lg font-medium text-stone-500 flex items-center gap-1">
+                                                            <span className="material-symbols-outlined text-base">location_on</span>
+                                                            {buyerProfiles[offer.buyerId]?.location || '—'}
+                                                        </p>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-6 bg-white/40 p-4 rounded-3xl border border-white/60">
+                                                        <div className="h-20 w-20 bg-accent/20 rounded-2xl flex items-center justify-center shadow-inner">
+                                                            <span className="material-symbols-outlined text-accent text-5xl">agriculture</span>
+                                                        </div>
+                                                        <div>
+                                                            <span className="block text-4xl font-black text-stone-900">{offer.productName}</span>
+                                                            <span className="block text-xl font-medium text-stone-500 mt-1">{offer.quantity} Quintals</span>
+                                                        </div>
+                                                        <div className="ml-auto text-right">
+                                                            <span className="block text-xs font-bold uppercase text-stone-400 tracking-wider mb-1">Offer Price</span>
+                                                            <span className="block text-4xl font-display font-bold text-primary">₹{Math.round(offer.offeredPrice).toLocaleString()}</span>
+                                                            <span className="text-sm font-bold text-stone-400">/quintal</span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-12 gap-3 mt-2">
+                                                        <button
+                                                            onClick={() => onRespond(offer.id, 'Rejected')}
+                                                            className="col-span-3 h-16 rounded-full bg-white/80 hover:bg-red-50 text-red-600 font-bold text-xl flex items-center justify-center border border-red-100 transition-all hover:shadow-soft active:scale-95"
+                                                        >
+                                                            <span className="material-symbols-outlined text-3xl">close</span>
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleOpenNegotiationChat(offer.id)}
+                                                            className="col-span-5 h-16 rounded-full bg-gradient-to-r from-accent to-orange-500 hover:brightness-110 text-white font-bold text-xl flex items-center justify-center gap-2 shadow-card transition-all hover:scale-[1.01] active:scale-95"
+                                                        >
+                                                            <span className="material-symbols-outlined text-3xl">forum</span>
+                                                            Negotiate
+                                                        </button>
+                                                        <button
+                                                            onClick={() => onRespond(offer.id, 'Accepted')}
+                                                            className="col-span-4 h-16 rounded-full bg-gradient-to-r from-primary to-primary-light hover:brightness-110 text-white font-bold text-xl flex items-center justify-center gap-2 shadow-card transition-all hover:scale-[1.01] active:scale-95"
+                                                        >
+                                                            <span className="material-symbols-outlined text-3xl">check</span>
+                                                            Accept
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+
+                                    {incomingOffers.length === 0 && (
+                                        <div className="lg:col-span-2 bg-white/50 backdrop-blur-xl border border-white/60 rounded-[2rem] p-10 text-center shadow-card">
+                                            <p className="text-stone-600 font-medium">No incoming orders right now.</p>
+                                            <button
+                                                onClick={() => handleOpenNegotiationChat()}
+                                                className="mt-4 px-6 py-3 rounded-full bg-stone-900 text-white font-bold"
+                                            >
+                                                View Messages
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
                             </div>
-                        ))
-                    ) : (
-                        <div className="bg-farmer-background-alt p-6 rounded-xl shadow-sm border border-stone-200/80 text-center">
-                            <p className="text-stone-500">You have no orders to fulfill at the moment.</p>
-                        </div>
-                    )}
-                </div>
-            </section>
 
-            {isEditModalOpen && editForm && (
-                 <div className="fixed inset-0 bg-black/50 z-30 flex justify-center items-center p-4" onClick={handleCloseEditModal}>
-                    <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-lg m-4 font-sans animate-fade-in" style={{animationDuration: '200ms'}} onClick={e => e.stopPropagation()}>
-                        <div className="flex justify-between items-start">
-                            <h2 className="text-xl font-bold font-heading text-stone-800">Edit Product</h2>
-                            <button onClick={handleCloseEditModal} className="text-stone-400 hover:text-stone-600"><XIcon className="h-6 w-6" /></button>
+                            {/* Active listings */}
+                            <div className="flex flex-col gap-6">
+                                <div className="flex flex-wrap items-end justify-between gap-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-primary/10 rounded-xl text-primary">
+                                            <span className="material-symbols-outlined text-3xl">storefront</span>
+                                        </div>
+                                        <h3 className="text-2xl font-display font-bold text-stone-900">Your Active Listings</h3>
+                                    </div>
+                                    <div className="flex gap-3">
+                                        <button
+                                            onClick={() => showToast('Filter feature coming soon!', 'info')}
+                                            className="px-6 py-3 bg-white/50 backdrop-blur-xl rounded-xl text-lg font-bold shadow-soft hover:bg-white text-stone-600 transition-colors border border-white/60"
+                                        >
+                                            Filter
+                                        </button>
+                                        <button
+                                            onClick={() => showToast('Sort feature coming soon!', 'info')}
+                                            className="px-6 py-3 bg-white/50 backdrop-blur-xl rounded-xl text-lg font-bold shadow-soft hover:bg-white text-stone-600 transition-colors border border-white/60"
+                                        >
+                                            Sort by Date
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-12">
+                                    {myProducts.map((product) => {
+                                        const productOffers = negotiations.filter(
+                                            (n) =>
+                                                n.productId === product.id &&
+                                                n.status !== NegotiationStatus.Accepted &&
+                                                n.status !== NegotiationStatus.Rejected
+                                        );
+                                        const offersCount = productOffers.length;
+                                        const isNegotiating = offersCount > 0;
+
+                                        return (
+                                            <div key={product.id} className="group flex flex-col rounded-[2rem] bg-white/50 backdrop-blur-xl p-0 shadow-card hover:shadow-xl transition-all duration-500 overflow-hidden transform hover:-translate-y-1 border border-white/60">
+                                                <div className="relative h-64 w-full overflow-hidden">
+                                                    <div
+                                                        className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
+                                                        style={{ backgroundImage: `url('${product.imageUrl}')` }}
+                                                    ></div>
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent"></div>
+                                                    <div className="absolute top-4 left-4 bg-green-500 text-white text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider shadow-card border border-white/20 backdrop-blur-md flex items-center gap-1">
+                                                        <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+                                                        Active
+                                                    </div>
+                                                    <div className="absolute bottom-6 left-6 text-white w-full pr-12">
+                                                        <h4 className="text-3xl font-display font-bold drop-shadow-md">{product.name}</h4>
+                                                        <p className="text-sm opacity-80 font-mono tracking-wider">#{product.id.slice(-6).toUpperCase()}</p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="p-6 flex flex-col flex-1 gap-6 bg-white/30 backdrop-blur-lg">
+                                                    <div className="flex items-center justify-between p-5 bg-white/40 rounded-2xl border border-white/60 shadow-soft">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-xs text-stone-500 font-bold uppercase tracking-wide">Quantity</span>
+                                                            <span className="text-2xl font-black text-stone-900">{product.quantity} <span className="text-base font-medium text-stone-500">Qtl</span></span>
+                                                        </div>
+                                                        <div className="h-10 w-px bg-stone-300"></div>
+                                                        <div className="flex flex-col text-right">
+                                                            <span className="text-xs text-stone-500 font-bold uppercase tracking-wide">Ask Price</span>
+                                                            <span className="text-2xl font-black text-primary">₹{Math.round(product.price).toLocaleString()}<span className="text-base font-medium text-stone-500">/q</span></span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex gap-3 mt-auto">
+                                                        <button
+                                                            onClick={() => handleOpenEditModal(product)}
+                                                            className="flex-1 py-3.5 rounded-xl border-2 border-stone-200 font-bold text-lg text-stone-600 hover:bg-white hover:border-stone-300 transition-colors"
+                                                        >
+                                                            Edit
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                if (productOffers[0]) handleOpenNegotiationChat(productOffers[0].id);
+                                                                else handleOpenNegotiationChat();
+                                                            }}
+                                                            className="flex-1 py-3.5 rounded-xl bg-stone-900 text-white font-bold text-lg shadow-card hover:bg-stone-800 transition-all flex items-center justify-center gap-2"
+                                                        >
+                                                            Offers
+                                                            <span className="bg-white text-stone-900 text-xs px-1.5 py-0.5 rounded-md font-bold">{offersCount}</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+
+                                    <button
+                                        onClick={() => setShowUploadPage(true)}
+                                        className="group flex flex-col items-center justify-center rounded-[2rem] border-4 border-dashed border-stone-300/60 bg-white/20 hover:bg-white/40 hover:border-primary transition-all duration-300 min-h-[400px] relative overflow-hidden"
+                                    >
+                                        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                                        <div className="flex flex-col items-center gap-6 relative z-10 p-6">
+                                            <div className="h-24 w-24 rounded-full bg-white shadow-card flex items-center justify-center group-hover:scale-110 transition-transform duration-300 ring-4 ring-primary/10 group-hover:ring-primary/30">
+                                                <span className="material-symbols-outlined text-6xl text-primary font-bold">add</span>
+                                            </div>
+                                            <div className="text-center">
+                                                <span className="block text-3xl font-display font-bold text-stone-700 group-hover:text-primary transition-colors">Add Another Crop</span>
+                                                <span className="block text-sm text-stone-500 mt-2 font-medium">Expand your catalog</span>
+                                            </div>
+                                        </div>
+                                    </button>
+                                </div>
+
+                                {myProducts.length === 0 && (
+                                    <div className="bg-white/50 backdrop-blur-xl border border-white/60 rounded-[2rem] p-10 text-center shadow-card">
+                                        <p className="text-stone-600 font-medium">You haven’t listed any crops yet.</p>
+                                        <button
+                                            onClick={() => setShowUploadPage(true)}
+                                            className="mt-4 px-6 py-3 rounded-full bg-gradient-to-r from-primary to-primary-light text-white font-bold"
+                                        >
+                                            Create your first listing
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                         <form onSubmit={handleUpdateProductSubmit} className="mt-4 space-y-4">
+                    </div>
+                </main>
+            </div>
+
+            {/* Add Product Modal */}
+            {isAddModalOpen && (
+                <div className="fixed inset-0 bg-black/50 z-[100] flex justify-center items-center p-4" onClick={() => setIsAddModalOpen(false)}>
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4 font-sans animate-fade-in" onClick={e => e.stopPropagation()}>
+                        <div className="p-6 border-b border-[#e9dece] flex justify-between items-center sticky top-0 bg-white z-10">
+                            <h2 className="text-2xl font-bold font-display text-[#1c160d]">List New Crop</h2>
+                            <button onClick={() => setIsAddModalOpen(false)} className="text-[#4e4639] hover:text-[#1c160d] p-2 rounded-full hover:bg-[#f4efe6]"><XIcon className="h-6 w-6" /></button>
+                        </div>
+                        
+                        <div className="p-6">
+                            <div className="flex border-b border-[#e9dece] mb-6">
+                                <button
+                                    type="button"
+                                    onClick={() => setActiveFormTab(ProductType.Retail)}
+                                    className={`-mb-px border-b-2 px-4 py-3 text-sm font-semibold transition-colors duration-200 ${
+                                        activeFormTab === ProductType.Retail
+                                            ? 'border-[#f9a824] text-[#f9a824]'
+                                            : 'border-transparent text-[#4e4639] hover:border-[#e9dece] hover:text-[#1c160d]'
+                                    }`}
+                                >
+                                    Retail Product
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setActiveFormTab(ProductType.Bulk)}
+                                    className={`-mb-px border-b-2 px-4 py-3 text-sm font-semibold transition-colors duration-200 ${
+                                        activeFormTab === ProductType.Bulk
+                                            ? 'border-[#f9a824] text-[#f9a824]'
+                                            : 'border-transparent text-[#4e4639] hover:border-[#e9dece] hover:text-[#1c160d]'
+                                    }`}
+                                >
+                                    Bulk Product (Negotiable)
+                                </button>
+                            </div>
+
+                            <form onSubmit={handleSubmit} className="space-y-6 relative">
+                                {(aiIsLoading || formIsSubmitting) && (
+                                    <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center rounded-lg z-20">
+                                        <LoaderIcon className="h-10 w-10 text-[#f9a824] animate-spin" />
+                                        <p className="mt-3 text-[#1c160d] font-semibold text-lg">{formIsSubmitting ? 'Listing crop...' : 'Analyzing image...'}</p>
+                                    </div>
+                                )}
+                                
+                                <div>
+                                    <label className="block text-sm font-bold text-[#1c160d] mb-2">Crop Photo</label>
+                                    {imagePreviewUrl ? (
+                                        <div className="relative group rounded-xl overflow-hidden border border-[#e9dece]">
+                                            <img src={imagePreviewUrl} alt="Preview" className="w-full h-64 object-cover" />
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                <button type="button" onClick={handleRemoveImage} className="bg-white text-red-600 px-4 py-2 rounded-lg font-bold text-sm hover:bg-red-50">Remove Photo</button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className={`border-2 border-dashed rounded-xl p-8 text-center hover:bg-[#f4efe6] transition-colors ${formErrors.image && touched.image ? 'border-red-500 bg-red-50/50' : 'border-[#e9dece]'}`}>
+                                            <div className="space-y-2">
+                                                <div className="mx-auto h-12 w-12 text-[#4e4639] bg-[#f4efe6] rounded-full flex items-center justify-center">
+                                                    <PlusIcon className="h-6 w-6" />
+                                                </div>
+                                                <div className="text-sm text-[#4e4639]">
+                                                    <label htmlFor="file-upload" className="relative cursor-pointer font-bold text-[#f9a824] hover:underline">
+                                                        <span>Upload a photo</span>
+                                                        <input id="file-upload" name="file-upload" type="file" className="sr-only" accept="image/*" onChange={handleImageUpload} disabled={aiIsLoading || formIsSubmitting} />
+                                                    </label>
+                                                    <span className="pl-1">or drag and drop</span>
+                                                </div>
+                                                <p className="text-xs text-[#4e4639]">PNG, JPG up to 10MB</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {formErrors.image && touched.image && <p className="text-red-500 text-sm mt-1 font-medium">{formErrors.image}</p>}
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-sm font-bold text-[#1c160d] mb-1">Crop Name</label>
+                                        <input type="text" name="name" placeholder="e.g. Sharbati Wheat" value={newProductForm.name} onChange={handleInputChange} onBlur={handleInputBlur} className={inputClasses(!!(formErrors.name && touched.name))} />
+                                        {formErrors.name && touched.name && <p className="text-red-500 text-xs mt-1">{formErrors.name}</p>}
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-[#1c160d] mb-1">Category</label>
+                                        <select name="category" value={newProductForm.category} onChange={handleInputChange} onBlur={handleInputBlur} className={inputClasses(false)}>
+                                            {Object.values(ProductCategory).map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-sm font-bold text-[#1c160d] mb-1">Asking Price (₹ / Qtl)</label>
+                                        <div className="relative">
+                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <span className="text-[#4e4639] sm:text-sm">₹</span>
+                                            </div>
+                                            <input type="number" name="price" placeholder="0" value={newProductForm.price} onChange={handleInputChange} onBlur={handleInputBlur} className={`${inputClasses(!!(formErrors.price && touched.price))} pl-7`} />
+                                        </div>
+                                        {formErrors.price && touched.price && <p className="text-red-500 text-xs mt-1">{formErrors.price}</p>}
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-[#1c160d] mb-1">Quantity (Quintals)</label>
+                                        <input type="number" name="quantity" placeholder="0" value={newProductForm.quantity} onChange={handleInputChange} onBlur={handleInputBlur} className={inputClasses(!!(formErrors.quantity && touched.quantity))} />
+                                        {formErrors.quantity && touched.quantity && <p className="text-red-500 text-xs mt-1">{formErrors.quantity}</p>}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-[#1c160d] mb-1">Description</label>
+                                    <textarea name="description" rows={3} placeholder="Describe quality, harvest date, etc." value={newProductForm.description} onChange={handleInputChange} onBlur={handleInputBlur} className={inputClasses(!!(formErrors.description && touched.description))}></textarea>
+                                    {formErrors.description && touched.description && <p className="text-red-500 text-xs mt-1">{formErrors.description}</p>}
+                                </div>
+
+                                <div className="pt-4 flex items-center justify-end space-x-4">
+                                    <button type="button" onClick={() => setIsAddModalOpen(false)} className="px-6 py-3 rounded-xl font-bold text-[#4e4639] hover:bg-[#f4efe6] transition-colors">Cancel</button>
+                                    <button type="submit" disabled={formIsSubmitting} className="px-8 py-3 rounded-xl font-bold text-[#1c160d] bg-[#F9A825] hover:bg-[#f9a824] shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5 disabled:bg-[#e9dece] disabled:transform-none disabled:shadow-none">
+                                        List Crop
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Modal */}
+            {isEditModalOpen && editForm && (
+                <div className="fixed inset-0 bg-black/50 z-[100] flex justify-center items-center p-4" onClick={handleCloseEditModal}>
+                    <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-lg m-4 font-sans animate-fade-in" onClick={e => e.stopPropagation()}>
+                        <div className="flex justify-between items-start mb-4">
+                            <h2 className="text-xl font-bold text-[#1c160d]">Edit Listing</h2>
+                            <button onClick={handleCloseEditModal} className="text-[#4e4639] hover:text-[#1c160d]"><XIcon className="h-6 w-6" /></button>
+                        </div>
+                        <form onSubmit={handleUpdateProductSubmit} className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-stone-700">Product Name</label>
-                                <input type="text" name="name" value={editForm.name} onChange={handleEditInputChange} onBlur={handleEditInputBlur} className={editInputClasses(!!(editFormErrors.name && editTouched.name))} />
-                                {editFormErrors.name && editTouched.name && <p className="text-red-500 text-xs mt-1">{editFormErrors.name}</p>}
+                                <label className="block text-sm font-bold text-[#1c160d] mb-1">Crop Name</label>
+                                <input type="text" name="name" value={editForm.name} onChange={handleEditInputChange} onBlur={handleEditInputBlur} className={inputClasses(!!(editFormErrors.name && editTouched.name))} />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
-                               <div>
-                                    <label className="block text-sm font-medium text-stone-700">Price (₹)</label>
-                                    <input type="number" name="price" value={editForm.price} onChange={handleEditInputChange} onBlur={handleEditInputBlur} className={editInputClasses(!!(editFormErrors.price && editTouched.price))} />
-                                    {editFormErrors.price && editTouched.price && <p className="text-red-500 text-xs mt-1">{editFormErrors.price}</p>}
+                                <div>
+                                    <label className="block text-sm font-bold text-[#1c160d] mb-1">Price (₹)</label>
+                                    <input type="number" name="price" value={editForm.price} onChange={handleEditInputChange} onBlur={handleEditInputBlur} className={inputClasses(!!(editFormErrors.price && editTouched.price))} />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-stone-700">Stock Quantity</label>
-                                    <input type="number" name="quantity" value={editForm.quantity} onChange={handleEditInputChange} onBlur={handleEditInputBlur} className={editInputClasses(!!(editFormErrors.quantity && editTouched.quantity))} />
-                                    {editFormErrors.quantity && editTouched.quantity && <p className="text-red-500 text-xs mt-1">{editFormErrors.quantity}</p>}
+                                    <label className="block text-sm font-bold text-[#1c160d] mb-1">Quantity</label>
+                                    <input type="number" name="quantity" value={editForm.quantity} onChange={handleEditInputChange} onBlur={handleEditInputBlur} className={inputClasses(!!(editFormErrors.quantity && editTouched.quantity))} />
                                 </div>
                             </div>
-                             <div>
-                                <label className="block text-sm font-medium text-stone-700">Description</label>
-                                <textarea name="description" rows={4} value={editForm.description} onChange={handleEditInputChange} onBlur={handleEditInputBlur} className={editInputClasses(!!(editFormErrors.description && editTouched.description))}></textarea>
-                                {editFormErrors.description && editTouched.description && <p className="text-red-500 text-xs mt-1">{editFormErrors.description}</p>}
+                            <div>
+                                <label className="block text-sm font-bold text-[#1c160d] mb-1">Description</label>
+                                <textarea name="description" rows={4} value={editForm.description} onChange={handleEditInputChange} onBlur={handleEditInputBlur} className={inputClasses(!!(editFormErrors.description && editTouched.description))}></textarea>
                             </div>
-                             <div className="flex justify-end space-x-3 pt-4">
-                                <button type="button" onClick={handleCloseEditModal} className="bg-stone-200 text-stone-800 px-4 py-2 rounded-lg font-semibold hover:bg-stone-300 transition-colors">Cancel</button>
-                                <button type="submit" className="px-4 py-2 rounded-lg font-semibold transition-colors bg-farmer-primary text-white hover:bg-farmer-primary-dark">Save Changes</button>
+                            <div className="flex justify-end space-x-3 pt-4">
+                                <button type="button" onClick={handleCloseEditModal} className="bg-[#f4efe6] text-[#1c160d] px-4 py-2 rounded-lg font-bold hover:bg-[#e9dece] transition-colors">Cancel</button>
+                                <button type="submit" className="px-6 py-2 rounded-lg font-bold transition-colors bg-[#F9A825] text-[#1c160d] hover:bg-[#f9a824]">Save Changes</button>
                             </div>
                         </form>
                     </div>

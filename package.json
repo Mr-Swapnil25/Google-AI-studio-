@@ -10,9 +10,12 @@
   },
   "dependencies": {
     "@google/genai": "^1.28.0",
-    "react-dom": "^19.2.0",
+    "clsx": "^2.1.1",
+    "firebase": "^12.6.0",
+    "framer-motion": "^12.23.26",
     "react": "^19.2.0",
-    "firebase": "^12.5.0"
+    "react-dom": "^19.2.0",
+    "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

@@ -13,6 +13,7 @@ interface FarmerProfileProps {
     wishlist: string[];
     onToggleWishlist: (productId: string) => void;
     onVerifyFarmer: (farmer: Farmer) => Promise<void>;
+    onContactFarmer?: (farmerId: string) => void;
 }
 
 const StatItem = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: string | number }) => (
@@ -27,7 +28,7 @@ const StatItem = ({ icon, label, value }: { icon: React.ReactNode, label: string
     </div>
 );
 
-export const FarmerProfile = ({ farmer, products, onBack, onAddToCart, onNegotiate, wishlist, onToggleWishlist, onVerifyFarmer }: FarmerProfileProps) => {
+export const FarmerProfile = ({ farmer, products, onBack, onAddToCart, onNegotiate, wishlist, onToggleWishlist, onVerifyFarmer, onContactFarmer }: FarmerProfileProps) => {
     const [isVerifying, setIsVerifying] = useState(false);
 
     const handleVerifyClick = async () => {
@@ -50,10 +51,13 @@ export const FarmerProfile = ({ farmer, products, onBack, onAddToCart, onNegotia
             </button>
 
             <header className="bg-background-alt p-6 sm:p-8 rounded-xl shadow-sm border border-stone-200/80">
-                <div className="relative h-32 rounded-lg bg-gradient-to-r from-primary/80 to-primary-light/80 -m-6 sm:-m-8 mb-16">
-                     <img src="https://picsum.photos/seed/farm-banner/1200/400" alt="Farm banner" className="w-full h-full object-cover rounded-t-lg opacity-30"/>
-                    <div className="absolute -bottom-14 left-8">
-                        <img src={farmer.profileImageUrl} alt={farmer.name} className="w-28 h-28 rounded-full object-cover border-4 border-white shadow-md"/>
+                <div className="relative h-32 rounded-lg bg-gradient-to-r from-primary/80 via-green-600/70 to-primary-light/80 -m-6 sm:-m-8 mb-16 overflow-hidden">
+                    {/* Farm-themed pattern overlay */}
+                    <div className="absolute inset-0 opacity-10">
+                        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMjAgMEwyNSAyMEwyMCA0MEwxNSAyMEwyMCAwWiIgZmlsbD0id2hpdGUiLz48L3N2Zz4=')] bg-repeat"></div>
+                    </div>
+                    <div className="absolute -bottom-14 left-4 sm:left-8">
+                        <img src={farmer.profileImageUrl || ''} alt={farmer.name} className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-white shadow-md bg-stone-200" onError={(e) => { (e.target as HTMLImageElement).src = ''; (e.target as HTMLImageElement).classList.add('flex', 'items-center', 'justify-center'); }}/>
                     </div>
                 </div>
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -83,7 +87,10 @@ export const FarmerProfile = ({ farmer, products, onBack, onAddToCart, onNegotia
                                 {isVerifying ? 'Verifying...' : 'Verify Farmer'}
                             </button>
                         )}
-                        <button className="bg-primary text-white px-6 py-3 rounded-full font-bold hover:bg-primary-dark transition-colors shadow-sm whitespace-nowrap">
+                        <button 
+                            onClick={() => onContactFarmer?.(farmer.id)}
+                            className="bg-primary text-white px-6 py-3 rounded-full font-bold hover:bg-primary-dark transition-colors shadow-sm whitespace-nowrap"
+                        >
                             Contact Farmer
                         </button>
                     </div>
@@ -99,7 +106,7 @@ export const FarmerProfile = ({ farmer, products, onBack, onAddToCart, onNegotia
                      <div className="bg-background-alt p-6 rounded-xl shadow-sm border border-stone-200/80 space-y-4">
                          <h3 className="text-lg font-bold font-heading text-stone-800 mb-3">Stats</h3>
                         <StatItem icon={<PackageIcon className="h-5 w-5 text-primary"/>} label="Products Listed" value={products.length}/>
-                        <StatItem icon={<LeafIcon className="h-5 w-5 text-green-500"/>} label="Years Farming" value={`${farmer.yearsFarming} Years`}/>
+                        <StatItem icon={<LeafIcon className="h-5 w-5 text-green-500"/>} label="Years Farming" value={farmer.yearsFarming ? `${farmer.yearsFarming} Years` : 'New Farmer'}/>
                         <StatItem icon={<MapPinIcon className="h-5 w-5 text-red-500"/>} label="Location" value={farmer.location}/>
                     </div>
                 </aside>
