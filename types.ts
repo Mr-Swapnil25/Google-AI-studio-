@@ -125,3 +125,34 @@ export interface FarmerDashboardWeather {
   rainPct: number;
   updatedAt: Date;
 }
+
+export enum TransactionType {
+  Payment = 'Payment',
+  Withdrawal = 'Withdrawal',
+  TopUp = 'TopUp',
+  Subsidy = 'Subsidy',
+}
+
+export enum TransactionStatus {
+  Completed = 'Completed',
+  Pending = 'Pending',
+  Failed = 'Failed',
+}
+
+export interface Transaction {
+  id: string;
+  farmerId: string;
+  type: TransactionType;
+  status: TransactionStatus;
+  amount: number;
+  description: string;
+  timestamp: Date;
+  relatedId?: string; // negotiationId for payments, etc.
+  metadata?: Record<string, any>;
+}
+
+export interface FarmerWallet {
+  farmerId: string;
+  totalBalance: number;
+  lastUpdated: Date;
+}

@@ -306,6 +306,20 @@ export default function App() {
                         ? negotiation.counterPrice
                         : negotiation.offeredPrice;
                     handleAddToCart({ ...product, price: finalPrice }, negotiation.quantity);
+
+                    // Record payment in farmer's wallet
+                    try {
+                        await firebaseService.recordNegotiationPayment(
+                            negotiation,
+                            currentUser.uid, // buyerId
+                            negotiation.farmerId,
+                            finalPrice,
+                            negotiation.quantity
+                        );
+                    } catch (paymentError) {
+                        console.warn('Failed to record payment in wallet:', paymentError);
+                        // Don't fail the entire transaction, just warn
+                    }
                 }
             }
         } catch (error) {

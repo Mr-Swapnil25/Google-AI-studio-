@@ -5,6 +5,7 @@ import { XIcon, LoaderIcon, PlusIcon } from './icons';
 import { useToast } from '../context/ToastContext';
 import { ProductUploadPage } from './ProductUploadPage';
 import { NegotiationChat } from './NegotiationChat';
+import { FarmerWallet } from './FarmerWallet';
 import { firebaseService } from '../services/firebaseService';
 
 interface FarmerViewProps {
@@ -330,6 +331,13 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                 onBack={() => setShowUploadPage(false)} 
                 onSubmit={handleUploadSubmit}
             />
+        );
+    }
+
+    // Show Wallet when Wallet is clicked
+    if (activeNav === 'wallet') {
+        return (
+            <FarmerWallet farmerId={currentUserId} />
         );
     }
 

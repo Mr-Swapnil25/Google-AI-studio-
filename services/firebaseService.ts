@@ -479,4 +479,105 @@ export const firebaseService = {
       return 'none';
     }
   },
+
+  onFarmerTransactionsChanged(farmerId: string, onChange: (transactions: any[]) => void) {
+    const q = query(
+      collection(db, 'transactions'),
+      where('farmerId', '==', farmerId),
+      orderBy('timestamp', 'desc')
+    );
+    return onSnapshot(
+      q,
+      (snap) => {
+        const transactions = snap.docs.map((doc) => {
+          const data = doc.data() as any;
+          return {
+            id: doc.id,
+            farmerId: data.farmerId,
+            type: data.type,
+            status: data.status,
+            amount: Number(data.amount ?? 0),
+            description: data.description ?? '',
+            timestamp: toDate(data.timestamp),
+            relatedId: data.relatedId,
+            metadata: data.metadata ?? {},
+          };
+        });
+        onChange(transactions);
+      },
+      (err) => {
+        console.warn('onFarmerTransactionsChanged failed', err);
+        onChange([]);
+      }
+    );
+  },
+
+  async createTransaction(transaction: {
+    farmerId: string;
+    type: string;
+    status: string;
+    amount: number;
+    description: string;
+    relatedId?: string;
+    metadata?: Record<string, any>;
+  }): Promise<string> {
+    const docRef = await addDoc(collection(db, 'transactions'), {
+      ...transaction,
+      timestamp: serverTimestamp(),
+      createdAt: serverTimestamp(),
+    });
+    return docRef.id;
+  },
+
+  async updateTransaction(transactionId: string, updates: Partial<any>): Promise<void> {
+    await updateDoc(doc(db, 'transactions', transactionId), {
+      ...updates,
+      updatedAt: serverTimestamp(),
+    });
+  },
+
+  async getFarmerWalletBalance(farmerId: string): Promise<number> {
+    const q = query(
+      collection(db, 'transactions'),
+      where('farmerId', '==', farmerId),
+      where('status', '==', 'Completed')
+    );
+    const snap = await getDoc(doc(db, 'wallets', farmerId));
+    if (snap.exists()) {
+      return Number(snap.data().totalBalance ?? 0);
+    }
+    // Calculate from transactions if wallet doesn't exist
+    const transactionsSnap = await getDoc(doc(db, 'transactions', farmerId));
+    return transactionsSnap.exists() ? Number(transactionsSnap.data().totalBalance ?? 0) : 0;
+  },
+
+  async recordNegotiationPayment(negotiation: any, buyerId: string, farmerId: string, agreedPrice: number, quantity: number): Promise<void> {
+    const amount = agreedPrice * quantity;
+    const txId = await firebaseService.createTransaction({
+      farmerId,
+      type: 'Payment',
+      status: 'Completed',
+      amount,
+      description: `Payment from buyer for ${negotiation.productName}`,
+      relatedId: negotiation.id,
+      metadata: {
+        negotiationId: negotiation.id,
+        buyerId,
+        productId: negotiation.productId,
+        quantity,
+      },
+    });
+
+    // Update wallet balance
+    const currentBalance = await firebaseService.getFarmerWalletBalance(farmerId);
+    await setDoc(
+      doc(db, 'wallets', farmerId),
+      {
+        farmerId,
+        totalBalance: currentBalance + amount,
+        lastUpdated: serverTimestamp(),
+      },
+      { merge: true }
+    );
+  },
 };
