@@ -185,6 +185,17 @@ export default function App() {
         
         showToast(`Switched to ${nextRole} view.`, 'info');
     };
+
+    const handleLogout = async () => {
+        try {
+            await auth.signOut();
+            // Firebase auth state listener will handle cleanup
+            showToast('Signed out successfully.', 'success');
+        } catch (e) {
+            console.error('Failed to sign out', e);
+            showToast('Could not sign out. Please try again.', 'error');
+        }
+    };
     
     const handleAddToCart = (product: Product, quantity: number = 1) => {
         setCart(prevCart => {
@@ -452,6 +463,8 @@ export default function App() {
                  onCounter: handleOpenNegotiation, 
                  onOpenChat: handleOpenChat, 
                  onSendMessage: handleSendMessageToNegotiation,
+                 onSwitchRole: handleSwitchRole,
+                 onLogout: handleLogout,
                  products: products.filter(p => p.farmerId === currentUser.uid), 
                  negotiations: negotiations.filter(n => n.farmerId === currentUser.uid),
                  messages: messages,
@@ -459,7 +472,7 @@ export default function App() {
                  currentUser: currentUser
              }} />;
         }
-        return <BuyerView {...{products, cart, cartTotal, minCartValue: MIN_CART_VALUE, negotiations: negotiations.filter(n => n.buyerId === currentUser.uid), messages, currentUserId: currentUser.uid, onAddToCart: handleAddToCart, onStartNegotiation: handleOpenNegotiation, onRespondToCounter: handleNegotiationResponse, onOpenChat: handleOpenChat, onSendMessage: handleSendMessageToNegotiation, wishlist, onToggleWishlist: handleToggleWishlist, farmers, onViewFarmerProfile: handleViewFarmerProfile, onSwitchRole: handleSwitchRole, isLoadingProducts}} />;
+        return <BuyerView {...{products, cart, cartTotal, minCartValue: MIN_CART_VALUE, negotiations: negotiations.filter(n => n.buyerId === currentUser.uid), messages, currentUserId: currentUser.uid, onAddToCart: handleAddToCart, onStartNegotiation: handleOpenNegotiation, onRespondToCounter: handleNegotiationResponse, onOpenChat: handleOpenChat, onSendMessage: handleSendMessageToNegotiation, wishlist, onToggleWishlist: handleToggleWishlist, farmers, onViewFarmerProfile: handleViewFarmerProfile, onSwitchRole: handleSwitchRole, onLogout: handleLogout, isLoadingProducts}} />;
     }
 
     // Show landing page if not authenticated

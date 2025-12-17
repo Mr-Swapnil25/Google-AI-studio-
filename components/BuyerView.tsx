@@ -24,6 +24,7 @@ interface BuyerViewProps {
     farmers: Farmer[];
     onViewFarmerProfile: (farmerId: string) => void;
     onSwitchRole: () => void;
+    onLogout: () => void;
     isLoadingProducts?: boolean;
 }
 
@@ -42,6 +43,7 @@ export const BuyerView = ({
     farmers, 
     onViewFarmerProfile,
     onSwitchRole,
+    onLogout,
     isLoadingProducts = false
 }: BuyerViewProps) => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -199,10 +201,20 @@ export const BuyerView = ({
                             <button className="flex items-center justify-center size-10 rounded-full bg-gray-100 hover:bg-[#2f7f33]/10 text-gray-700 transition-colors">
                                 <span className="material-symbols-outlined">notifications</span>
                             </button>
+                            {/* Logout Button */}
+                            <button 
+                                onClick={onLogout}
+                                className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 hover:bg-red-50 text-gray-700 hover:text-red-600 transition-colors border border-gray-200 hover:border-red-200"
+                                title="Sign out"
+                            >
+                                <span className="material-symbols-outlined text-lg">logout</span>
+                                <span className="text-sm font-medium hidden xl:inline">Sign Out</span>
+                            </button>
                             {/* Role Toggle Switch */}
                             <button 
                                 onClick={onSwitchRole}
                                 className="flex items-center gap-2 px-3 py-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors border border-gray-200"
+                                title="Switch to Farmer view"
                             >
                                 <span className="text-sm font-medium text-gray-500">Farmer</span>
                                 <div className="relative w-12 h-6 bg-[#2f7f33] rounded-full transition-colors">
