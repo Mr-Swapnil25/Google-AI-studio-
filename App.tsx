@@ -30,6 +30,10 @@ export default function App() {
     const [pendingRole, setPendingRole] = useState<UserRole>(() => {
         if (typeof window !== 'undefined') {
             const saved = localStorage.getItem('anna_bazaar_pending_role');
+            // Check if saved value matches UserRole enum values
+            if (saved === UserRole.Farmer || saved === 'Farmer') return UserRole.Farmer;
+            if (saved === UserRole.Buyer || saved === 'Buyer') return UserRole.Buyer;
+            // Also handle legacy lowercase values for backwards compatibility
             if (saved === 'farmer') return UserRole.Farmer;
             if (saved === 'buyer') return UserRole.Buyer;
         }
@@ -478,9 +482,10 @@ export default function App() {
     // Show landing page if not authenticated
     if (!currentUser) {
         const handleLandingGetStarted = (role: Role) => {
-            // Store selected role for AuthModal
-            localStorage.setItem('anna_bazaar_pending_role', role);
-            setPendingRole(role === 'farmer' ? UserRole.Farmer : UserRole.Buyer);
+            // Convert landing page role to UserRole enum and store
+            const userRole = role === 'farmer' ? UserRole.Farmer : UserRole.Buyer;
+            localStorage.setItem('anna_bazaar_pending_role', userRole);
+            setPendingRole(userRole);
             setIsAuthOpen(true);
         };
         return (
