@@ -1,19 +1,8 @@
-import { useRef, useState } from "react";
+  import React, { useRef, useState } from "react";
 import { motion, useMotionValue, useTransform, useMotionTemplate } from "framer-motion";
 import { cn } from "../../lib/utils";
 
-export const InteractiveCard = ({
-  children,
-  className,
-  InteractiveColor = "#07eae6ff",
-  borderRadius = "24px",
-  rotationFactor = 0.4,
-  transitionDuration = 0.3,
-  transitionEasing = "easeInOut",
-  tailwindBgClass = "bg-transparent backdrop-blur-md",
-  aspectRatio,
-  width,
-}: {
+interface InteractiveCardProps {
   children: React.ReactNode;
   className?: string;
   InteractiveColor?: string;
@@ -24,6 +13,19 @@ export const InteractiveCard = ({
   tailwindBgClass?: string;
   aspectRatio?: string;
   width?: string;
+}
+
+export const InteractiveCard: React.FC<InteractiveCardProps> = ({
+  children,
+  className,
+  InteractiveColor = "#07eae6ff",
+  borderRadius = "24px",
+  rotationFactor = 0.4,
+  transitionDuration = 0.3,
+  transitionEasing = "easeInOut",
+  tailwindBgClass = "bg-transparent backdrop-blur-md",
+  aspectRatio,
+  width,
 }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);

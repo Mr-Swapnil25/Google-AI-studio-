@@ -3,6 +3,7 @@ import {
   collection,
   doc,
   getDoc,
+  getDocs,
   onSnapshot,
   orderBy,
   query,
@@ -11,8 +12,11 @@ import {
   Timestamp,
   updateDoc,
   where,
+  limit,
+  startAfter,
   type DocumentData,
   type QuerySnapshot,
+  type QueryDocumentSnapshot,
 } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { db, storage } from '../firebase';
@@ -242,9 +246,35 @@ export const firebaseService = {
     );
   },
 
-  subscribeProducts(onChange: (products: Product[]) => void) {
-    const q = query(collection(db, 'products'));
+  subscribeProducts(onChange: (products: Product[]) => void, pageSize = 50) {
+    // Use pagination with a reasonable limit to prevent loading all documents at once
+    const q = query(collection(db, 'products'), orderBy('createdAt', 'desc'), limit(pageSize));
     return onSnapshot(q, (snap) => onChange(mapProducts(snap)));
+  },
+
+  /**
+   * Load more products after the last document for infinite scroll
+   */
+  async loadMoreProducts(lastDoc: QueryDocumentSnapshot<DocumentData> | null, pageSize = 50): Promise<{products: Product[], lastDoc: QueryDocumentSnapshot<DocumentData> | null}> {
+    let q;
+    if (lastDoc) {
+      q = query(
+        collection(db, 'products'),
+        orderBy('createdAt', 'desc'),
+        startAfter(lastDoc),
+        limit(pageSize)
+      );
+    } else {
+      q = query(
+        collection(db, 'products'),
+        orderBy('createdAt', 'desc'),
+        limit(pageSize)
+      );
+    }
+    const snap = await getDocs(q);
+    const products = mapProducts(snap);
+    const newLastDoc = snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null;
+    return { products, lastDoc: newLastDoc };
   },
 
   subscribeFarmers(onChange: (farmers: Farmer[]) => void) {

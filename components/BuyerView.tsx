@@ -538,7 +538,7 @@ export const BuyerView = ({
                                             />
                                             <div className="flex-1">
                                                 <h3 className="font-bold text-lg text-gray-900">{neg.productName}</h3>
-                                                <p className="text-sm text-gray-500">Qty: {neg.quantity}kg</p>
+                                                <p className="text-sm text-gray-500">Quantity: {neg.quantity} kg</p>
                                                 <div className="flex items-center gap-2 mt-1">
                                                     <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                                                         neg.status === NegotiationStatus.Pending ? 'bg-yellow-500/20 text-yellow-500' :

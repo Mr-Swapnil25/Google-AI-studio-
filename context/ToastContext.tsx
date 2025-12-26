@@ -24,7 +24,13 @@ export const useToast = () => {
   return context;
 };
 
-const Toast = ({ message, type, onClose }: { message: string; type: ToastType; onClose: () => void }) => {
+interface ToastProps {
+  message: string;
+  type: ToastType;
+  onClose: () => void;
+}
+
+const Toast: React.FC<ToastProps> = ({ message, type, onClose }) => {
   useEffect(() => {
     const timer = setTimeout(onClose, 5000);
     return () => clearTimeout(timer);

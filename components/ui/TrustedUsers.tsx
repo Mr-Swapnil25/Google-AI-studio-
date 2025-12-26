@@ -22,6 +22,9 @@ interface TrustedUsersProps {
   starColorClass?: string;
   ringColors?: string[];
   role?: 'farmer' | 'buyer';
+  audienceText?: string;
+  linkHref?: string;
+  linkText?: string;
 }
 
 export const TrustedUsers: React.FC<TrustedUsersProps> = ({
@@ -33,35 +36,42 @@ export const TrustedUsers: React.FC<TrustedUsersProps> = ({
   starColorClass = 'text-yellow-400',
   ringColors = [],
   role = 'farmer',
+  audienceText,
+  linkHref,
+  linkText,
 }) => {
-  const gradientClass = role === 'farmer' 
-    ? 'from-primary to-emerald-500' 
-    : 'from-cyan-500 to-teal-500';
-  
-  const ringDefaultColor = role === 'farmer' 
-    ? 'ring-primary/50' 
-    : 'ring-cyan-500/50';
+  const gradientClass = role === 'farmer'
+    ? 'from-primary to-emerald-500'
+    : 'from-buyer-primary to-amber-300';
+
+  const ringDefaultColor = role === 'farmer'
+    ? 'ring-primary/50'
+    : 'ring-buyer-primary/50';
+
+  const resolvedAudienceText = audienceText ?? (role === 'farmer'
+    ? 'farmers across India'
+    : 'buyers across India');
 
   return (
     <div
       className={cn(
-        'flex items-center justify-center gap-4 bg-white/40 dark:bg-gray-800/40 backdrop-blur-sm rounded-2xl py-3 px-5 border border-white/30 dark:border-gray-700/50',
+        'flex items-center justify-center gap-6 bg-transparent py-4 px-4',
         className
       )}
     >
       {/* Avatars */}
-      <div className="flex -space-x-3">
+      <div className="flex -space-x-4">
         {avatars.map((src, i) => (
           <div
             key={i}
             className={cn(
-              'w-10 h-10 rounded-full overflow-hidden ring-2 ring-offset-2 ring-offset-white dark:ring-offset-gray-900 transition-transform hover:scale-110 hover:z-10',
+              'w-10 h-10 rounded-full overflow-hidden ring-1 ring-offset-2 ring-offset-black',
               ringColors[i] || ringDefaultColor
             )}
           >
             <img
               src={src}
-              alt={`User ${i + 1}`}
+              alt={`Avatar ${i + 1}`}
               className="w-full h-full object-cover"
               loading="lazy"
               decoding="async"
@@ -81,21 +91,25 @@ export const TrustedUsers: React.FC<TrustedUsersProps> = ({
             <StarIcon key={i} className="w-4 h-4" />
           ))}
         </div>
-        <span className="text-text-main dark:text-white text-sm font-medium">
-          {caption}{' '}
+        <span className="text-xs md:text-sm font-medium text-current">
+          {caption}
           <CountUp
             value={totalUsersText}
             duration={2}
             separator=","
-            className={cn('text-base font-bold bg-gradient-to-r bg-clip-text text-transparent', gradientClass)}
+            className={cn('ml-1 text-lg font-bold bg-gradient-to-r bg-clip-text text-transparent', gradientClass)}
             suffix="+"
+            colorScheme="gradient"
           />
-          <span className={cn(
-            'ml-1 font-semibold',
-            role === 'farmer' ? 'text-primary' : 'text-cyan-600 dark:text-cyan-400'
-          )}>
-            {role === 'farmer' ? 'Farmers' : 'Buyers'}
-          </span>
+          <span className="ml-1">{resolvedAudienceText}</span>
+          {linkHref && linkText ? (
+            <a
+              className="ml-2 underline text-primary"
+              href={linkHref}
+            >
+              {linkText}
+            </a>
+          ) : null}
         </span>
       </div>
     </div>

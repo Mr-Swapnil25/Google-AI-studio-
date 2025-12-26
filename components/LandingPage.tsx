@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Role } from './landing';
 import { InteractiveCard } from './ui/InteractiveCard';
+import { TrustedUsers } from './ui/TrustedUsers';
 import WaveBackground from './ui/WaveBackground';
 
 // Avatar images for trusted users display
@@ -340,19 +341,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               </div>
 
               {/* Trusted Users */}
-              <div className="flex items-center gap-4 pt-4 text-sm text-white/80">
-                <div className="flex -space-x-3">
-                  {(role === 'farmer' ? FARMER_AVATARS : BUYER_AVATARS).map((avatar, i) => (
-                    <div
-                      key={i}
-                      className="size-10 rounded-full border-2 border-white/30 bg-gray-300 bg-cover bg-center shadow-lg"
-                      style={{ backgroundImage: `url('${avatar}')` }}
-                    />
-                  ))}
-                </div>
-                <p>
-                  Trusted by <strong className="text-white font-semibold">{role === 'farmer' ? '10,000+ farmers' : '5,000+ buyers'}</strong> across India
-                </p>
+              <div className="pt-4">
+                <TrustedUsers
+                  role={role}
+                  avatars={role === 'farmer' ? FARMER_AVATARS : BUYER_AVATARS}
+                  totalUsersText={role === 'farmer' ? 10000 : 5000}
+                  caption="Trusted by"
+                  audienceText={role === 'farmer' ? 'farmers across India' : 'buyers across India'}
+                  className="justify-start text-white/80"
+                  ringColors={['ring-white/30', 'ring-white/30', 'ring-white/30']}
+                />
               </div>
             </div>
 

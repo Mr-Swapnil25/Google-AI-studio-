@@ -281,7 +281,7 @@ export const BuyerNegotiationConsole: React.FC<BuyerNegotiationConsoleProps> = (
                                             <span className="material-symbols-outlined">remove</span>
                                         </button>
                                         <div className="flex-1 text-center border-x border-stone-300 dark:border-stone-700 mx-2 py-1">
-                                            <span className="block text-xs text-stone-600 dark:text-stone-400 font-medium">Qty (kg)</span>
+                                            <span className="block text-xs text-stone-600 dark:text-stone-400 font-medium">Quantity (kg)</span>
                                             <input
                                                 className="w-full bg-transparent text-center font-bold text-xl border-none focus:ring-0 p-0"
                                                 type="number"
