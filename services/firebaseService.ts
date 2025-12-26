@@ -399,6 +399,14 @@ export const firebaseService = {
     return getDownloadURL(objectRef);
   },
 
+  async uploadKYCDocument(file: File, farmerId: string, docType: 'aadhaar' | 'kisan'): Promise<string> {
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const objectPath = `kycDocuments/${farmerId}/${docType}-${Date.now()}-${safeName}`;
+    const objectRef = ref(storage, objectPath);
+    await uploadBytes(objectRef, file, { contentType: file.type || 'application/octet-stream' });
+    return getDownloadURL(objectRef);
+  },
+
   async addProduct(
     currentUser: User,
     productData: Omit<Product, 'id' | 'farmerId' | 'imageUrl' | 'isVerified' | 'verificationFeedback'>,

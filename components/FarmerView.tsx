@@ -20,6 +20,8 @@ interface FarmerViewProps {
     onCounter: (negotiation: Negotiation) => void;
     onOpenChat: (negotiation: Negotiation) => void;
     onSendMessage: (negotiationId: string, text: string) => void;
+    onSwitchRole: () => void;
+    onLogout: () => void;
 }
 
 type FormErrors = { [key in keyof Omit<Product, 'id' | 'farmerId' | 'imageUrl' | 'isVerified' | 'verificationFeedback'>]?: string } & { image?: string };
@@ -40,7 +42,7 @@ const fileToDataUrl = (file: File): Promise<string> =>
         reader.onerror = error => reject(error);
     });
 
-export const FarmerView = ({ products, negotiations, messages, currentUserId, currentUser, onAddNewProduct, onUpdateProduct, onRespond, onCounter, onOpenChat, onSendMessage }: FarmerViewProps) => {
+export const FarmerView = ({ products, negotiations, messages, currentUserId, currentUser, onAddNewProduct, onUpdateProduct, onRespond, onCounter, onOpenChat, onSendMessage, onSwitchRole, onLogout }: FarmerViewProps) => {
     const [aiIsLoading, setAiIsLoading] = useState(false);
     const [formIsSubmitting, setFormIsSubmitting] = useState(false);
     const [imageFile, setImageFile] = useState<File | null>(null);
@@ -466,6 +468,25 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                         </div>
 
                         <div className="flex items-center gap-4">
+                            {/* Logout Button */}
+                            <button
+                                onClick={onLogout}
+                                className="flex items-center gap-2 px-4 py-3 rounded-full bg-white/60 hover:bg-red-50 text-stone-700 hover:text-red-600 transition-colors border border-white/50 hover:border-red-200 shadow-soft"
+                                title="Sign out"
+                            >
+                                <span className="material-symbols-outlined text-xl">logout</span>
+                                <span className="text-sm font-medium hidden md:inline">Sign Out</span>
+                            </button>
+                            {/* Role Switch Button */}
+                            <button
+                                onClick={onSwitchRole}
+                                className="flex items-center gap-2 px-4 py-3 rounded-full bg-white/60 hover:bg-white/80 transition-colors border border-white/50 shadow-soft"
+                                title="Switch to Buyer view"
+                            >
+                                <span className="material-symbols-outlined text-xl text-primary">swap_horiz</span>
+                                <span className="text-sm font-medium hidden md:inline">Switch to Buyer</span>
+                            </button>
+                            {/* New Listing Button */}
                             <button
                                 onClick={() => setShowUploadPage(true)}
                                 className="relative group overflow-hidden px-8 py-4 rounded-full bg-gradient-to-r from-primary to-primary-light text-white shadow-card transition-all duration-300 hover:-translate-y-0.5"
