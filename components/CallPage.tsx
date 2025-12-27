@@ -181,7 +181,7 @@ export const CallPage: React.FC<CallPageProps> = ({
           </p>
           <button
             onClick={onLeaveCall}
-            className="w-full py-3 px-6 bg-[#2E7D32] hover:bg-[#256029] text-white rounded-xl font-bold transition-all"
+            className="w-full py-3 px-6 bg-[#2E7D32] hover:bg-[#256029] text-white rounded-2xl font-bold transition-all"
           >
             Go Back
           </button>
@@ -204,7 +204,7 @@ export const CallPage: React.FC<CallPageProps> = ({
           <p className="text-gray-600 dark:text-gray-300 mb-6">{error}</p>
           <button
             onClick={onLeaveCall}
-            className="w-full py-3 px-6 bg-[#2E7D32] hover:bg-[#256029] text-white rounded-xl font-bold transition-all"
+            className="w-full py-3 px-6 bg-[#2E7D32] hover:bg-[#256029] text-white rounded-2xl font-bold transition-all"
           >
             Go Back
           </button>

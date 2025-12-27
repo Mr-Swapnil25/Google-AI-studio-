@@ -40,9 +40,9 @@ const WeatherSkeleton: React.FC = () => (
         <div className="relative h-full flex flex-col justify-between rounded-[2rem] p-8 overflow-hidden bg-white/50 backdrop-blur-xl border border-white/60 shadow-card animate-pulse">
             <div className="flex justify-between items-start">
                 <div className="space-y-3">
-                    <div className="h-6 w-32 bg-stone-200 rounded-lg"></div>
-                    <div className="h-16 w-24 bg-stone-200 rounded-lg"></div>
-                    <div className="h-5 w-28 bg-stone-200 rounded-lg"></div>
+                    <div className="h-6 w-32 bg-stone-200 rounded-2xl"></div>
+                    <div className="h-16 w-24 bg-stone-200 rounded-2xl"></div>
+                    <div className="h-5 w-28 bg-stone-200 rounded-2xl"></div>
                 </div>
                 <div className="h-24 w-24 bg-stone-200 rounded-full"></div>
             </div>

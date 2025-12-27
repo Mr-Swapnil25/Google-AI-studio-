@@ -41,7 +41,7 @@ export const RoleCards: React.FC<RoleCardsProps> = ({ activeRole, onRoleChange, 
               <div className="relative p-8 lg:p-10 h-full">
                 {/* Glow */}
                 {activeRole === 'farmer' && (
-                  <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-primary/20 to-emerald-500/20 blur-xl -z-10" />
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/20 to-emerald-500/20 blur-xl -z-10" />
                 )}
 
                 <div className="flex items-start gap-4 mb-6">
@@ -96,7 +96,7 @@ export const RoleCards: React.FC<RoleCardsProps> = ({ activeRole, onRoleChange, 
               <div className="relative p-8 lg:p-10 h-full">
                 {/* Glow */}
                 {activeRole === 'buyer' && (
-                  <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-cyan-500/20 to-teal-500/20 blur-xl -z-10" />
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-teal-500/20 blur-xl -z-10" />
                 )}
 
                 <div className="flex items-start gap-4 mb-6">

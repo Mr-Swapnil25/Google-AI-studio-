@@ -104,8 +104,8 @@ export const NegotiationModal = ({ isOpen, onClose, item, userRole, onSubmit }: 
     const inputClasses = `mt-1 block w-full rounded-xl bg-stone-100 text-stone-900 placeholder-stone-500 px-4 py-3 border border-stone-200 focus:outline-none focus:ring-2 ${ringColorClass}`;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 z-30 flex justify-center items-center p-4" onClick={onClose}>
-            <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md font-sans animate-fade-in" style={{ animationDuration: '200ms' }} onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-lg z-30 flex justify-center items-center p-4" onClick={onClose}>
+            <div className="bg-white/60 backdrop-blur-lg rounded-2xl shadow-2xl p-6 w-full max-w-md font-sans animate-fade-in border border-white/30" style={{ animationDuration: '200ms' }} onClick={e => e.stopPropagation()}>
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-2xl font-bold font-heading text-stone-900">
                         {isFarmerCountering ? 'Make Counter-Offer' : 'Negotiate Bulk Order'}
@@ -114,7 +114,7 @@ export const NegotiationModal = ({ isOpen, onClose, item, userRole, onSubmit }: 
                 </div>
                 
                 <div className="flex items-center space-x-4 mb-4">
-                    <img src={productImageUrl} alt={productName} className="w-20 h-20 rounded-lg object-cover" />
+                    <img src={productImageUrl} alt={productName} className="w-20 h-20 rounded-2xl object-cover" />
                     <div>
                         <h3 className="font-bold font-heading text-lg text-stone-900">{productName}</h3>
                         <p className="text-stone-500 text-sm">Listed Price: <span className="font-bold">₹{initialPrice}/kg</span></p>
@@ -124,7 +124,7 @@ export const NegotiationModal = ({ isOpen, onClose, item, userRole, onSubmit }: 
 
                 {/* Price Band Display */}
                 {priceBand && userRole === UserRole.Buyer && (
-                    <div className="mb-4 p-3 bg-stone-50 rounded-lg border border-stone-200">
+                    <div className="mb-4 p-3 bg-stone-50 rounded-2xl border border-stone-200">
                         <div className="flex items-center justify-between text-xs mb-2">
                             <span className="text-stone-500">Mandi Price Reference</span>
                             {!priceBand.isVerified && (
@@ -150,7 +150,7 @@ export const NegotiationModal = ({ isOpen, onClose, item, userRole, onSubmit }: 
 
                 {/* Offer Classification */}
                 {offerClassification && (
-                    <div className={`mb-4 p-3 rounded-lg border ${offerClassification.bgClass}`}>
+                    <div className={`mb-4 p-3 rounded-2xl border ${offerClassification.bgClass}`}>
                         <div className="flex items-center gap-2">
                             <span className={`material-symbols-outlined text-sm ${offerClassification.colorClass}`}>
                                 {offerClassification.status === 'INVALID' ? 'block' :
@@ -221,11 +221,11 @@ export const NegotiationModal = ({ isOpen, onClose, item, userRole, onSubmit }: 
                         />
                     </div>
                     <div className="flex justify-end space-x-3 pt-4">
-                        <button type="button" onClick={onClose} className="bg-stone-200 text-stone-800 px-5 py-2.5 rounded-lg font-bold hover:bg-stone-300 transition-colors">Cancel</button>
+                        <button type="button" onClick={onClose} className="bg-stone-200 text-stone-800 px-5 py-2.5 rounded-2xl font-bold hover:bg-stone-300 transition-colors">Cancel</button>
                         <button 
                             type="submit" 
                             disabled={!canSubmit || isLoadingPrices}
-                            className={`px-5 py-2.5 rounded-lg font-bold transition-colors ${
+                            className={`px-5 py-2.5 rounded-2xl font-bold transition-colors ${
                                 canSubmit && !isLoadingPrices 
                                     ? primaryButtonClass 
                                     : 'bg-stone-400 text-stone-200 cursor-not-allowed'

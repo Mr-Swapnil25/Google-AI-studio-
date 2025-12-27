@@ -1,13 +1,13 @@
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   ANNA BAZAAR - PROFESSIONAL B2B DESIGN SYSTEM
-   Typography: Syne (Headings) + Outfit (Body) + Work Sans (Prices/Data)
-   Natural Premium Palette | Clean Interface | Production-Ready
+   ANNA BAZAAR - SHARP B2B DESIGN SYSTEM
+   Typography: Syne (Headings) + Inter (Body) + JetBrains Mono (Prices/Data)
+   Sharp Edges | Strategic Glassmorphism | Apple-Grade Professional
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @layer base {
@@ -19,99 +19,177 @@
 
   body {
     @apply bg-background-light text-text-main font-sans leading-normal;
-    font-family: 'Outfit', system-ui, sans-serif;
+    font-family: 'Inter', system-ui, sans-serif;
   }
 
-  /* Typography System - B2B Professional */
+  /* Typography System - Sharp B2B Professional */
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading font-bold tracking-tight leading-tight;
-    font-family: 'Syne', Georgia, serif;
+    font-family: 'Syne', system-ui, sans-serif;
   }
 
-  /* Desktop: 32px / Mobile: 24px */
-  h1 { @apply text-2xl md:text-[32px]; }
-  /* Desktop: 24px / Mobile: 18px */
-  h2 { @apply text-lg md:text-2xl; }
-  /* Subsections: 18px */
-  h3 { @apply text-base md:text-lg font-semibold; }
-  h4 { @apply text-sm md:text-base font-semibold; }
+  /* Display: H1 - 48px desktop / 32px mobile */
+  h1 { @apply text-2xl md:text-4xl lg:text-5xl; }
+  /* H2 - 36px desktop / 28px mobile */
+  h2 { @apply text-xl md:text-3xl lg:text-4xl; }
+  /* H3 - 28px desktop / 24px mobile */
+  h3 { @apply text-lg md:text-2xl lg:text-3xl font-semibold; }
+  /* H4 - 20px */
+  h4 { @apply text-base md:text-xl font-semibold; }
 
-  /* Body text: 14px desktop, 13px mobile */
+  /* Body text: Inter for readability */
   p, span, div {
-    font-family: 'Outfit', system-ui, sans-serif;
+    font-family: 'Inter', system-ui, sans-serif;
   }
 
-  /* Prices and Numbers - Work Sans for tabular figures */
-  .price, .currency, [data-price], .font-data {
-    font-family: 'Work Sans', monospace;
+  /* Prices and Numbers - JetBrains Mono for tabular alignment */
+  .price, .currency, [data-price], .font-data, .font-mono {
+    font-family: 'JetBrains Mono', monospace;
     font-feature-settings: 'tnum' on;
     font-variant-numeric: tabular-nums;
   }
 
-  /* Small text/labels: 12px */
+  /* Labels: Small, uppercase, tracked */
   .text-label {
-    @apply text-xs font-medium;
-    font-family: 'Work Sans', monospace;
+    @apply text-xs font-semibold uppercase tracking-wide;
+    font-family: 'Inter', system-ui, sans-serif;
   }
 }
 
 @layer components {
-  /* Professional Card - Clean, no glassmorphism */
+  /* ═══════════════════════════════════════════════════════════════════════════
+     SOFT ROUNDED GLASSMORPHIC DESIGN SYSTEM
+     Elegant curves + subtle blur + depth shadows
+  ═══════════════════════════════════════════════════════════════════════════ */
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     GLASSMORPHIC CARDS - Soft, rounded, premium feel
+  ═══════════════════════════════════════════════════════════════════════════ */
+
+  /* Premium Glass Card - For product cards, main content */
+  .card-glass {
+    @apply rounded-3xl bg-white/70 backdrop-blur-md border border-white/40 shadow-lg p-6;
+  }
+
+  /* Standard Glass Card - For medium containers */
+  .card-glass-md {
+    @apply rounded-2xl bg-white/70 backdrop-blur-md border border-white/40 shadow-lg p-5;
+  }
+
+  /* Subtle Glass Card - For nested content */
+  .card-glass-subtle {
+    @apply rounded-2xl bg-white/80 backdrop-blur-sm border border-white/50 shadow-md p-4;
+  }
+
+  /* Legacy card-pro - now glassmorphic */
   .card-pro {
-    @apply bg-white border border-gray-200 rounded-lg shadow-pro;
+    @apply rounded-2xl bg-white/70 backdrop-blur-md border border-white/40 shadow-lg;
   }
 
   /* Information Strip - Dense data display */
   .info-strip {
-    @apply flex items-center justify-between px-3 py-2 border-b border-gray-100 last:border-b-0;
+    @apply flex items-center justify-between px-3 py-2 border-b border-gray-100/50 last:border-b-0;
   }
 
-  /* Professional Input - Bottom border or thin outline style */
-  .input-classic {
-    @apply w-full h-11 px-3 bg-white border border-gray-200 rounded-md text-sm font-medium
+  /* ═══════════════════════════════════════════════════════════════════════════
+     SOFT ROUNDED INPUTS - Elegant form fields
+  ═══════════════════════════════════════════════════════════════════════════ */
+
+  .input-glass {
+    @apply w-full h-11 px-4 rounded-xl bg-white/90 backdrop-blur-sm 
+           border border-gray-300 text-sm font-medium
            placeholder:text-gray-400 
-           focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20
-           transition-colors;
+           focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20
+           transition-all;
   }
 
-  /* Professional Button - 44px touch target, not bulky */
+  .input-classic {
+    @apply input-glass;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     SOFT ROUNDED BUTTONS - Elegant, touchable
+  ═══════════════════════════════════════════════════════════════════════════ */
+
+  .btn-soft {
+    @apply h-11 px-5 inline-flex items-center justify-center gap-2
+           text-sm font-semibold rounded-xl shadow-md
+           transition-all duration-200
+           focus:outline-none focus:ring-2 focus:ring-offset-2
+           hover:shadow-lg hover:-translate-y-0.5;
+  }
+
   .btn-pro {
-    @apply h-11 px-4 inline-flex items-center justify-center gap-2
-           text-sm font-semibold rounded-md
-           transition-colors duration-150
-           focus:outline-none focus:ring-2 focus:ring-offset-1;
+    @apply btn-soft;
   }
 
   .btn-primary {
-    @apply btn-pro bg-primary text-white hover:bg-primary-dark focus:ring-primary/50;
+    @apply btn-soft bg-primary text-white hover:bg-primary-dark focus:ring-primary/50;
   }
 
   .btn-secondary {
-    @apply btn-pro bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 focus:ring-gray-200;
+    @apply btn-soft bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 focus:ring-gray-200;
   }
 
   .btn-accent {
-    @apply btn-pro bg-accent text-gray-900 hover:bg-accent-dark focus:ring-accent/50;
+    @apply btn-soft bg-accent text-gray-900 hover:bg-accent-dark focus:ring-accent/50;
   }
 
-  /* Status Badges - Clean, professional */
+  /* ═══════════════════════════════════════════════════════════════════════════
+     GLASSMORPHIC MODALS & OVERLAYS - Maximum blur effect
+  ═══════════════════════════════════════════════════════════════════════════ */
+
+  /* Modal Backdrop - Blurred background */
+  .modal-backdrop {
+    @apply fixed inset-0 backdrop-blur-lg bg-black/40 flex items-center justify-center z-50;
+  }
+
+  /* Modal Content - Premium glass effect */
+  .modal-glass {
+    @apply rounded-2xl bg-white/60 backdrop-blur-lg border border-white/30 shadow-2xl p-6 md:p-8;
+  }
+
+  /* Glassmorphic Modal - Legacy class */
+  .glass-modal {
+    @apply rounded-2xl bg-white/60 backdrop-blur-lg border border-white/30 shadow-2xl;
+  }
+
+  /* Glassmorphic Overlay - For floating elements */
+  .glass-overlay {
+    @apply rounded-2xl bg-white/70 backdrop-blur-md border border-white/40 shadow-xl;
+  }
+
+  /* Dark glass for dramatic overlays */
+  .glass-dark {
+    @apply backdrop-blur-lg bg-black/40;
+  }
+
+  /* Widget glass - subtle, for sidebar widgets */
+  .glass-widget {
+    @apply rounded-2xl bg-white/50 backdrop-blur-sm border border-white/30 shadow-md;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     STATUS BADGES - Soft rounded
+  ═══════════════════════════════════════════════════════════════════════════ */
+
   .badge {
-    @apply inline-flex items-center px-2 py-0.5 text-xs font-medium rounded;
+    @apply inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-full;
   }
 
-  .badge-success { @apply bg-green-50 text-green-700 border border-green-200; }
-  .badge-warning { @apply bg-amber-50 text-amber-700 border border-amber-200; }
-  .badge-error { @apply bg-red-50 text-red-700 border border-red-200; }
-  .badge-info { @apply bg-blue-50 text-blue-700 border border-blue-200; }
+  .badge-success { @apply bg-green-100 text-green-700 border border-green-200; }
+  .badge-warning { @apply bg-amber-100 text-amber-700 border border-amber-200; }
+  .badge-error { @apply bg-red-100 text-red-700 border border-red-200; }
+  .badge-info { @apply bg-blue-100 text-blue-700 border border-blue-200; }
 
   /* Trading Desk Table Row */
   .trade-row {
     @apply flex items-center gap-3 px-3 py-2.5 border-b border-gray-100 hover:bg-gray-50 transition-colors;
   }
 
-  /* Section Container */
+  /* Section Container - Sharp */
   .section-container {
-    @apply bg-white border border-gray-200 rounded-lg overflow-hidden;
+    @apply bg-white border border-gray-200 rounded-sm overflow-hidden;
   }
 
   .section-header {
@@ -124,7 +202,7 @@
   }
 
   /* ═══════════════════════════════════════════════════════════════════════════
-     SIDEBAR COMPONENTS - Fixed 240px width, proper alignment
+     SIDEBAR COMPONENTS - Sharp edges, 240px width
   ═══════════════════════════════════════════════════════════════════════════ */
   
   .sidebar {
@@ -133,7 +211,7 @@
 
   .sidebar-nav-item {
     @apply h-11 flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-600 
-           hover:bg-gray-50 hover:text-gray-900 transition-colors rounded-lg mx-2;
+           hover:bg-gray-50 hover:text-gray-900 transition-colors rounded-sm mx-2;
   }
 
   .sidebar-nav-item.active {
@@ -142,10 +220,10 @@
 
   .sidebar-logout {
     @apply mt-auto h-11 flex items-center gap-3 px-4 py-3 mx-2 mb-4 text-sm font-medium 
-           text-red-600 hover:bg-red-50 rounded-lg transition-colors;
+           text-red-600 hover:bg-red-50 rounded-sm transition-colors;
   }
 
-  /* Cart Badge */
+  /* Cart Badge - Keep rounded-full for circles */
   .cart-badge {
     @apply absolute -top-1.5 -right-1.5 bg-red-600 text-white text-xs font-bold 
            w-5 h-5 flex items-center justify-center rounded-full;

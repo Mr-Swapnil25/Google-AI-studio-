@@ -292,7 +292,7 @@ export const LiveAssistantModal = ({ isOpen, onClose }: LiveAssistantModalProps)
                 <main className="flex-1 p-6 overflow-y-auto space-y-4">
                     {transcripts.map((t, i) => (
                         <div key={i} className={`flex ${t.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[80%] px-4 py-2 rounded-xl ${t.role === 'user' ? 'bg-farmer-accent text-white' : 'bg-stone-800 text-stone-200'}`}>
+                            <div className={`max-w-[80%] px-4 py-2 rounded-2xl ${t.role === 'user' ? 'bg-farmer-accent text-white' : 'bg-stone-800 text-stone-200'}`}>
                                 <p className="text-sm">{t.text}</p>
                             </div>
                         </div>

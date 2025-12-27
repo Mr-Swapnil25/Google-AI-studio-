@@ -192,7 +192,7 @@ export const AuthModal = ({ isOpen, onClose, initialRole, onAuthenticated }: Aut
 
     const renderAuthStep = () => (
         <>
-            <button type="button" onClick={handleGoogleSignIn} disabled={isLoading} className="w-full flex justify-center items-center py-3 px-4 border border-stone-300 rounded-lg shadow-sm bg-white text-sm font-medium text-stone-700 hover:bg-stone-50 disabled:bg-stone-100 transition-colors">
+            <button type="button" onClick={handleGoogleSignIn} disabled={isLoading} className="w-full flex justify-center items-center py-3 px-4 border border-stone-300 rounded-2xl shadow-sm bg-white text-sm font-medium text-stone-700 hover:bg-stone-50 disabled:bg-stone-100 transition-colors">
                 {isLoading ? <Spinner /> : <><GoogleIcon className="h-5 w-5 mr-3" /> Sign in with Google</>}
             </button>
             <div className="my-4 flex items-center"><div className="flex-grow border-t border-stone-300"></div><span className="flex-shrink mx-4 text-stone-400 text-sm">OR</span><div className="flex-grow border-t border-stone-300"></div></div>
@@ -204,7 +204,7 @@ export const AuthModal = ({ isOpen, onClose, initialRole, onAuthenticated }: Aut
                     id="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="mt-1 focus:ring-primary focus:border-primary block w-full sm:text-sm border-stone-300 rounded-lg"
+                    className="mt-1 focus:ring-primary focus:border-primary block w-full sm:text-sm border-stone-300 rounded-2xl"
                     placeholder="you@example.com"
                     autoComplete="email"
                 />
@@ -216,12 +216,12 @@ export const AuthModal = ({ isOpen, onClose, initialRole, onAuthenticated }: Aut
                     id="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="mt-1 focus:ring-primary focus:border-primary block w-full sm:text-sm border-stone-300 rounded-lg"
+                    className="mt-1 focus:ring-primary focus:border-primary block w-full sm:text-sm border-stone-300 rounded-2xl"
                     placeholder="••••••••"
                     autoComplete={isSignUp ? 'new-password' : 'current-password'}
                 />
 
-                <button type="submit" disabled={isLoading} className="mt-4 w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:ring-primary disabled:bg-orange-300 transition-colors">
+                <button type="submit" disabled={isLoading} className="mt-4 w-full flex justify-center py-3 px-4 border border-transparent rounded-2xl shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:ring-primary disabled:bg-orange-300 transition-colors">
                     {isLoading ? <Spinner /> : isSignUp ? 'Create account' : 'Sign in'}
                 </button>
 
@@ -252,11 +252,11 @@ export const AuthModal = ({ isOpen, onClose, initialRole, onAuthenticated }: Aut
                     id="name" 
                     value={name} 
                     onChange={(e) => setName(e.target.value)} 
-                    className="mt-2 focus:ring-primary focus:border-primary block w-full text-base border-stone-300 rounded-xl py-3 px-4" 
+                    className="mt-2 focus:ring-primary focus:border-primary block w-full text-base border-stone-300 rounded-2xl py-3 px-4" 
                     placeholder="Enter your full name"
                 />
             </div>
-            <div className="mt-4 p-3 bg-stone-50 rounded-xl border border-stone-200">
+            <div className="mt-4 p-3 bg-stone-50 rounded-2xl border border-stone-200">
                 <p className="text-xs text-stone-500">
                     You're signing up as a <span className="font-bold text-primary">{selectedRole}</span>
                 </p>
@@ -264,7 +264,7 @@ export const AuthModal = ({ isOpen, onClose, initialRole, onAuthenticated }: Aut
             <button 
                 onClick={handleFinalSubmit} 
                 disabled={!name.trim() || isLoading} 
-                className="mt-6 w-full flex justify-center items-center py-3.5 px-4 border rounded-xl shadow-sm text-base font-bold text-white bg-primary hover:bg-primary-dark focus:ring-primary disabled:bg-primary/50 transition-colors"
+                className="mt-6 w-full flex justify-center items-center py-3.5 px-4 border rounded-2xl shadow-sm text-base font-bold text-white bg-primary hover:bg-primary-dark focus:ring-primary disabled:bg-primary/50 transition-colors"
             >
                 {isLoading ? <Spinner /> : 'Get Started'}
             </button>
@@ -276,15 +276,15 @@ export const AuthModal = ({ isOpen, onClose, initialRole, onAuthenticated }: Aut
     const roleColor = selectedRole === UserRole.Farmer ? 'text-primary' : 'text-primary';
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-center p-4" onClick={onClose}>
-            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md font-sans overflow-hidden animate-fade-in" style={{animationDuration: '200ms'}} onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-lg z-50 flex justify-center items-center p-4" onClick={onClose}>
+            <div className="relative bg-white/60 backdrop-blur-lg rounded-2xl shadow-2xl w-full max-w-md font-sans overflow-hidden animate-fade-in border border-white/30" style={{animationDuration: '200ms'}} onClick={e => e.stopPropagation()}>
                 {/* Header with role indicator */}
-                <div className="bg-gradient-to-r from-primary/5 to-secondary/5 px-6 pt-6 pb-4 border-b border-stone-100">
-                    <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-full hover:bg-stone-100 transition-colors">
+                <div className="bg-gradient-to-r from-primary/10 to-secondary/10 backdrop-blur-sm px-6 pt-6 pb-4 border-b border-white/30">
+                    <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-full hover:bg-white/50 transition-colors">
                         <XIcon className="h-5 w-5 text-stone-400" />
                     </button>
                     <div className="flex items-center gap-3 mb-3">
-                        <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center shadow-lg">
+                        <div className="h-10 w-10 rounded-2xl bg-primary flex items-center justify-center shadow-lg">
                             <span className="material-symbols-outlined text-white text-xl">agriculture</span>
                         </div>
                         <h2 className="text-2xl font-bold text-stone-900">Anna Bazaar</h2>
@@ -300,7 +300,7 @@ export const AuthModal = ({ isOpen, onClose, initialRole, onAuthenticated }: Aut
                 <div className="p-6">
                     {step === 'auth' && renderAuthStep()}
                     {step === 'details' && renderDetailsStep()}
-                    {error && <p className="mt-4 text-center text-sm text-red-600 bg-red-50 p-3 rounded-xl">{error}</p>}
+                    {error && <p className="mt-4 text-center text-sm text-red-600 bg-red-50 p-3 rounded-2xl">{error}</p>}
                 </div>
             </div>
         </div>

@@ -116,7 +116,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           ) : (
             <div className="p-4 space-y-4">
               {/* B2B Notice */}
-              <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="p-3 bg-blue-50 rounded-2xl border border-blue-200">
                 <div className="flex items-center gap-2 text-blue-700 text-sm font-medium">
                   <span className="material-symbols-outlined text-lg">business</span>
                   B2B Bulk Orders
@@ -130,13 +130,13 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               {cart.map((item) => (
                 <div
                   key={item.id}
-                  className="flex gap-4 p-3 bg-gray-50 rounded-xl border border-gray-200"
+                  className="flex gap-4 p-3 bg-gray-50 rounded-2xl border border-gray-200"
                 >
                   {/* Product Image */}
                   <img
                     src={item.imageUrl}
                     alt={item.name}
-                    className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
+                    className="w-20 h-20 rounded-2xl object-cover flex-shrink-0"
                   />
 
                   {/* Product Details */}
@@ -232,7 +232,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
             {/* Checkout Button */}
             <button
               onClick={handleCheckout}
-              className="w-full py-4 bg-accent text-gray-900 rounded-xl font-bold text-lg hover:bg-yellow-400 hover:shadow-lg transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2"
+              className="w-full py-4 bg-accent text-gray-900 rounded-2xl font-bold text-lg hover:bg-yellow-400 hover:shadow-lg transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2"
             >
               <span className="material-symbols-outlined">lock</span>
               Proceed to Checkout

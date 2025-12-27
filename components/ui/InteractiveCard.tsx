@@ -73,11 +73,11 @@ export const InteractiveCard: React.FC<InteractiveCardProps> = ({
           transformStyle: "preserve-3d",
           transition: `transform ${transitionDuration}s ${transitionEasing}`,
         }}
-        className="w-full h-full rounded-xl overflow-hidden"
+        className="w-full h-full rounded-2xl overflow-hidden"
       >
         {/* Background Interactive Layer */}
         <motion.div
-          className="absolute inset-0 rounded-xl z-0"
+          className="absolute inset-0 rounded-2xl z-0"
           style={{
             background: interactiveBackground,
             transition: `opacity ${transitionDuration}s ${transitionEasing}`,

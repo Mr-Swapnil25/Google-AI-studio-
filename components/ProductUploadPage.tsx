@@ -524,7 +524,7 @@ export const ProductUploadPage: React.FC<ProductUploadPageProps> = ({ onBack, on
                             {/* Upload from Gallery Option */}
                             <div 
                                 onClick={() => fileInputRef.current?.click()}
-                                className="hidden md:flex items-center justify-between p-4 bg-white rounded-xl border-2 border-dashed border-gray-300 hover:border-primary cursor-pointer transition-colors"
+                                className="hidden md:flex items-center justify-between p-4 bg-white rounded-2xl border-2 border-dashed border-gray-300 hover:border-primary cursor-pointer transition-colors"
                             >
                                 <div className="flex items-center gap-4">
                                     <div className="bg-green-50 p-3 rounded-full text-primary">
@@ -563,13 +563,13 @@ export const ProductUploadPage: React.FC<ProductUploadPageProps> = ({ onBack, on
                                     </div>
                                     <div className="mt-4 flex flex-wrap gap-2">
                                         {analysisResult.colorTrait && (
-                                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-green-50 text-green-700 text-sm font-semibold border border-green-100">
+                                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-2xl bg-green-50 text-green-700 text-sm font-semibold border border-green-100">
                                                 <span className="material-symbols-outlined text-sm">check</span>
                                                 Color: {analysisResult.colorTrait}
                                             </span>
                                         )}
                                         {analysisResult.sizeTrait && (
-                                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-green-50 text-green-700 text-sm font-semibold border border-green-100">
+                                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-2xl bg-green-50 text-green-700 text-sm font-semibold border border-green-100">
                                                 <span className="material-symbols-outlined text-sm">check</span>
                                                 Size: {analysisResult.sizeTrait}
                                             </span>
@@ -588,7 +588,7 @@ export const ProductUploadPage: React.FC<ProductUploadPageProps> = ({ onBack, on
                                     value={productName}
                                     onChange={(e) => setProductName(e.target.value)}
                                     placeholder="e.g., Fresh Tomatoes, Organic Wheat"
-                                    className="w-full text-2xl font-bold text-gray-900 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                                    className="w-full text-2xl font-bold text-gray-900 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
                                 />
                                 <p className="text-xs text-gray-500 mt-2">AI suggested: {analysisResult.name}. Edit if needed.</p>
                             </div>
@@ -615,7 +615,7 @@ export const ProductUploadPage: React.FC<ProductUploadPageProps> = ({ onBack, on
                                 </div>
                                 
                                 {/* MSP Indicator */}
-                                <div className={`mt-4 rounded-xl p-3 flex items-center gap-3 border ${
+                                <div className={`mt-4 rounded-2xl p-3 flex items-center gap-3 border ${
                                     analysisResult.mspStatus.isAbove 
                                         ? 'bg-green-50 border-green-100' 
                                         : 'bg-red-50 border-red-100'
@@ -633,7 +633,7 @@ export const ProductUploadPage: React.FC<ProductUploadPageProps> = ({ onBack, on
 
                                 {/* Price Engine Pills */}
                                 {priceLoading && (
-                                    <div className="flex items-center gap-2 mt-3 p-2 bg-gray-50 rounded-lg animate-pulse">
+                                    <div className="flex items-center gap-2 mt-3 p-2 bg-gray-50 rounded-2xl animate-pulse">
                                         <span className="material-symbols-outlined text-gray-400 text-sm animate-spin">sync</span>
                                         <span className="text-xs text-gray-500">Fetching live market prices...</span>
                                     </div>
@@ -684,7 +684,7 @@ export const ProductUploadPage: React.FC<ProductUploadPageProps> = ({ onBack, on
                                             type="number" 
                                             value={editableQuantity}
                                             onChange={(e) => setEditableQuantity(Number(e.target.value))}
-                                            className="text-2xl font-bold text-gray-900 bg-gray-50 border border-gray-200 rounded-lg w-20 text-center py-2 focus:border-primary outline-none"
+                                            className="text-2xl font-bold text-gray-900 bg-gray-50 border border-gray-200 rounded-2xl w-20 text-center py-2 focus:border-primary outline-none"
                                         />
                                         <span className="text-lg text-gray-500 font-medium">Qtl</span>
                                     </div>
@@ -701,7 +701,7 @@ export const ProductUploadPage: React.FC<ProductUploadPageProps> = ({ onBack, on
                                     value={farmerNote}
                                     onChange={(e) => setFarmerNote(e.target.value)}
                                     placeholder="e.g., 'Harvested yesterday, organic, slightly green, 50kg batch'"
-                                    className="w-full min-h-[120px] p-4 text-gray-900 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-base placeholder:text-gray-400 resize-none"
+                                    className="w-full min-h-[120px] p-4 text-gray-900 bg-gray-50 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary text-base placeholder:text-gray-400 resize-none"
                                 ></textarea>
                                 <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
                                     <span className="material-symbols-outlined text-sm">info</span>
@@ -711,7 +711,7 @@ export const ProductUploadPage: React.FC<ProductUploadPageProps> = ({ onBack, on
 
                             {/* AI Gatekeeper Block */}
                             {!analysisResult.isValidAgri && (
-                                <div className="bg-red-50 border-2 border-red-300 rounded-xl p-4 flex items-start gap-3">
+                                <div className="bg-red-50 border-2 border-red-300 rounded-2xl p-4 flex items-start gap-3">
                                     <span className="material-symbols-outlined text-red-600 text-2xl shrink-0">block</span>
                                     <div>
                                         <p className="text-red-800 font-bold text-lg">Not an Agricultural Product</p>

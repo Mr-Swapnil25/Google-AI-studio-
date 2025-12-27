@@ -124,7 +124,7 @@ export class FirestoreErrorBoundary extends Component<
                     <p className="text-gray-600 mb-4">
                         We encountered an unexpected error. Please try again.
                     </p>
-                    <details className="text-left mb-6 bg-gray-50 rounded-lg p-3">
+                    <details className="text-left mb-6 bg-gray-50 rounded-2xl p-3">
                         <summary className="text-sm text-gray-500 cursor-pointer font-medium">
                             Technical Details
                         </summary>

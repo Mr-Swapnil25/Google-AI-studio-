@@ -37,12 +37,12 @@ const AddToCartModal: React.FC<{
             />
             {/* Modal */}
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-fade-in">
+                <div className="bg-white/60 backdrop-blur-lg rounded-2xl shadow-2xl max-w-md w-full p-6 animate-fade-in border border-white/30">
                     <div className="flex items-center gap-4 mb-4">
                         <img 
                             src={product.imageUrl} 
                             alt={product.name}
-                            className="w-16 h-16 rounded-lg object-cover"
+                            className="w-16 h-16 rounded-2xl object-cover"
                         />
                         <div>
                             <h3 className="font-bold text-lg text-gray-800">{product.name}</h3>
@@ -50,7 +50,7 @@ const AddToCartModal: React.FC<{
                         </div>
                     </div>
 
-                    <div className="bg-blue-50 rounded-lg p-3 mb-4 border border-blue-200">
+                    <div className="bg-blue-50 rounded-2xl p-3 mb-4 border border-blue-200">
                         <p className="text-xs text-blue-700 font-medium">
                             <span className="material-symbols-outlined text-sm align-middle mr-1">info</span>
                             B2B Bulk Order: Minimum 100kg (1 quintal)
@@ -76,7 +76,7 @@ const AddToCartModal: React.FC<{
                                 onChange={(e) => setQuantity(Math.max(100, parseInt(e.target.value) || 100))}
                                 min={100}
                                 step={100}
-                                className="flex-1 h-12 text-center text-xl font-bold border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20"
+                                className="flex-1 h-12 text-center text-xl font-bold border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20"
                             />
                             <button
                                 onClick={() => setQuantity(quantity + 100)}
@@ -91,7 +91,7 @@ const AddToCartModal: React.FC<{
                     </div>
 
                     {/* Total Price */}
-                    <div className="bg-gray-50 rounded-xl p-4 mb-6">
+                    <div className="bg-gray-50 rounded-2xl p-4 mb-6">
                         <div className="flex justify-between items-center">
                             <span className="text-gray-600">Total Price</span>
                             <span className="text-2xl font-bold text-primary font-heading">
@@ -104,7 +104,7 @@ const AddToCartModal: React.FC<{
                     <div className="flex gap-3">
                         <button
                             onClick={onClose}
-                            className="flex-1 py-3 border-2 border-gray-200 rounded-xl font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+                            className="flex-1 py-3 border-2 border-gray-200 rounded-2xl font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
                         >
                             Cancel
                         </button>
@@ -113,7 +113,7 @@ const AddToCartModal: React.FC<{
                                 onConfirm(quantity);
                                 onClose();
                             }}
-                            className="flex-1 py-3 bg-primary text-white rounded-xl font-semibold hover:bg-primary-dark transition-colors flex items-center justify-center gap-2"
+                            className="flex-1 py-3 bg-primary text-white rounded-2xl font-semibold hover:bg-primary-dark transition-colors flex items-center justify-center gap-2"
                         >
                             <ShoppingCartIcon className="w-5 h-5" />
                             Add to Cart
@@ -147,7 +147,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
     return (
         <>
-            <div className="bg-background-alt rounded-xl shadow-md overflow-hidden group transform hover:-translate-y-1 transition-all duration-300 flex flex-col h-full border border-stone-200/80 hover:shadow-xl">
+            <div className="bg-white/70 backdrop-blur-md rounded-3xl shadow-lg overflow-hidden group transform hover:-translate-y-1 transition-all duration-300 flex flex-col h-full border border-white/40 hover:shadow-xl">
                 <div className="relative">
                     <button 
                         onClick={() => onToggleWishlist(product.id)}
@@ -184,7 +184,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                     
                     <button 
                         onClick={() => onViewFarmerProfile(farmer.id)} 
-                        className="w-full text-left group mb-4 p-2 -mx-2 rounded-lg hover:bg-stone-100 transition-colors"
+                        className="w-full text-left group mb-4 p-2 -mx-2 rounded-2xl hover:bg-stone-100 transition-colors"
                         aria-label={`View profile for ${farmer.name}`}
                     >
                         <div className="flex items-center space-x-3">

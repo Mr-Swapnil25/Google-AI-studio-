@@ -202,7 +202,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                                     <span className="material-symbols-outlined text-sm">zoom_in</span> 
                                     Click to Zoom
                                 </div>
-                                <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur text-white px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2">
+                                <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur text-white px-3 py-1.5 rounded-2xl text-sm font-medium flex items-center gap-2">
                                     <span className="material-symbols-outlined text-[#2f7f33]">photo_camera</span>
                                     Img {selectedImageIndex + 1} of {productImages.length}
                                 </div>
@@ -214,7 +214,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                                     <button 
                                         key={index}
                                         onClick={() => setSelectedImageIndex(index)}
-                                        className={`shrink-0 size-20 rounded-lg overflow-hidden border-2 transition-all ${
+                                        className={`shrink-0 size-20 rounded-2xl overflow-hidden border-2 transition-all ${
                                             selectedImageIndex === index 
                                                 ? 'border-[#2f7f33] ring-2 ring-[#2f7f33]/20' 
                                                 : 'border-transparent hover:border-gray-400'
@@ -230,7 +230,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                         <section className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-[#2f7f33]/10 rounded-lg">
+                                    <div className="p-2 bg-[#2f7f33]/10 rounded-2xl">
                                         <span className="material-symbols-outlined text-2xl text-[#2f7f33]">analytics</span>
                                     </div>
                                     <div>
@@ -255,7 +255,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                                 <div className="flex flex-col gap-4">
                                     <h4 className="text-sm font-bold uppercase tracking-wider text-gray-500">Size Breakdown</h4>
                                     {/* Visual Bar Chart */}
-                                    <div className="w-full h-12 flex rounded-lg overflow-hidden border border-gray-100">
+                                    <div className="w-full h-12 flex rounded-2xl overflow-hidden border border-gray-100">
                                         <div 
                                             className="bg-[#2E7D32] h-full flex items-center justify-center text-white font-bold text-sm"
                                             style={{ width: `${aiInspection.sizeDistribution.large}%` }}
@@ -416,7 +416,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                             <div className="p-6 flex flex-col gap-6">
                                 {/* Location & Logistics */}
                                 {farmer && (
-                                    <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                                    <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-2xl border border-gray-100">
                                         <span className="material-symbols-outlined text-gray-500 mt-0.5">location_on</span>
                                         <div>
                                             <p className="font-bold text-sm text-gray-900">{farmer.location}</p>

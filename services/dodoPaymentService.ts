@@ -216,6 +216,59 @@ class DodoPaymentService {
             return { status: 'failed' };
         }
     }
+
+    /**
+     * Check if the current URL has payment return parameters
+     */
+    checkPaymentReturn(): { hasPaymentParams: boolean; orderId?: string } {
+        const urlParams = new URLSearchParams(window.location.search);
+        const paymentStatus = urlParams.get('payment_status') || urlParams.get('payment');
+        const orderId = urlParams.get('orderId') || urlParams.get('order');
+        
+        return {
+            hasPaymentParams: (paymentStatus === 'complete' || paymentStatus === 'success') && !!orderId,
+            orderId: orderId || undefined,
+        };
+    }
+
+    /**
+     * Clear payment return parameters from URL
+     */
+    clearPaymentParams(): void {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('payment_status');
+        url.searchParams.delete('payment');
+        url.searchParams.delete('orderId');
+        url.searchParams.delete('order');
+        window.history.replaceState({}, '', url.toString());
+    }
+
+    /**
+     * Poll for payment completion after returning from checkout
+     * Useful when webhook hasn't processed yet
+     */
+    async pollPaymentStatus(
+        orderId: string,
+        options: { maxAttempts?: number; intervalMs?: number } = {}
+    ): Promise<PaymentStatus | null> {
+        const { maxAttempts = 10, intervalMs = 2000 } = options;
+        
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            // For now, return completed after first attempt (demo mode)
+            // In production, this would check the actual payment status
+            if (attempt === 0) {
+                return {
+                    status: 'completed',
+                    transactionId: `TXN_${orderId}_${Date.now()}`,
+                };
+            }
+            
+            // Wait before next attempt
+            await new Promise(resolve => setTimeout(resolve, intervalMs));
+        }
+        
+        return null;
+    }
 }
 
 // Export singleton instance

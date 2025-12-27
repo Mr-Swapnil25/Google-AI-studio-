@@ -64,12 +64,12 @@ export const IncomingCallOverlay: React.FC<IncomingCallOverlayProps> = ({
       <div className="relative z-10 w-full max-w-sm animate-[pulse_2s_ease-in-out_infinite]">
         {/* Pulsing Ring Animation */}
         <div className="absolute inset-0 -m-4">
-          <div className="absolute inset-0 bg-[#2E7D32]/20 rounded-3xl animate-ping" />
-          <div className="absolute inset-0 bg-[#2E7D32]/10 rounded-3xl animate-pulse" />
+          <div className="absolute inset-0 bg-[#2E7D32]/20 rounded-2xl animate-ping" />
+          <div className="absolute inset-0 bg-[#2E7D32]/10 rounded-2xl animate-pulse" />
         </div>
 
         {/* Main Card */}
-        <div className="relative bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 shadow-2xl">
+        <div className="relative bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-8 shadow-2xl">
           {/* Call Icon with Animation */}
           <div className="flex justify-center mb-6">
             <div className="relative">

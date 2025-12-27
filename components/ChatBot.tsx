@@ -39,13 +39,13 @@ export const ChatBot = ({ isOpen, onClose, messages, onSendMessage, isLoading }:
     return (
         <>
             {/* Overlay */}
-            <div className="fixed inset-0 bg-black bg-opacity-25 z-30" onClick={onClose} />
+            <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-30" onClick={onClose} />
             
             {/* Chat Window */}
             <div className="fixed bottom-24 right-4 sm:right-6 lg:right-8 z-40" aria-modal="true" role="dialog" aria-labelledby="chatbot-title">
-                <div className="bg-white rounded-2xl shadow-xl w-[calc(100vw-2rem)] sm:w-96 h-[60vh] flex flex-col font-sans animate-slide-in-up" style={{ animationDuration: '300ms' }}>
+                <div className="bg-white/70 backdrop-blur-lg rounded-2xl shadow-xl w-[calc(100vw-2rem)] sm:w-96 h-[60vh] flex flex-col font-sans animate-slide-in-up border border-white/40" style={{ animationDuration: '300ms' }}>
                     {/* Header */}
-                    <header className="flex items-center justify-between p-4 border-b bg-stone-50 rounded-t-2xl">
+                    <header className="flex items-center justify-between p-4 border-b border-white/30 bg-white/50 backdrop-blur-sm rounded-t-2xl">
                         <div className="flex items-center space-x-2">
                              <SparklesIcon className="h-6 w-6 text-primary" />
                             <h2 id="chatbot-title" className="text-lg font-bold font-heading text-stone-800">Anna Helper</h2>

@@ -281,13 +281,13 @@ export const NegotiationChat: React.FC<NegotiationChatProps> = ({
                                             <div className="flex gap-2">
                                                 <button 
                                                     onClick={() => onRespond(selectedNegotiation.id, 'Rejected')}
-                                                    className="px-4 py-2 rounded-lg border-2 border-[#e0e0e0] font-bold text-[#5e7c8d] hover:bg-gray-50 text-sm"
+                                                    className="px-4 py-2 rounded-2xl border-2 border-[#e0e0e0] font-bold text-[#5e7c8d] hover:bg-gray-50 text-sm"
                                                 >
                                                     Decline
                                                 </button>
                                                 <button 
                                                     onClick={() => onCounter(selectedNegotiation)}
-                                                    className="px-4 py-2 rounded-lg bg-orange-100 text-orange-800 font-bold hover:bg-orange-200 border border-orange-200 text-sm"
+                                                    className="px-4 py-2 rounded-2xl bg-orange-100 text-orange-800 font-bold hover:bg-orange-200 border border-orange-200 text-sm"
                                                 >
                                                     Counter
                                                 </button>

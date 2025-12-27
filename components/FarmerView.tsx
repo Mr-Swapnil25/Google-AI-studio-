@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Farmer, FarmerDashboardWeather, MarketRate, Negotiation, ProductCategory, NegotiationStatus, Product, ProductType, ChatMessage, User, CallStatus } from '../types';
 import { generateProductDetails } from '../services/geminiService';
 import { XIcon, LoaderIcon, PlusIcon } from './icons';
@@ -121,9 +121,9 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
         return () => unsub();
     }, [buyerIdsInOffers]);
 
-    // ═══════════════════════════════════════════════════════════════════════════════
+    // -------------------------------------------------------------------------------
     // INCOMING CALL LISTENER
-    // ═══════════════════════════════════════════════════════════════════════════════
+    // -------------------------------------------------------------------------------
     useEffect(() => {
         if (!currentUserId) return;
         
@@ -299,7 +299,7 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
     };
 
     const inputClasses = (hasError: boolean) =>
-        `mt-1 block w-full rounded-lg bg-[#fcfaf8] border text-[#1c160d] sm:text-sm px-3 py-2.5 focus:border-[#f9a824] focus:ring-2 focus:ring-[#f9a824]/50 ${hasError ? 'border-red-500' : 'border-[#e9dece]'
+        `mt-1 block w-full rounded-2xl bg-[#fcfaf8] border text-[#1c160d] sm:text-sm px-3 py-2.5 focus:border-[#f9a824] focus:ring-2 focus:ring-[#f9a824]/50 ${hasError ? 'border-red-500' : 'border-[#e9dece]'
         }`;
 
     const navItems = [
@@ -418,7 +418,7 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                     <div className="flex flex-col gap-6 sm:gap-10 min-h-full">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3 sm:gap-4 group">
-                                <div className="relative flex items-center justify-center h-10 w-10 sm:h-14 sm:w-14 rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary to-primary-dark text-white shadow-card transition-transform group-hover:scale-105">
+                                <div className="relative flex items-center justify-center h-10 w-10 sm:h-14 sm:w-14 rounded-2xl sm:rounded-2xl bg-gradient-to-br from-primary to-primary-dark text-white shadow-card transition-transform group-hover:scale-105">
                                     <span className="material-symbols-outlined text-2xl sm:text-4xl">agriculture</span>
                                     <div className="absolute inset-0 rounded-2xl bg-white/20 blur-sm opacity-0 group-hover:opacity-100 transition-opacity"></div>
                                 </div>
@@ -436,8 +436,8 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                             </button>
                         </div>
 
-                        <div className="rounded-3xl p-[1px] bg-gradient-to-br from-white/80 to-white/20">
-                            <div className="flex items-center gap-4 p-4 rounded-3xl bg-white/40 backdrop-blur-xl">
+                        <div className="rounded-2xl p-[1px] bg-gradient-to-br from-white/80 to-white/20">
+                            <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/40 backdrop-blur-xl">
                                 <div className="relative">
                                     <div
                                         className="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-16 w-16 ring-2 ring-white shadow-lg flex items-center justify-center font-bold text-primary"
@@ -491,14 +491,14 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                         </nav>
 
                         <div className="mt-auto flex flex-col gap-3">
-                            <button className="w-full py-3 px-4 rounded-xl bg-gray-100 text-gray-700 font-medium flex items-center justify-center gap-2 hover:bg-gray-200 transition-all text-sm">
+                            <button className="w-full py-3 px-4 rounded-2xl bg-gray-100 text-gray-700 font-medium flex items-center justify-center gap-2 hover:bg-gray-200 transition-all text-sm">
                                 <span className="material-symbols-outlined text-xl">headset_mic</span>
                                 <span>Help & Support</span>
                             </button>
                             {onLogout && (
                                 <button 
                                     onClick={onLogout}
-                                    className="w-full h-11 px-4 rounded-xl text-red-600 bg-red-50 hover:bg-red-100 font-medium flex items-center justify-center gap-2 transition-all text-sm"
+                                    className="w-full h-11 px-4 rounded-2xl text-red-600 bg-red-50 hover:bg-red-100 font-medium flex items-center justify-center gap-2 transition-all text-sm"
                                 >
                                     <span className="material-symbols-outlined text-xl">logout</span>
                                     <span>Sign Out</span>
@@ -519,7 +519,7 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                         <div className="flex flex-col gap-1 sm:gap-2 relative">
                             <div className="absolute -left-10 -top-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
                             <div className="flex items-center gap-2 sm:gap-3">
-                                <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white/60 backdrop-blur-md text-stone-900 shadow-card border border-white/50">
+                                <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2 sm:p-3 rounded-2xl sm:rounded-2xl bg-white/60 backdrop-blur-md text-stone-900 shadow-card border border-white/50">
                                     <span className="material-symbols-outlined text-xl sm:text-2xl lg:text-3xl">menu</span>
                                 </button>
                                 <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-display font-bold text-stone-900 tracking-tight">
@@ -537,7 +537,7 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                         <div className="flex items-center gap-2 sm:gap-4">
                             <button
                                 onClick={() => setShowUploadPage(true)}
-                                className="relative group overflow-hidden px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 lg:py-4 rounded-xl sm:rounded-full bg-gradient-to-r from-primary to-primary-light text-white shadow-card transition-all duration-300 hover:-translate-y-0.5"
+                                className="relative group overflow-hidden px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 lg:py-4 rounded-2xl sm:rounded-full bg-gradient-to-r from-primary to-primary-light text-white shadow-card transition-all duration-300 hover:-translate-y-0.5"
                             >
                                 <div className="absolute inset-0 bg-white/20 group-hover:translate-x-full transition-transform duration-700 ease-in-out skew-x-12 -translate-x-full"></div>
                                 <div className="flex items-center gap-2 sm:gap-3 relative z-10">
@@ -608,16 +608,16 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                                                         <div>
                                                             <p className="text-sm font-bold text-stone-500">{rate.crop}</p>
                                                             <p className="mt-2 text-3xl font-extrabold text-stone-900">
-                                                                ₹{Math.round(rate.pricePerQuintal).toLocaleString()}
+                                                                ?{Math.round(rate.pricePerQuintal).toLocaleString()}
                                                                 <span className="text-sm font-bold text-stone-400">/q</span>
                                                             </p>
                                                         </div>
-                                                        <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${iconBoxClass}`}>
+                                                        <div className={`h-10 w-10 rounded-2xl flex items-center justify-center ${iconBoxClass}`}>
                                                             <span className="material-symbols-outlined">{icon}</span>
                                                         </div>
                                                     </div>
 
-                                                    <div className={`mt-4 w-full py-2 rounded-xl border text-center text-sm font-bold ${badgeClass}`}>
+                                                    <div className={`mt-4 w-full py-2 rounded-2xl border text-center text-sm font-bold ${badgeClass}`}>
                                                         {statusLabel}
                                                     </div>
                                                 </div>
@@ -650,7 +650,7 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                                                     <span className="px-4 py-1.5 rounded-full bg-white/60 border border-white/70 text-stone-800 text-sm font-bold uppercase tracking-wider backdrop-blur-sm shadow-soft">
                                                         {offer.status === NegotiationStatus.Pending ? 'New Offer' : 'In Negotiation'}
                                                     </span>
-                                                    <div className="flex items-center gap-2 text-stone-900 font-mono font-bold bg-white/60 px-3 py-1 rounded-lg">
+                                                    <div className="flex items-center gap-2 text-stone-900 font-mono font-bold bg-white/60 px-3 py-1 rounded-2xl">
                                                         <span className="material-symbols-outlined text-lg">schedule</span>
                                                         <span>
                                                             {(() => {
@@ -669,11 +669,11 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                                                         </h4>
                                                         <p className="text-lg font-medium text-stone-500 flex items-center gap-1">
                                                             <span className="material-symbols-outlined text-base">location_on</span>
-                                                            {buyerProfiles[offer.buyerId]?.location || '—'}
+                                                            {buyerProfiles[offer.buyerId]?.location || '�'}
                                                         </p>
                                                     </div>
 
-                                                    <div className="flex items-center gap-6 bg-white/40 p-4 rounded-3xl border border-white/60">
+                                                    <div className="flex items-center gap-6 bg-white/40 p-4 rounded-2xl border border-white/60">
                                                         <div className="h-20 w-20 bg-accent/20 rounded-2xl flex items-center justify-center shadow-inner">
                                                             <span className="material-symbols-outlined text-accent text-5xl">agriculture</span>
                                                         </div>
@@ -683,7 +683,7 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                                                         </div>
                                                         <div className="ml-auto text-right">
                                                             <span className="block text-xs font-bold uppercase text-stone-400 tracking-wider mb-1">Offer Price</span>
-                                                            <span className="block text-4xl font-display font-bold text-primary">₹{Math.round(offer.offeredPrice).toLocaleString()}</span>
+                                                            <span className="block text-4xl font-display font-bold text-primary">?{Math.round(offer.offeredPrice).toLocaleString()}</span>
                                                             <span className="text-sm font-bold text-stone-400">/quintal</span>
                                                         </div>
                                                     </div>
@@ -733,7 +733,7 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                             <div className="flex flex-col gap-6">
                                 <div className="flex flex-wrap items-end justify-between gap-4">
                                     <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-primary/10 rounded-xl text-primary">
+                                        <div className="p-2 bg-primary/10 rounded-2xl text-primary">
                                             <span className="material-symbols-outlined text-3xl">storefront</span>
                                         </div>
                                         <h3 className="text-2xl font-display font-bold text-stone-900">Your Active Listings</h3>
@@ -741,13 +741,13 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                                     <div className="flex gap-3">
                                         <button
                                             onClick={() => showToast('Filter feature coming soon!', 'info')}
-                                            className="px-6 py-3 bg-white/50 backdrop-blur-xl rounded-xl text-lg font-bold shadow-soft hover:bg-white text-stone-600 transition-colors border border-white/60"
+                                            className="px-6 py-3 bg-white/50 backdrop-blur-xl rounded-2xl text-lg font-bold shadow-soft hover:bg-white text-stone-600 transition-colors border border-white/60"
                                         >
                                             Filter
                                         </button>
                                         <button
                                             onClick={() => showToast('Sort feature coming soon!', 'info')}
-                                            className="px-6 py-3 bg-white/50 backdrop-blur-xl rounded-xl text-lg font-bold shadow-soft hover:bg-white text-stone-600 transition-colors border border-white/60"
+                                            className="px-6 py-3 bg-white/50 backdrop-blur-xl rounded-2xl text-lg font-bold shadow-soft hover:bg-white text-stone-600 transition-colors border border-white/60"
                                         >
                                             Sort by Date
                                         </button>
@@ -792,14 +792,14 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                                                         <div className="h-10 w-px bg-stone-300"></div>
                                                         <div className="flex flex-col text-right">
                                                             <span className="text-xs text-stone-500 font-bold uppercase tracking-wide">Ask Price</span>
-                                                            <span className="text-2xl font-black text-primary">₹{Math.round(product.price).toLocaleString()}<span className="text-base font-medium text-stone-500">/q</span></span>
+                                                            <span className="text-2xl font-black text-primary">?{Math.round(product.price).toLocaleString()}<span className="text-base font-medium text-stone-500">/q</span></span>
                                                         </div>
                                                     </div>
 
                                                     <div className="flex gap-3 mt-auto">
                                                         <button
                                                             onClick={() => handleOpenEditModal(product)}
-                                                            className="flex-1 py-3.5 rounded-xl border-2 border-stone-200 font-bold text-lg text-stone-600 hover:bg-white hover:border-stone-300 transition-colors"
+                                                            className="flex-1 py-3.5 rounded-2xl border-2 border-stone-200 font-bold text-lg text-stone-600 hover:bg-white hover:border-stone-300 transition-colors"
                                                         >
                                                             Edit
                                                         </button>
@@ -808,10 +808,10 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                                                                 if (productOffers[0]) handleOpenNegotiationChat(productOffers[0].id);
                                                                 else handleOpenNegotiationChat();
                                                             }}
-                                                            className="flex-1 py-3.5 rounded-xl bg-stone-900 text-white font-bold text-lg shadow-card hover:bg-stone-800 transition-all flex items-center justify-center gap-2"
+                                                            className="flex-1 py-3.5 rounded-2xl bg-stone-900 text-white font-bold text-lg shadow-card hover:bg-stone-800 transition-all flex items-center justify-center gap-2"
                                                         >
                                                             Offers
-                                                            <span className="bg-white text-stone-900 text-xs px-1.5 py-0.5 rounded-md font-bold">{offersCount}</span>
+                                                            <span className="bg-white text-stone-900 text-xs px-1.5 py-0.5 rounded-2xl font-bold">{offersCount}</span>
                                                         </button>
                                                     </div>
                                                 </div>
@@ -838,7 +838,7 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
 
                                 {myProducts.length === 0 && (
                                     <div className="bg-white/50 backdrop-blur-xl border border-white/60 rounded-[2rem] p-10 text-center shadow-card">
-                                        <p className="text-stone-600 font-medium">You haven’t listed any crops yet.</p>
+                                        <p className="text-stone-600 font-medium">You haven�t listed any crops yet.</p>
                                         <button
                                             onClick={() => setShowUploadPage(true)}
                                             className="mt-4 px-6 py-3 rounded-full bg-gradient-to-r from-primary to-primary-light text-white font-bold"
@@ -864,7 +864,7 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
 
                         <div className="p-6">
                             {/* B2B Bulk Platform Notice */}
-                            <div className="flex items-center gap-3 mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                            <div className="flex items-center gap-3 mb-6 p-4 bg-blue-50 border border-blue-200 rounded-2xl">
                                 <span className="material-symbols-outlined text-blue-600">business</span>
                                 <div>
                                     <p className="font-bold text-blue-900">B2B Bulk Trading Platform</p>
@@ -874,7 +874,7 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
 
                             <form onSubmit={handleSubmit} className="space-y-6 relative">
                                 {(aiIsLoading || formIsSubmitting) && (
-                                    <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center rounded-lg z-20">
+                                    <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center rounded-2xl z-20">
                                         <LoaderIcon className="h-10 w-10 text-[#f9a824] animate-spin" />
                                         <p className="mt-3 text-[#1c160d] font-semibold text-lg">{formIsSubmitting ? 'Listing crop...' : 'Analyzing image...'}</p>
                                     </div>
@@ -883,14 +883,14 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                                 <div>
                                     <label className="block text-sm font-bold text-[#1c160d] mb-2">Crop Photo</label>
                                     {imagePreviewUrl ? (
-                                        <div className="relative group rounded-xl overflow-hidden border border-[#e9dece]">
+                                        <div className="relative group rounded-2xl overflow-hidden border border-[#e9dece]">
                                             <img src={imagePreviewUrl} alt="Preview" className="w-full h-64 object-cover" />
                                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                <button type="button" onClick={handleRemoveImage} className="bg-white text-red-600 px-4 py-2 rounded-lg font-bold text-sm hover:bg-red-50">Remove Photo</button>
+                                                <button type="button" onClick={handleRemoveImage} className="bg-white text-red-600 px-4 py-2 rounded-2xl font-bold text-sm hover:bg-red-50">Remove Photo</button>
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className={`border-2 border-dashed rounded-xl p-8 text-center hover:bg-[#f4efe6] transition-colors ${formErrors.image && touched.image ? 'border-red-500 bg-red-50/50' : 'border-[#e9dece]'}`}>
+                                        <div className={`border-2 border-dashed rounded-2xl p-8 text-center hover:bg-[#f4efe6] transition-colors ${formErrors.image && touched.image ? 'border-red-500 bg-red-50/50' : 'border-[#e9dece]'}`}>
                                             <div className="space-y-2">
                                                 <div className="mx-auto h-12 w-12 text-[#4e4639] bg-[#f4efe6] rounded-full flex items-center justify-center">
                                                     <PlusIcon className="h-6 w-6" />
@@ -925,10 +925,10 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
-                                        <label className="block text-sm font-bold text-[#1c160d] mb-1">Asking Price (₹ / Qtl)</label>
+                                        <label className="block text-sm font-bold text-[#1c160d] mb-1">Asking Price (? / Qtl)</label>
                                         <div className="relative">
                                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <span className="text-[#4e4639] sm:text-sm">₹</span>
+                                                <span className="text-[#4e4639] sm:text-sm">?</span>
                                             </div>
                                             <input type="number" name="price" placeholder="0" value={newProductForm.price} onChange={handleInputChange} onBlur={handleInputBlur} className={`${inputClasses(!!(formErrors.price && touched.price))} pl-7`} />
                                         </div>
@@ -948,8 +948,8 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                                 </div>
 
                                 <div className="pt-4 flex items-center justify-end space-x-4">
-                                    <button type="button" onClick={() => setIsAddModalOpen(false)} className="px-6 py-3 rounded-xl font-bold text-[#4e4639] hover:bg-[#f4efe6] transition-colors">Cancel</button>
-                                    <button type="submit" disabled={formIsSubmitting} className="px-8 py-3 rounded-xl font-bold text-[#1c160d] bg-[#F9A825] hover:bg-[#f9a824] shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5 disabled:bg-[#e9dece] disabled:transform-none disabled:shadow-none">
+                                    <button type="button" onClick={() => setIsAddModalOpen(false)} className="px-6 py-3 rounded-2xl font-bold text-[#4e4639] hover:bg-[#f4efe6] transition-colors">Cancel</button>
+                                    <button type="submit" disabled={formIsSubmitting} className="px-8 py-3 rounded-2xl font-bold text-[#1c160d] bg-[#F9A825] hover:bg-[#f9a824] shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5 disabled:bg-[#e9dece] disabled:transform-none disabled:shadow-none">
                                         List Crop
                                     </button>
                                 </div>
@@ -974,7 +974,7 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-bold text-[#1c160d] mb-1">Price (₹)</label>
+                                    <label className="block text-sm font-bold text-[#1c160d] mb-1">Price (?)</label>
                                     <input type="number" name="price" value={editForm.price} onChange={handleEditInputChange} onBlur={handleEditInputBlur} className={inputClasses(!!(editFormErrors.price && editTouched.price))} />
                                 </div>
                                 <div>
@@ -987,8 +987,8 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                                 <textarea name="description" rows={4} value={editForm.description} onChange={handleEditInputChange} onBlur={handleEditInputBlur} className={inputClasses(!!(editFormErrors.description && editTouched.description))}></textarea>
                             </div>
                             <div className="flex justify-end space-x-3 pt-4">
-                                <button type="button" onClick={handleCloseEditModal} className="bg-[#f4efe6] text-[#1c160d] px-4 py-2 rounded-lg font-bold hover:bg-[#e9dece] transition-colors">Cancel</button>
-                                <button type="submit" className="px-6 py-2 rounded-lg font-bold transition-colors bg-[#F9A825] text-[#1c160d] hover:bg-[#f9a824]">Save Changes</button>
+                                <button type="button" onClick={handleCloseEditModal} className="bg-[#f4efe6] text-[#1c160d] px-4 py-2 rounded-2xl font-bold hover:bg-[#e9dece] transition-colors">Cancel</button>
+                                <button type="submit" className="px-6 py-2 rounded-2xl font-bold transition-colors bg-[#F9A825] text-[#1c160d] hover:bg-[#f9a824]">Save Changes</button>
                             </div>
                         </form>
                     </div>

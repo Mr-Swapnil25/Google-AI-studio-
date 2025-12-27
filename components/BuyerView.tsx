@@ -163,7 +163,7 @@ export const BuyerView = ({
                             <h1 className="text-lg sm:text-xl lg:text-2xl font-bold tracking-tight">Anna Bazaar</h1>
                         </div>
                         {/* Mobile Menu Button */}
-                        <button className="lg:hidden p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors">
+                        <button className="lg:hidden p-2 rounded-2xl bg-gray-100 hover:bg-gray-200 transition-colors">
                             <span className="material-symbols-outlined text-xl">menu</span>
                         </button>
                     </div>
@@ -171,7 +171,7 @@ export const BuyerView = ({
                     {/* Search & Location */}
                     <div className="flex flex-1 items-center gap-2 sm:gap-4 w-full max-w-3xl">
                         {/* Location Selector - Hidden on mobile */}
-                        <button className="hidden md:flex items-center gap-2 whitespace-nowrap bg-gray-100 hover:bg-gray-200 px-3 lg:px-4 h-10 lg:h-12 rounded-lg border border-gray-200 transition-colors">
+                        <button className="hidden md:flex items-center gap-2 whitespace-nowrap bg-gray-100 hover:bg-gray-200 px-3 lg:px-4 h-10 lg:h-12 rounded-2xl border border-gray-200 transition-colors">
                             <span className="material-symbols-outlined text-[#2f7f33]">location_on</span>
                             <div className="flex flex-col items-start leading-tight">
                                 <span className="text-xs text-gray-500 font-medium">Deliver to</span>
@@ -181,7 +181,7 @@ export const BuyerView = ({
                         </button>
 
                         {/* Search Bar */}
-                        <label className="flex w-full items-center h-10 sm:h-12 rounded-lg bg-gray-100 border border-gray-200 focus-within:border-[#2f7f33] focus-within:ring-2 focus-within:ring-[#2f7f33]/20 overflow-hidden transition-all shadow-sm">
+                        <label className="flex w-full items-center h-10 sm:h-12 rounded-2xl bg-gray-100 border border-gray-200 focus-within:border-[#2f7f33] focus-within:ring-2 focus-within:ring-[#2f7f33]/20 overflow-hidden transition-all shadow-sm">
                             <div className="flex items-center justify-center pl-3 sm:pl-4 text-gray-500">
                                 <span className="material-symbols-outlined text-xl sm:text-2xl">search</span>
                             </div>
@@ -233,7 +233,7 @@ export const BuyerView = ({
                             {/* Logout Button */}
                             <button 
                                 onClick={onLogout}
-                                className="flex items-center gap-2 px-3 h-10 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
+                                className="flex items-center gap-2 px-3 h-10 rounded-2xl text-red-600 hover:bg-red-50 transition-colors"
                             >
                                 <span className="material-symbols-outlined text-xl">logout</span>
                                 <span className="text-sm font-medium">Logout</span>
@@ -265,7 +265,7 @@ export const BuyerView = ({
                         </div>
 
                         {/* B2B Platform Notice */}
-                        <div className="mb-4 p-2.5 bg-blue-50 rounded-lg border border-blue-200">
+                        <div className="mb-4 p-2.5 bg-blue-50 rounded-2xl border border-blue-200">
                             <div className="flex items-center gap-2 text-blue-700 text-xs font-medium">
                                 <span className="material-symbols-outlined text-sm">business</span>
                                 B2B Bulk Platform
@@ -278,7 +278,7 @@ export const BuyerView = ({
                             <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Category</h3>
                             <div className="space-y-1">
                                 {Object.values(ProductCategory).map(cat => (
-                                    <label key={cat} className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 cursor-pointer text-sm">
+                                    <label key={cat} className="flex items-center gap-2 p-2 rounded-2xl hover:bg-gray-50 cursor-pointer text-sm">
                                         <input 
                                             type="checkbox" 
                                             checked={filterCategory === cat}
@@ -303,14 +303,14 @@ export const BuyerView = ({
                                     value={priceRange.min}
                                     onChange={(e) => setPriceRange(prev => ({ ...prev, min: Number(e.target.value) }))}
                                     placeholder="Min"
-                                    className="w-full bg-gray-50 border border-gray-200 rounded-lg text-gray-900 text-sm py-2 px-2"
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-2xl text-gray-900 text-sm py-2 px-2"
                                 />
                                 <input 
                                     type="number" 
                                     value={priceRange.max}
                                     onChange={(e) => setPriceRange(prev => ({ ...prev, max: Number(e.target.value) }))}
                                     placeholder="Max"
-                                    className="w-full bg-gray-50 border border-gray-200 rounded-lg text-gray-900 text-sm py-2 px-2"
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-2xl text-gray-900 text-sm py-2 px-2"
                                 />
                             </div>
                         </div>
@@ -319,7 +319,7 @@ export const BuyerView = ({
                         <div className="mb-6">
                             <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">AI Grade</h3>
                             <div className="flex gap-2">
-                                <label className={`flex-1 flex items-center justify-center gap-1 p-2 rounded-lg cursor-pointer border text-sm transition-all ${selectedGrades.includes('A') ? 'bg-green-50 border-green-300 text-green-700' : 'bg-gray-50 border-gray-200 text-gray-500'}`}>
+                                <label className={`flex-1 flex items-center justify-center gap-1 p-2 rounded-2xl cursor-pointer border text-sm transition-all ${selectedGrades.includes('A') ? 'bg-green-50 border-green-300 text-green-700' : 'bg-gray-50 border-gray-200 text-gray-500'}`}>
                                     <input 
                                         type="checkbox" 
                                         checked={selectedGrades.includes('A')}
@@ -329,7 +329,7 @@ export const BuyerView = ({
                                     <span className="material-symbols-outlined text-sm">verified</span>
                                     <span className="font-medium">A</span>
                                 </label>
-                                <label className={`flex-1 flex items-center justify-center gap-1 p-2 rounded-lg cursor-pointer border text-sm transition-all ${selectedGrades.includes('B') ? 'bg-yellow-50 border-yellow-300 text-yellow-700' : 'bg-gray-50 border-gray-200 text-gray-500'}`}>
+                                <label className={`flex-1 flex items-center justify-center gap-1 p-2 rounded-2xl cursor-pointer border text-sm transition-all ${selectedGrades.includes('B') ? 'bg-yellow-50 border-yellow-300 text-yellow-700' : 'bg-gray-50 border-gray-200 text-gray-500'}`}>
                                     <input 
                                         type="checkbox" 
                                         checked={selectedGrades.includes('B')}
@@ -347,7 +347,7 @@ export const BuyerView = ({
                     <div className="mt-auto p-3 border-t border-gray-100">
                         <button 
                             onClick={onLogout}
-                            className="w-full h-11 flex items-center justify-center gap-2 px-4 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg font-medium text-sm transition-colors"
+                            className="w-full h-11 flex items-center justify-center gap-2 px-4 text-red-600 bg-red-50 hover:bg-red-100 rounded-2xl font-medium text-sm transition-colors"
                         >
                             <span className="material-symbols-outlined text-xl">logout</span>
                             <span>Sign Out</span>
@@ -384,7 +384,7 @@ export const BuyerView = ({
                             </h2>
                             <p className="text-sm text-gray-500">Found {displayedProducts.length} listings</p>
                         </div>
-                        <div className="flex items-center gap-2 bg-white border border-gray-200 p-1 rounded-lg">
+                        <div className="flex items-center gap-2 bg-white border border-gray-200 p-1 rounded-2xl">
                             <span className="text-sm px-3 text-gray-500">Sort by:</span>
                             <select 
                                 value={sortOrder}
@@ -419,7 +419,7 @@ export const BuyerView = ({
                                 <div 
                                     key={product.id}
                                     onClick={() => setSelectedProduct(product)}
-                                    className="group relative bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-200 hover:border-[#2f7f33]/50 flex flex-col cursor-pointer"
+                                    className="group relative bg-white/70 backdrop-blur-md rounded-3xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-white/40 hover:border-[#2f7f33]/50 flex flex-col cursor-pointer"
                                 >
                                     <div className="relative aspect-[4/3] w-full bg-gray-100 overflow-hidden">
                                         <img 
@@ -485,7 +485,7 @@ export const BuyerView = ({
                                                             e.stopPropagation(); 
                                                             onAddToCart(product, 100); // Add 1 quintal (100kg) 
                                                         }}
-                                                        className={`w-full h-10 rounded-lg font-bold transition-all flex items-center justify-center gap-2 ${
+                                                        className={`w-full h-10 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 ${
                                                             isInCart 
                                                                 ? 'bg-green-100 text-green-700 hover:bg-green-200 border-2 border-green-300' 
                                                                 : 'bg-[#2f7f33] text-white hover:bg-[#256629]'
@@ -499,7 +499,7 @@ export const BuyerView = ({
                                             {/* B2B Platform - Negotiation option */}
                                             <button 
                                                 onClick={(e) => { e.stopPropagation(); onStartNegotiation(product); }}
-                                                className="w-full h-10 rounded-lg border-2 border-[#2f7f33] text-[#2f7f33] font-bold hover:bg-[#2f7f33] hover:text-white transition-all flex items-center justify-center gap-2 group/btn"
+                                                className="w-full h-10 rounded-2xl border-2 border-[#2f7f33] text-[#2f7f33] font-bold hover:bg-[#2f7f33] hover:text-white transition-all flex items-center justify-center gap-2 group/btn"
                                             >
                                                 Negotiate Price
                                                 <span className="material-symbols-outlined text-lg group-hover/btn:translate-x-1 transition-transform">arrow_forward</span>
@@ -522,7 +522,7 @@ export const BuyerView = ({
                     {/* Load More */}
                     {displayedProducts.length > 0 && (
                         <div className="flex justify-center mt-12 mb-8">
-                            <button className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl font-bold text-[#2f7f33] transition-colors shadow-sm">
+                            <button className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 hover:bg-gray-50 rounded-2xl font-bold text-[#2f7f33] transition-colors shadow-sm">
                                 <span className="material-symbols-outlined">autorenew</span>
                                 Load More Listings
                             </button>
@@ -555,13 +555,13 @@ export const BuyerView = ({
                                 negotiations.map(neg => (
                                     <div 
                                         key={neg.id}
-                                        className="bg-gray-50 rounded-xl p-4 border border-gray-200"
+                                        className="bg-gray-50 rounded-2xl p-4 border border-gray-200"
                                     >
                                         <div className="flex gap-4">
                                             <img 
                                                 src={neg.productImageUrl} 
                                                 alt={neg.productName}
-                                                className="w-20 h-20 rounded-lg object-cover"
+                                                className="w-20 h-20 rounded-2xl object-cover"
                                             />
                                             <div className="flex-1">
                                                 <h3 className="font-bold text-lg text-gray-900">{neg.productName}</h3>
@@ -598,7 +598,7 @@ export const BuyerView = ({
                                         <div className="mt-4 flex gap-2">
                                             <button 
                                                 onClick={() => setActiveNegotiationId(neg.id)}
-                                                className="flex-1 py-2 rounded-lg bg-gray-200 text-gray-700 font-bold hover:bg-gray-300 transition-colors flex items-center justify-center gap-2"
+                                                className="flex-1 py-2 rounded-2xl bg-gray-200 text-gray-700 font-bold hover:bg-gray-300 transition-colors flex items-center justify-center gap-2"
                                             >
                                                 <span className="material-symbols-outlined text-lg">chat</span>
                                                 Chat
@@ -607,13 +607,13 @@ export const BuyerView = ({
                                                 <>
                                                     <button 
                                                         onClick={() => onRespondToCounter(neg.id, 'Accepted')}
-                                                        className="py-2 px-4 rounded-lg bg-green-600 text-white font-bold hover:bg-green-700 transition-colors"
+                                                        className="py-2 px-4 rounded-2xl bg-green-600 text-white font-bold hover:bg-green-700 transition-colors"
                                                     >
                                                         Accept
                                                     </button>
                                                     <button 
                                                         onClick={() => onRespondToCounter(neg.id, 'Rejected')}
-                                                        className="py-2 px-4 rounded-lg bg-red-600 text-white font-bold hover:bg-red-700 transition-colors"
+                                                        className="py-2 px-4 rounded-2xl bg-red-600 text-white font-bold hover:bg-red-700 transition-colors"
                                                     >
                                                         Reject
                                                     </button>

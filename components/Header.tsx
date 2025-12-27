@@ -25,7 +25,7 @@ const UserMenu = ({ user, onLogout }: { user: User, onLogout: () => void }) => {
                 <>
                     <div className="fixed inset-0 z-30" onClick={() => setIsOpen(false)}></div>
                     <div 
-                        className="origin-top-right absolute right-0 mt-2 w-56 rounded-lg shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-40 animate-fade-in border border-gray-100" 
+                        className="origin-top-right absolute right-0 mt-2 w-56 rounded-2xl shadow-lg py-1 bg-white/80 backdrop-blur-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-40 animate-fade-in border border-white/40" 
                         role="menu" 
                         aria-orientation="vertical"
                     >
@@ -116,7 +116,7 @@ const MobileMenu = ({ user, onLogout, cartItemCount, onCartClick, onClose }: Hea
                 <div className="p-4 border-t border-gray-100">
                     <button
                         onClick={() => { onLogout(); onClose(); }}
-                        className="w-full h-11 flex items-center justify-center gap-2 px-4 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg font-medium text-sm transition-colors"
+                        className="w-full h-11 flex items-center justify-center gap-2 px-4 text-red-600 bg-red-50 hover:bg-red-100 rounded-2xl font-medium text-sm transition-colors"
                     >
                        <LogoutIcon className="w-5 h-5" />
                        <span>Sign Out</span>
@@ -157,7 +157,7 @@ export const Header = ({ user, onLogout, cartItemCount, onCartClick }: HeaderPro
                         {/* Center Section - Search (Buyer only, hidden on mobile) */}
                         {user.role === UserRole.Buyer && (
                             <div className="hidden md:flex flex-1 max-w-lg mx-8">
-                                <label className="flex w-full items-center h-10 rounded-lg bg-gray-50 border border-gray-200 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/20 overflow-hidden transition-all">
+                                <label className="flex w-full items-center h-10 rounded-2xl bg-gray-50 border border-gray-200 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/20 overflow-hidden transition-all">
                                     <div className="flex items-center justify-center pl-3 text-gray-400">
                                         <span className="material-symbols-outlined text-xl">search</span>
                                     </div>
@@ -175,7 +175,7 @@ export const Header = ({ user, onLogout, cartItemCount, onCartClick }: HeaderPro
                             {user.role === UserRole.Buyer && (
                                 <button 
                                     onClick={onCartClick} 
-                                    className="relative p-2 text-gray-600 hover:text-primary hover:bg-gray-50 rounded-lg transition-colors" 
+                                    className="relative p-2 text-gray-600 hover:text-primary hover:bg-gray-50 rounded-2xl transition-colors" 
                                     aria-label={`View cart with ${cartItemCount} items`}
                                 >
                                     <ShoppingCartIcon className="h-5 w-5"/>

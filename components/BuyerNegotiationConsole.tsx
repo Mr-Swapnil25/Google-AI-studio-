@@ -142,11 +142,11 @@ export const BuyerNegotiationConsole: React.FC<BuyerNegotiationConsoleProps> = (
             {/* Compact Header */}
             <header className="flex items-center justify-between px-4 py-2.5 bg-white border-b border-gray-200 shadow-sm">
                 <div className="flex items-center gap-3">
-                    <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-md transition-colors">
+                    <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-2xl transition-colors">
                         <span className="material-symbols-outlined text-xl text-gray-600">arrow_back</span>
                     </button>
                     <div className="flex items-center gap-2">
-                        <div className="size-8 rounded-lg bg-primary flex items-center justify-center text-white">
+                        <div className="size-8 rounded-2xl bg-primary flex items-center justify-center text-white">
                             <span className="material-symbols-outlined text-lg">handshake</span>
                         </div>
                         <div>
@@ -160,7 +160,7 @@ export const BuyerNegotiationConsole: React.FC<BuyerNegotiationConsoleProps> = (
                         <button
                             onClick={handleStartCall}
                             disabled={isStartingCall}
-                            className="flex items-center gap-1.5 px-3 h-9 rounded-md bg-primary hover:bg-primary-dark text-white text-xs font-semibold transition-colors disabled:opacity-50"
+                            className="flex items-center gap-1.5 px-3 h-9 rounded-2xl bg-primary hover:bg-primary-dark text-white text-xs font-semibold transition-colors disabled:opacity-50"
                         >
                             {isStartingCall ? (
                                 <div className="size-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -170,7 +170,7 @@ export const BuyerNegotiationConsole: React.FC<BuyerNegotiationConsoleProps> = (
                             <span className="hidden sm:inline">Call Farmer</span>
                         </button>
                     )}
-                    <button className="p-2 hover:bg-gray-100 rounded-md text-gray-500">
+                    <button className="p-2 hover:bg-gray-100 rounded-2xl text-gray-500">
                         <span className="material-symbols-outlined text-lg">help</span>
                     </button>
                 </div>
@@ -235,7 +235,7 @@ export const BuyerNegotiationConsole: React.FC<BuyerNegotiationConsoleProps> = (
                                     <div className={`size-6 rounded-full flex items-center justify-center text-xs font-medium shrink-0 ${isMe ? 'bg-primary text-white' : 'bg-gray-300 text-gray-700'}`}>
                                         {isMe ? 'Y' : 'F'}
                                     </div>
-                                    <div className={`px-3 py-2 rounded-lg text-sm ${isMe ? 'bg-primary/10 text-gray-900' : 'bg-white border border-gray-200'}`}>
+                                    <div className={`px-3 py-2 rounded-2xl text-sm ${isMe ? 'bg-primary/10 text-gray-900' : 'bg-white border border-gray-200'}`}>
                                         <p>{msg.text}</p>
                                         <span className="text-[10px] text-gray-400 mt-1 block">
                                             {new Date(msg.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
@@ -272,7 +272,7 @@ export const BuyerNegotiationConsole: React.FC<BuyerNegotiationConsoleProps> = (
                     <div className="p-3 border-t border-gray-200 bg-white">
                         <div className="flex gap-2">
                             <input
-                                className="flex-1 h-10 px-3 rounded-md border border-gray-200 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
+                                className="flex-1 h-10 px-3 rounded-2xl border border-gray-200 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
                                 placeholder={`Message ${farmer?.name || 'farmer'}...`}
                                 value={messageInput}
                                 onChange={(e) => setMessageInput(e.target.value)}
@@ -281,7 +281,7 @@ export const BuyerNegotiationConsole: React.FC<BuyerNegotiationConsoleProps> = (
                             <button
                                 onClick={handleSendMessage}
                                 disabled={!messageInput.trim()}
-                                className="h-10 px-4 bg-primary text-white rounded-md disabled:opacity-40 transition-opacity"
+                                className="h-10 px-4 bg-primary text-white rounded-2xl disabled:opacity-40 transition-opacity"
                             >
                                 <span className="material-symbols-outlined text-lg">send</span>
                             </button>
@@ -300,7 +300,7 @@ export const BuyerNegotiationConsole: React.FC<BuyerNegotiationConsoleProps> = (
                     <div className="flex-1 overflow-y-auto p-4 space-y-4">
                         {/* Fair Value Gauge */}
                         {priceBand && (
-                            <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                            <div className="p-3 bg-gray-50 rounded-2xl border border-gray-200">
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="text-xs font-medium text-gray-600">Market Band</span>
                                     {!priceBand.isVerified && (
@@ -332,7 +332,7 @@ export const BuyerNegotiationConsole: React.FC<BuyerNegotiationConsoleProps> = (
 
                         {/* Offer Classification */}
                         {offerClassification && (
-                            <div className={`p-2.5 rounded-md border ${
+                            <div className={`p-2.5 rounded-2xl border ${
                                 offerClassification.status === 'INVALID' ? 'bg-red-50 border-red-200' :
                                 offerClassification.status === 'LOW' ? 'bg-amber-50 border-amber-200' :
                                 offerClassification.status === 'FAIR' ? 'bg-green-50 border-green-200' :
@@ -362,7 +362,7 @@ export const BuyerNegotiationConsole: React.FC<BuyerNegotiationConsoleProps> = (
                                 {/* Price Input */}
                                 <div>
                                     <label className="text-xs text-gray-500 mb-1 block">Price (₹/kg)</label>
-                                    <div className={`flex items-center h-10 rounded-md border ${!isOfferValid ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-white'}`}>
+                                    <div className={`flex items-center h-10 rounded-2xl border ${!isOfferValid ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-white'}`}>
                                         <button
                                             onClick={() => setCounterPrice(Math.max(1, counterPrice - 1))}
                                             className="w-10 h-full flex items-center justify-center text-gray-500 hover:bg-gray-100"
@@ -387,7 +387,7 @@ export const BuyerNegotiationConsole: React.FC<BuyerNegotiationConsoleProps> = (
                                 {/* Quantity Input */}
                                 <div>
                                     <label className="text-xs text-gray-500 mb-1 block">Quantity (kg) - Min {MIN_BULK_QUANTITY_KG}</label>
-                                    <div className={`flex items-center h-10 rounded-md border ${!isQuantityValid ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-white'}`}>
+                                    <div className={`flex items-center h-10 rounded-2xl border ${!isQuantityValid ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-white'}`}>
                                         <button
                                             onClick={() => setCounterQuantity(Math.max(MIN_BULK_QUANTITY_KG, counterQuantity - 100))}
                                             className="w-10 h-full flex items-center justify-center text-gray-500 hover:bg-gray-100"
@@ -413,7 +413,7 @@ export const BuyerNegotiationConsole: React.FC<BuyerNegotiationConsoleProps> = (
                                 <button
                                     onClick={handleUpdateOffer}
                                     disabled={!canSubmitOffer}
-                                    className={`w-full h-10 rounded-md font-semibold text-sm transition-colors ${
+                                    className={`w-full h-10 rounded-2xl font-semibold text-sm transition-colors ${
                                         canSubmitOffer
                                             ? 'bg-accent text-gray-900 hover:bg-accent-dark'
                                             : 'bg-gray-200 text-gray-400 cursor-not-allowed'
@@ -476,7 +476,7 @@ export const BuyerNegotiationConsole: React.FC<BuyerNegotiationConsoleProps> = (
                     {/* Action Footer */}
                     <div className="p-4 border-t border-gray-200 bg-gray-50">
                         {isAgreement ? (
-                            <button className="w-full h-11 bg-primary hover:bg-primary-dark text-white rounded-md font-semibold text-sm transition-colors flex items-center justify-center gap-2">
+                            <button className="w-full h-11 bg-primary hover:bg-primary-dark text-white rounded-2xl font-semibold text-sm transition-colors flex items-center justify-center gap-2">
                                 <span className="material-symbols-outlined text-lg">payment</span>
                                 Pay ₹{formatPrice(finalTotal)}
                             </button>
@@ -484,7 +484,7 @@ export const BuyerNegotiationConsole: React.FC<BuyerNegotiationConsoleProps> = (
                             <button
                                 onClick={onAcceptOffer}
                                 disabled={isRejected}
-                                className="w-full h-11 bg-primary hover:bg-primary-dark disabled:bg-gray-300 text-white rounded-md font-semibold text-sm transition-colors disabled:cursor-not-allowed"
+                                className="w-full h-11 bg-primary hover:bg-primary-dark disabled:bg-gray-300 text-white rounded-2xl font-semibold text-sm transition-colors disabled:cursor-not-allowed"
                             >
                                 Accept ₹{counterPrice}/kg
                             </button>

@@ -70,7 +70,7 @@ export const CartView = ({ cart, cartTotal, onUpdateQuantity, onClose, currentUs
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
                     {/* Cart Items */}
-                    <div className="lg:col-span-2 bg-background-alt/80 backdrop-blur-sm p-6 rounded-xl shadow-sm border border-stone-200/80 space-y-4">
+                    <div className="lg:col-span-2 bg-white/70 backdrop-blur-md p-6 rounded-2xl shadow-lg border border-white/40 space-y-4">
                         <div className="flex justify-between border-b pb-2 mb-2 text-sm font-semibold text-stone-500">
                             <span>Product</span>
                             <div className="flex space-x-20">
@@ -81,7 +81,7 @@ export const CartView = ({ cart, cartTotal, onUpdateQuantity, onClose, currentUs
                         {cart.map(item => (
                             <div key={item.id} className="flex items-center justify-between">
                                 <div className="flex items-center space-x-4">
-                                    <img src={item.imageUrl} alt={item.name} className="w-24 h-24 rounded-lg object-cover" />
+                                    <img src={item.imageUrl} alt={item.name} className="w-24 h-24 rounded-2xl object-cover" />
                                     <div>
                                         <h3 className="font-bold font-heading text-lg text-stone-800">{item.name}</h3>
                                         <p className="text-stone-500 text-sm">₹{item.price.toFixed(2)} / unit</p>
@@ -91,10 +91,10 @@ export const CartView = ({ cart, cartTotal, onUpdateQuantity, onClose, currentUs
                                     </div>
                                 </div>
                                 <div className="flex items-center space-x-4">
-                                    <div className="flex items-center border rounded-full">
-                                        <button onClick={() => onUpdateQuantity(item.id, item.cartQuantity - 1)} className="px-3 py-1 text-lg font-bold text-stone-600 hover:bg-stone-100 rounded-l-full">-</button>
+                                    <div className="flex items-center border border-white/40 rounded-full bg-white/50 backdrop-blur-sm">
+                                        <button onClick={() => onUpdateQuantity(item.id, item.cartQuantity - 1)} className="px-3 py-1 text-lg font-bold text-stone-600 hover:bg-white/60 rounded-l-full">-</button>
                                         <span className="px-4 py-1 font-semibold w-12 text-center">{item.cartQuantity}</span>
-                                        <button onClick={() => onUpdateQuantity(item.id, item.cartQuantity + 1)} className="px-3 py-1 text-lg font-bold text-stone-600 hover:bg-stone-100 rounded-r-full">+</button>
+                                        <button onClick={() => onUpdateQuantity(item.id, item.cartQuantity + 1)} className="px-3 py-1 text-lg font-bold text-stone-600 hover:bg-white/60 rounded-r-full">+</button>
                                     </div>
                                     <p className="font-bold text-stone-800 w-24 text-right">₹{(item.price * item.cartQuantity).toFixed(2)}</p>
                                 </div>
@@ -104,7 +104,7 @@ export const CartView = ({ cart, cartTotal, onUpdateQuantity, onClose, currentUs
 
                     {/* Order Summary & Checkout */}
                     <div className="lg:col-span-1 space-y-6">
-                         <div className="bg-background-alt/80 backdrop-blur-sm p-6 rounded-xl shadow-sm border border-stone-200/80">
+                         <div className="bg-white/70 backdrop-blur-md p-6 rounded-2xl shadow-lg border border-white/40">
                             <h2 className="text-xl font-bold font-heading text-stone-800 border-b pb-3 mb-4">Order Summary</h2>
                             <div className="space-y-2 text-sm">
                                 <div className="flex justify-between text-stone-500"><span>Subtotal</span><span className="font-semibold text-stone-800">₹{cartTotal.toFixed(2)}</span></div>
@@ -114,19 +114,19 @@ export const CartView = ({ cart, cartTotal, onUpdateQuantity, onClose, currentUs
                             </div>
                         </div>
 
-                        <div className="bg-background-alt/80 backdrop-blur-sm p-6 rounded-xl shadow-sm border border-stone-200/80">
+                        <div className="bg-white/70 backdrop-blur-md p-6 rounded-2xl shadow-lg border border-white/40">
                             <h2 className="text-xl font-bold font-heading text-stone-800 mb-4">Delivery Information</h2>
                             <form className="space-y-4">
                                 <div>
                                     <label htmlFor="address" className="block text-sm font-medium text-stone-700">Street Address</label>
-                                    <input type="text" id="address" className="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/50 sm:text-sm" />
+                                    <input type="text" id="address" className="mt-1 block w-full rounded-xl border-stone-300 shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/50 sm:text-sm bg-white/90 backdrop-blur-sm" />
                                 </div>
                             </form>
                         </div>
                         
                         <button 
                             onClick={handleProceedToPayment}
-                            className="w-full bg-accent text-stone-900 py-3 rounded-full font-bold text-lg hover:bg-yellow-400 hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02]"
+                            className="w-full bg-accent text-stone-900 py-3 rounded-xl font-bold text-lg hover:bg-yellow-400 hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02]"
                         >
                             Proceed to Payment
                         </button>

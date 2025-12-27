@@ -293,7 +293,7 @@ export const FarmerWallet: React.FC<FarmerWalletProps> = ({ farmerId, onNavigate
               <button
                 key={item.id}
                 onClick={() => handleNavigation(item.id)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left font-medium ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all text-left font-medium ${
                   item.id === 'wallet'
                     ? 'bg-primary/90 text-white shadow-lg'
                     : 'text-slate-600 hover:bg-white/60 hover:text-slate-900'
@@ -332,7 +332,7 @@ export const FarmerWallet: React.FC<FarmerWalletProps> = ({ farmerId, onNavigate
               </div>
               <button
                 onClick={() => setDrawerOpen(false)}
-                className="p-2 hover:bg-slate-100 rounded-xl transition-colors"
+                className="p-2 hover:bg-slate-100 rounded-2xl transition-colors"
               >
                 <span className="material-symbols-outlined text-2xl text-slate-700">close</span>
               </button>
@@ -359,7 +359,7 @@ export const FarmerWallet: React.FC<FarmerWalletProps> = ({ farmerId, onNavigate
                 <button
                   key={item.id}
                   onClick={() => handleNavigation(item.id)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left font-medium w-full ${
+                  className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all text-left font-medium w-full ${
                     item.id === 'wallet'
                       ? 'bg-primary/90 text-white shadow-lg'
                       : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
@@ -373,7 +373,7 @@ export const FarmerWallet: React.FC<FarmerWalletProps> = ({ farmerId, onNavigate
 
             {/* Help Section */}
             <div className="pt-4">
-              <button className="w-full py-3 px-4 rounded-xl bg-slate-900 text-white font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition-colors">
+              <button className="w-full py-3 px-4 rounded-2xl bg-slate-900 text-white font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition-colors">
                 <span className="material-symbols-outlined">headset_mic</span>
                 <span>Help Support</span>
               </button>
@@ -388,7 +388,7 @@ export const FarmerWallet: React.FC<FarmerWalletProps> = ({ farmerId, onNavigate
             <h2 className="text-2xl font-bold text-slate-800">My Wallet</h2>
             <button
               onClick={() => setDrawerOpen(true)}
-              className="p-3 rounded-xl bg-white/60 backdrop-blur-md hover:bg-white/80 transition-colors shadow-sm border border-white/50"
+              className="p-3 rounded-2xl bg-white/60 backdrop-blur-md hover:bg-white/80 transition-colors shadow-sm border border-white/50"
             >
               <span className="material-symbols-outlined text-2xl text-slate-700">menu</span>
             </button>
@@ -430,7 +430,7 @@ export const FarmerWallet: React.FC<FarmerWalletProps> = ({ farmerId, onNavigate
                     disabled={isProcessing}
                   >
                     <div className="relative flex items-center justify-center gap-3 px-6 py-4 bg-white/95 group-hover:bg-white rounded-2xl transition-colors h-full">
-                      <div className="bg-blue-50 rounded-xl p-2.5 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-inner group-hover:shadow-glow">
+                      <div className="bg-blue-50 rounded-2xl p-2.5 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-inner group-hover:shadow-glow">
                         <span className="material-symbols-outlined text-2xl">upload</span>
                       </div>
                       <span className="text-lg font-bold text-slate-800 group-hover:text-blue-700">Withdraw</span>
@@ -443,7 +443,7 @@ export const FarmerWallet: React.FC<FarmerWalletProps> = ({ farmerId, onNavigate
                   >
                     <div className="absolute inset-0 bg-white/10 group-hover:bg-transparent transition-colors"></div>
                     <div className="relative flex items-center justify-center gap-3 px-6 py-4 h-full">
-                      <div className="bg-white/20 rounded-xl p-2.5 flex items-center justify-center backdrop-blur-md shadow-inner">
+                      <div className="bg-white/20 rounded-2xl p-2.5 flex items-center justify-center backdrop-blur-md shadow-inner">
                         <span className="material-symbols-outlined text-2xl">download</span>
                       </div>
                       <span className="text-lg font-bold">Top Up</span>
@@ -623,7 +623,7 @@ export const FarmerWallet: React.FC<FarmerWalletProps> = ({ farmerId, onNavigate
       {/* Withdrawal Modal */}
       {withdrawalModal.isOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
             <h2 className="text-2xl font-bold text-slate-800 mb-6">Withdraw Funds</h2>
             
             <div className="space-y-4">
@@ -634,7 +634,7 @@ export const FarmerWallet: React.FC<FarmerWalletProps> = ({ farmerId, onNavigate
                   value={withdrawalModal.amount || ''}
                   onChange={(e) => setWithdrawalModal({ ...withdrawalModal, amount: Number(e.target.value) })}
                   placeholder="Enter amount"
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-primary"
+                  className="w-full px-4 py-3 border border-slate-200 rounded-2xl focus:outline-none focus:border-primary"
                   disabled={isProcessing}
                 />
                 <p className="text-xs text-slate-500 mt-1">Available: {formatCurrency(wallet.balance)}</p>
@@ -647,7 +647,7 @@ export const FarmerWallet: React.FC<FarmerWalletProps> = ({ farmerId, onNavigate
                   value={withdrawalModal.accountNumber}
                   onChange={(e) => setWithdrawalModal({ ...withdrawalModal, accountNumber: e.target.value })}
                   placeholder="Enter account number"
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-primary"
+                  className="w-full px-4 py-3 border border-slate-200 rounded-2xl focus:outline-none focus:border-primary"
                   disabled={isProcessing}
                 />
               </div>
@@ -659,7 +659,7 @@ export const FarmerWallet: React.FC<FarmerWalletProps> = ({ farmerId, onNavigate
                   value={withdrawalModal.ifscCode}
                   onChange={(e) => setWithdrawalModal({ ...withdrawalModal, ifscCode: e.target.value })}
                   placeholder="Enter IFSC code"
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-primary"
+                  className="w-full px-4 py-3 border border-slate-200 rounded-2xl focus:outline-none focus:border-primary"
                   disabled={isProcessing}
                 />
               </div>
@@ -668,14 +668,14 @@ export const FarmerWallet: React.FC<FarmerWalletProps> = ({ farmerId, onNavigate
             <div className="flex gap-3 mt-8">
               <button
                 onClick={() => setWithdrawalModal({ isOpen: false, amount: 0, accountNumber: '', ifscCode: '' })}
-                className="flex-1 px-4 py-3 rounded-xl bg-slate-100 text-slate-800 font-bold hover:bg-slate-200 transition-colors disabled:opacity-50"
+                className="flex-1 px-4 py-3 rounded-2xl bg-slate-100 text-slate-800 font-bold hover:bg-slate-200 transition-colors disabled:opacity-50"
                 disabled={isProcessing}
               >
                 Cancel
               </button>
               <button
                 onClick={handleWithdrawal}
-                className="flex-1 px-4 py-3 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-3 rounded-2xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 disabled={isProcessing}
               >
                 {isProcessing && <span className="material-symbols-outlined text-lg animate-spin">loading</span>}
@@ -689,7 +689,7 @@ export const FarmerWallet: React.FC<FarmerWalletProps> = ({ farmerId, onNavigate
       {/* Top Up Modal */}
       {topUpModal.isOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
             <h2 className="text-2xl font-bold text-slate-800 mb-6">Add Funds</h2>
 
             <div className="space-y-4">
@@ -700,7 +700,7 @@ export const FarmerWallet: React.FC<FarmerWalletProps> = ({ farmerId, onNavigate
                   value={topUpModal.amount || ''}
                   onChange={(e) => setTopUpModal({ ...topUpModal, amount: Number(e.target.value) })}
                   placeholder="Enter amount"
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-primary"
+                  className="w-full px-4 py-3 border border-slate-200 rounded-2xl focus:outline-none focus:border-primary"
                   disabled={isProcessing}
                 />
               </div>
@@ -709,7 +709,7 @@ export const FarmerWallet: React.FC<FarmerWalletProps> = ({ farmerId, onNavigate
                 <label className="block text-sm font-bold text-slate-600 mb-3">Payment Method</label>
                 <div className="space-y-2">
                   {(['upi', 'bank', 'card'] as const).map((method) => (
-                    <label key={method} className="flex items-center gap-3 p-3 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors">
+                    <label key={method} className="flex items-center gap-3 p-3 border border-slate-200 rounded-2xl cursor-pointer hover:bg-slate-50 transition-colors">
                       <input
                         type="radio"
                         name="payment"
@@ -728,14 +728,14 @@ export const FarmerWallet: React.FC<FarmerWalletProps> = ({ farmerId, onNavigate
             <div className="flex gap-3 mt-8">
               <button
                 onClick={() => setTopUpModal({ isOpen: false, amount: 0, paymentMethod: 'upi' })}
-                className="flex-1 px-4 py-3 rounded-xl bg-slate-100 text-slate-800 font-bold hover:bg-slate-200 transition-colors disabled:opacity-50"
+                className="flex-1 px-4 py-3 rounded-2xl bg-slate-100 text-slate-800 font-bold hover:bg-slate-200 transition-colors disabled:opacity-50"
                 disabled={isProcessing}
               >
                 Cancel
               </button>
               <button
                 onClick={handleTopUp}
-                className="flex-1 px-4 py-3 rounded-xl bg-green-600 text-white font-bold hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-3 rounded-2xl bg-green-600 text-white font-bold hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 disabled={isProcessing}
               >
                 {isProcessing && <span className="material-symbols-outlined text-lg animate-spin">loading</span>}

@@ -342,7 +342,7 @@ ${itemsList}
 
           {/* Main Content */}
           <main className="max-w-2xl mx-auto px-4 py-12">
-            <div className="bg-white/80 backdrop-blur-xl rounded-3xl border border-green-200 shadow-xl p-8 sm:p-12 text-center relative overflow-hidden">
+            <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-green-200 shadow-xl p-8 sm:p-12 text-center relative overflow-hidden">
               {/* Success gradient overlay */}
               <div className="absolute inset-0 bg-gradient-to-b from-green-50/50 to-transparent pointer-events-none" />
 
@@ -369,19 +369,19 @@ ${itemsList}
 
               {/* Transaction Details Grid */}
               <div className="relative grid grid-cols-2 gap-4 text-left mb-8">
-                <div className="p-4 bg-stone-50 rounded-xl">
+                <div className="p-4 bg-stone-50 rounded-2xl">
                   <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Transaction ID</p>
                   <p className="font-mono font-semibold text-stone-800 text-sm truncate">{transactionId}</p>
                 </div>
-                <div className="p-4 bg-stone-50 rounded-xl">
+                <div className="p-4 bg-stone-50 rounded-2xl">
                   <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Date & Time</p>
                   <p className="font-semibold text-stone-800 text-sm">{new Date().toLocaleDateString('en-IN')}</p>
                 </div>
-                <div className="p-4 bg-stone-50 rounded-xl">
+                <div className="p-4 bg-stone-50 rounded-2xl">
                   <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Payment Method</p>
                   <p className="font-semibold text-stone-800 text-sm">DodoPayments</p>
                 </div>
-                <div className="p-4 bg-stone-50 rounded-xl">
+                <div className="p-4 bg-stone-50 rounded-2xl">
                   <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Order ID</p>
                   <p className="font-semibold text-stone-800 text-sm">{orderId}</p>
                 </div>
@@ -391,7 +391,7 @@ ${itemsList}
               <div className="relative flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={handleDownloadReceipt}
-                  className="flex-1 py-3 px-6 border-2 border-stone-200 rounded-xl font-semibold text-stone-700
+                  className="flex-1 py-3 px-6 border-2 border-stone-200 rounded-2xl font-semibold text-stone-700
                            hover:bg-stone-50 transition-colors flex items-center justify-center gap-2"
                 >
                   <DownloadIcon className="h-5 w-5" />
@@ -399,7 +399,7 @@ ${itemsList}
                 </button>
                 <button
                   onClick={onClose}
-                  className="flex-1 py-3 px-6 bg-primary text-white rounded-xl font-semibold
+                  className="flex-1 py-3 px-6 bg-primary text-white rounded-2xl font-semibold
                            hover:bg-primary-dark transition-colors flex items-center justify-center gap-2"
                 >
                   <ShoppingBagIcon className="h-5 w-5" />
@@ -441,7 +441,7 @@ ${itemsList}
 
           {/* Main Content */}
           <main className="max-w-md mx-auto px-4 py-12">
-            <div className="bg-white rounded-3xl shadow-xl p-8 text-center">
+            <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
               {/* X Icon */}
               <div className="w-20 h-20 mx-auto mb-6 bg-red-100 rounded-full flex items-center justify-center">
                 <XIcon className="w-10 h-10 text-red-500" />
@@ -459,14 +459,14 @@ ${itemsList}
                     setPaymentStatus('idle');
                     setError(null);
                   }}
-                  className="w-full py-4 bg-primary text-white rounded-xl font-semibold
+                  className="w-full py-4 bg-primary text-white rounded-2xl font-semibold
                            hover:bg-primary-dark transition-colors flex items-center justify-center gap-2"
                 >
                   Try Again
                 </button>
                 <button
                   onClick={onClose}
-                  className="w-full py-4 border-2 border-stone-200 rounded-xl font-semibold text-stone-700
+                  className="w-full py-4 border-2 border-stone-200 rounded-2xl font-semibold text-stone-700
                            hover:bg-stone-50 transition-colors"
                 >
                   Cancel
@@ -491,7 +491,7 @@ ${itemsList}
     return (
       <div className="fixed inset-0 z-50 overflow-auto">
         <div className="min-h-screen bg-gradient-to-br from-green-50/50 via-stone-50 to-blue-50/50 flex items-center justify-center">
-          <div className="bg-white/80 backdrop-blur-xl rounded-3xl border border-white/60 shadow-2xl p-8 sm:p-12 max-w-md w-full mx-4 text-center">
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-2xl p-8 sm:p-12 max-w-md w-full mx-4 text-center">
             {/* Animated spinner */}
             <div className="relative w-20 h-20 mx-auto mb-6">
               <div className="absolute inset-0 border-4 border-stone-200 rounded-full" />
@@ -539,7 +539,7 @@ ${itemsList}
               <div className="flex items-center gap-4 text-sm text-stone-600">
                 <button className="hover:text-primary transition-colors">Help</button>
                 <button onClick={onClose} className="hover:text-primary transition-colors">Cancel Order</button>
-                <div className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg font-semibold">
+                <div className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-2xl font-semibold">
                   <LockIcon className="h-4 w-4" />
                   Secure Checkout
                 </div>
@@ -558,10 +558,10 @@ ${itemsList}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Payment Info */}
             <div className="lg:col-span-2">
-              <div className="bg-white/60 backdrop-blur-xl rounded-2xl border border-white/60 shadow-card p-6">
+              <div className="bg-white/60 backdrop-blur-xl rounded-2xl border border-white/40 shadow-lg p-6">
                 {/* DodoPayments badge */}
-                <div className="flex items-center gap-3 mb-6 p-4 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-xl border border-primary/20">
-                  <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center">
+                <div className="flex items-center gap-3 mb-6 p-4 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-2xl border border-primary/20">
+                  <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center">
                     <span className="text-white text-xl font-bold">D</span>
                   </div>
                   <div>
@@ -574,19 +574,19 @@ ${itemsList}
                 <div className="mb-6">
                   <h3 className="text-sm font-semibold text-stone-600 uppercase tracking-wide mb-3">Supported Payment Methods</h3>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div className="p-3 bg-stone-50 rounded-lg text-center">
+                    <div className="p-3 bg-stone-50 rounded-2xl text-center">
                       <span className="text-2xl">💳</span>
                       <p className="text-xs text-stone-600 mt-1">Credit/Debit</p>
                     </div>
-                    <div className="p-3 bg-stone-50 rounded-lg text-center">
+                    <div className="p-3 bg-stone-50 rounded-2xl text-center">
                       <span className="text-2xl">📱</span>
                       <p className="text-xs text-stone-600 mt-1">UPI</p>
                     </div>
-                    <div className="p-3 bg-stone-50 rounded-lg text-center">
+                    <div className="p-3 bg-stone-50 rounded-2xl text-center">
                       <span className="text-2xl">🏦</span>
                       <p className="text-xs text-stone-600 mt-1">Net Banking</p>
                     </div>
-                    <div className="p-3 bg-stone-50 rounded-lg text-center">
+                    <div className="p-3 bg-stone-50 rounded-2xl text-center">
                       <span className="text-2xl">📲</span>
                       <p className="text-xs text-stone-600 mt-1">Google Pay</p>
                     </div>
@@ -613,7 +613,7 @@ ${itemsList}
 
             {/* Order Summary */}
             <div className="lg:col-span-1">
-              <div className="bg-white/60 backdrop-blur-xl rounded-2xl border border-white/60 shadow-card p-6 sticky top-24">
+              <div className="bg-white/60 backdrop-blur-xl rounded-2xl border border-white/40 shadow-lg p-6 sticky top-24">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-bold text-stone-800">Order Summary</h2>
                   <ShoppingBagIcon className="h-5 w-5 text-primary" />
@@ -658,7 +658,7 @@ ${itemsList}
 
                 <button
                   onClick={startDodoCheckout}
-                  className="w-full py-4 bg-primary text-white rounded-xl font-bold text-lg
+                  className="w-full py-4 bg-primary text-white rounded-2xl font-bold text-lg
                            hover:bg-primary-dark transition-all duration-300 transform hover:scale-[1.02]
                            flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
                 >

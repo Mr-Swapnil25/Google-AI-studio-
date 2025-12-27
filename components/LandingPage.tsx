@@ -170,7 +170,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           <div className="flex items-center justify-between h-20 gap-4">
             {/* Logo */}
             <div className="flex items-center gap-3 shrink-0 cursor-pointer group">
-              <div className={`size-10 flex items-center justify-center rounded-xl ${role === 'farmer' ? 'bg-primary' : 'bg-orange-500'} text-white shadow-[0_0_15px_rgba(43,75,238,0.5)] transition-colors duration-300`}>
+              <div className={`size-10 flex items-center justify-center rounded-2xl ${role === 'farmer' ? 'bg-primary' : 'bg-orange-500'} text-white shadow-[0_0_15px_rgba(43,75,238,0.5)] transition-colors duration-300`}>
                 <span className="material-symbols-outlined text-[28px]">agriculture</span>
               </div>
               <div className="hidden sm:flex flex-col">
@@ -180,8 +180,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             </div>
 
             {/* Persona Switcher (Segmented Button) - Desktop */}
-            <div className="hidden md:flex items-center justify-center bg-white/10 p-1 rounded-xl border border-white/10">
-              <label className="cursor-pointer relative flex items-center justify-center px-6 py-2 rounded-lg transition-all duration-200">
+            <div className="hidden md:flex items-center justify-center bg-white/10 p-1 rounded-2xl border border-white/10">
+              <label className="cursor-pointer relative flex items-center justify-center px-6 py-2 rounded-2xl transition-all duration-200">
                 <input
                   checked={role === 'farmer'}
                   className="peer sr-only"
@@ -190,12 +190,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   value="farmer"
                   onChange={() => setRole('farmer')}
                 />
-                <div className={`absolute inset-0 ${role === 'farmer' ? 'bg-primary' : 'bg-transparent'} rounded-lg shadow-sm transition-all duration-300`} />
+                <div className={`absolute inset-0 ${role === 'farmer' ? 'bg-primary' : 'bg-transparent'} rounded-2xl shadow-sm transition-all duration-300`} />
                 <span className={`relative z-10 text-sm font-bold ${role === 'farmer' ? 'text-white' : 'text-white/60'} transition-colors`}>
                   Farmer Mode
                 </span>
               </label>
-              <label className="cursor-pointer relative flex items-center justify-center px-6 py-2 rounded-lg transition-all duration-200">
+              <label className="cursor-pointer relative flex items-center justify-center px-6 py-2 rounded-2xl transition-all duration-200">
                 <input
                   checked={role === 'buyer'}
                   className="peer sr-only"
@@ -204,7 +204,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   value="buyer"
                   onChange={() => setRole('buyer')}
                 />
-                <div className={`absolute inset-0 ${role === 'buyer' ? 'bg-orange-500' : 'bg-transparent'} rounded-lg shadow-sm transition-all duration-300`} />
+                <div className={`absolute inset-0 ${role === 'buyer' ? 'bg-orange-500' : 'bg-transparent'} rounded-2xl shadow-sm transition-all duration-300`} />
                 <span className={`relative z-10 text-sm font-bold ${role === 'buyer' ? 'text-white' : 'text-white/60'} transition-colors`}>
                   Buyer Mode
                 </span>
@@ -215,20 +215,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             <div className="flex items-center gap-3">
               <button
                 aria-label="Language"
-                className="flex items-center justify-center size-10 rounded-xl bg-white/10 border border-white/10 text-white hover:bg-white/20 transition-colors"
+                className="flex items-center justify-center size-10 rounded-2xl bg-white/10 border border-white/10 text-white hover:bg-white/20 transition-colors"
               >
                 <span className="material-symbols-outlined">translate</span>
               </button>
               <button
                 onClick={() => onGetStarted(role)}
-                className="flex items-center justify-center h-10 px-5 rounded-xl bg-white/10 border border-white/10 text-white text-sm font-bold hover:bg-white/20 transition-colors"
+                className="flex items-center justify-center h-10 px-5 rounded-2xl bg-white/10 border border-white/10 text-white text-sm font-bold hover:bg-white/20 transition-colors"
               >
                 Login
               </button>
               {/* Mobile Menu Trigger */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden flex items-center justify-center size-10 rounded-xl bg-white/10 border border-white/10 text-white hover:bg-white/20 transition-colors"
+                className="md:hidden flex items-center justify-center size-10 rounded-2xl bg-white/10 border border-white/10 text-white hover:bg-white/20 transition-colors"
               >
                 <span className="material-symbols-outlined">{mobileMenuOpen ? 'close' : 'menu'}</span>
               </button>
@@ -237,9 +237,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
           {/* Mobile Persona Switcher */}
           <div className={`md:hidden pb-4 ${mobileMenuOpen ? 'block' : 'hidden'}`}>
-            <div className="flex w-full bg-white/10 p-1 rounded-xl border border-white/10">
+            <div className="flex w-full bg-white/10 p-1 rounded-2xl border border-white/10">
               <label
-                className={`flex-1 cursor-pointer text-center py-2.5 rounded-lg text-sm font-bold shadow-sm transition-all ${
+                className={`flex-1 cursor-pointer text-center py-2.5 rounded-2xl text-sm font-bold shadow-sm transition-all ${
                   role === 'farmer' ? 'bg-primary text-white' : 'text-white/60 hover:text-white'
                 }`}
               >
@@ -253,7 +253,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 />
               </label>
               <label
-                className={`flex-1 cursor-pointer text-center py-2.5 rounded-lg text-sm font-bold transition-all ${
+                className={`flex-1 cursor-pointer text-center py-2.5 rounded-2xl text-sm font-bold transition-all ${
                   role === 'buyer' ? 'bg-orange-500 text-white' : 'text-white/60 hover:text-white'
                 }`}
               >
@@ -274,7 +274,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
       {/* Main Content Wrapper */}
       <main className="flex flex-col w-full max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-6 gap-8">
         {/* Market Ticker (Trust Signal) */}
-        <div className="w-full bg-black/50 backdrop-blur-xl rounded-xl overflow-hidden py-3 border-2 border-white/20 shadow-lg">
+        <div className="w-full bg-black/50 backdrop-blur-xl rounded-2xl overflow-hidden py-3 border-2 border-white/20 shadow-lg">
           <div className="ticker-container">
             <div className="ticker-content">
               {/* First set of items */}
@@ -329,12 +329,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <button
                   onClick={() => onGetStarted(role)}
-                  className={`group flex items-center justify-center gap-3 h-14 px-8 rounded-xl ${role === 'farmer' ? 'bg-primary hover:bg-primary/90 shadow-[0_0_20px_rgba(46,125,50,0.4)] hover:shadow-[0_0_30px_rgba(46,125,50,0.6)]' : 'bg-orange-500 hover:bg-orange-500/90 shadow-[0_0_20px_rgba(249,115,22,0.4)] hover:shadow-[0_0_30px_rgba(249,115,22,0.6)]'} text-white text-lg font-bold transition-all hover:-translate-y-1`}
+                  className={`group flex items-center justify-center gap-3 h-14 px-8 rounded-2xl ${role === 'farmer' ? 'bg-primary hover:bg-primary/90 shadow-[0_0_20px_rgba(46,125,50,0.4)] hover:shadow-[0_0_30px_rgba(46,125,50,0.6)]' : 'bg-orange-500 hover:bg-orange-500/90 shadow-[0_0_20px_rgba(249,115,22,0.4)] hover:shadow-[0_0_30px_rgba(249,115,22,0.6)]'} text-white text-lg font-bold transition-all hover:-translate-y-1`}
                 >
                   <span>{content.cta}</span>
                   <span className="material-symbols-outlined transition-transform group-hover:translate-x-1">arrow_forward</span>
                 </button>
-                <button className="flex items-center justify-center gap-3 h-14 px-8 rounded-xl bg-white/15 backdrop-blur-xl border-2 border-white/30 hover:bg-white/25 hover:border-white/50 text-white text-lg font-bold transition-all shadow-lg">
+                <button className="flex items-center justify-center gap-3 h-14 px-8 rounded-2xl bg-white/15 backdrop-blur-xl border-2 border-white/30 hover:bg-white/25 hover:border-white/50 text-white text-lg font-bold transition-all shadow-lg">
                   <span className="material-symbols-outlined">mic</span>
                   <span>{content.ctaSecondary}</span>
                 </button>
@@ -379,7 +379,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   />
 
                   {/* Floating Card 1 - Payment */}
-                  <div className="absolute bottom-6 left-6 z-20 bg-black/60 backdrop-blur-xl p-4 rounded-xl flex items-center gap-3 max-w-[200px] border-2 border-white/20 shadow-xl animate-bounce-slow">
+                  <div className="absolute bottom-6 left-6 z-20 bg-black/60 backdrop-blur-xl p-4 rounded-2xl flex items-center gap-3 max-w-[200px] border-2 border-white/20 shadow-xl animate-bounce-slow">
                     <div className="size-10 rounded-full bg-green-500/30 flex items-center justify-center text-green-400">
                       <span className="material-symbols-outlined">payments</span>
                     </div>
@@ -390,7 +390,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   </div>
 
                   {/* Floating Card 2 - Rate */}
-                  <div className={`absolute top-6 right-6 z-20 bg-black/60 backdrop-blur-xl p-3 rounded-xl flex flex-col gap-1 w-32 border-l-4 ${role === 'farmer' ? 'border-l-primary' : 'border-l-orange-500'} border-2 border-white/20 shadow-xl`}>
+                  <div className={`absolute top-6 right-6 z-20 bg-black/60 backdrop-blur-xl p-3 rounded-2xl flex flex-col gap-1 w-32 border-l-4 ${role === 'farmer' ? 'border-l-primary' : 'border-l-orange-500'} border-2 border-white/20 shadow-xl`}>
                     <p className="text-[10px] text-white/70 uppercase font-bold">Today's Rate</p>
                     <p className="text-xl font-bold text-white">₹ 2,125</p>
                     <p className="text-xs text-green-400 flex items-center gap-1">
@@ -431,7 +431,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                     </div>
                     
                     {/* Icon */}
-                    <div className={`size-14 rounded-xl ${
+                    <div className={`size-14 rounded-2xl ${
                       feature.color === 'primary' ? 'bg-primary/10 text-primary' :
                       feature.color === 'blue' ? 'bg-blue-400/10 text-blue-400' :
                       feature.color === 'green' ? 'bg-green-500/10 text-green-500' :
@@ -504,7 +504,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
         {/* Footer Call to Action */}
         <section className="mt-8 mb-16">
-          <div className={`w-full rounded-3xl bg-gradient-to-r ${role === 'farmer' ? 'from-primary to-emerald-500' : 'from-orange-500 to-amber-500'} p-8 md:p-12 text-center md:text-left flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden border-2 border-white/30 shadow-2xl`}>
+          <div className={`w-full rounded-2xl bg-gradient-to-r ${role === 'farmer' ? 'from-primary to-emerald-500' : 'from-orange-500 to-amber-500'} p-8 md:p-12 text-center md:text-left flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden border-2 border-white/30 shadow-2xl`}>
             {/* Decorative Circles */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full translate-x-1/3 -translate-y-1/3 blur-2xl" />
             <div className="absolute bottom-0 left-0 w-48 h-48 bg-black/10 rounded-full -translate-x-1/3 translate-y-1/3 blur-xl" />
@@ -521,7 +521,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             <div className="relative z-10 flex flex-col gap-3 w-full md:w-auto">
               <button
                 onClick={() => onGetStarted(role)}
-                className={`bg-white ${role === 'farmer' ? 'text-primary' : 'text-orange-600'} hover:bg-slate-100 px-8 py-4 rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-transform hover:scale-105`}
+                className={`bg-white ${role === 'farmer' ? 'text-primary' : 'text-orange-600'} hover:bg-slate-100 px-8 py-4 rounded-2xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-transform hover:scale-105`}
               >
                 Create Account
               </button>
@@ -538,7 +538,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             {/* Brand */}
             <div className="flex flex-col items-center md:items-start gap-4">
               <div className="flex items-center gap-2">
-                <div className={`size-8 flex items-center justify-center rounded-lg ${role === 'farmer' ? 'bg-primary' : 'bg-orange-500'} text-white`}>
+                <div className={`size-8 flex items-center justify-center rounded-2xl ${role === 'farmer' ? 'bg-primary' : 'bg-orange-500'} text-white`}>
                   <span className="material-symbols-outlined text-xl">agriculture</span>
                 </div>
                 <div className="flex flex-col">
@@ -553,7 +553,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             <div className="flex flex-col sm:flex-row gap-4">
               <a
                 href="#"
-                className="flex items-center gap-3 px-6 py-3 rounded-xl bg-white/15 border-2 border-white/25 hover:bg-white/25 hover:border-white/40 transition-all group shadow-lg"
+                className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-white/15 border-2 border-white/25 hover:bg-white/25 hover:border-white/40 transition-all group shadow-lg"
               >
                 <span className="material-symbols-outlined text-green-400 group-hover:scale-110 transition-transform">chat</span>
                 <div className="text-left">
@@ -563,7 +563,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               </a>
               <a
                 href="#"
-                className="flex items-center gap-3 px-6 py-3 rounded-xl bg-white/15 border-2 border-white/25 hover:bg-white/25 hover:border-white/40 transition-all group shadow-lg"
+                className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-white/15 border-2 border-white/25 hover:bg-white/25 hover:border-white/40 transition-all group shadow-lg"
               >
                 <span className={`material-symbols-outlined ${role === 'farmer' ? 'text-green-400' : 'text-orange-400'} group-hover:scale-110 transition-transform`}>call</span>
                 <div className="text-left">

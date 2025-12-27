@@ -51,7 +51,7 @@ export const ChatModal = ({ isOpen, onClose, negotiation, messages, currentUserI
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b">
                      <div className="flex items-center space-x-3">
-                        <img src={negotiation.productImageUrl} alt={negotiation.productName} className="w-12 h-12 rounded-lg object-cover" />
+                        <img src={negotiation.productImageUrl} alt={negotiation.productName} className="w-12 h-12 rounded-2xl object-cover" />
                         <div>
                             <h2 className="text-lg font-bold font-heading text-stone-800">Chat for {negotiation.productName}</h2>
                             <p className="text-sm text-stone-500">Negotiation ID: {negotiation.id.slice(0, 8)}...</p>

@@ -50,7 +50,7 @@ export const FarmerProfile = ({ farmer, products, onBack, onNegotiate, wishlist,
             </button>
 
             <header className="bg-background-alt p-6 sm:p-8 rounded-xl shadow-sm border border-stone-200/80">
-                <div className="relative h-32 rounded-lg bg-gradient-to-r from-primary/80 via-green-600/70 to-primary-light/80 -m-6 sm:-m-8 mb-16 overflow-hidden">
+                <div className="relative h-32 rounded-2xl bg-gradient-to-r from-primary/80 via-green-600/70 to-primary-light/80 -m-6 sm:-m-8 mb-16 overflow-hidden">
                     {/* Farm-themed pattern overlay */}
                     <div className="absolute inset-0 opacity-10">
                         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMjAgMEwyNSAyMEwyMCA0MEwxNSAyMEwyMCAwWiIgZmlsbD0id2hpdGUiLz48L3N2Zz4=')] bg-repeat"></div>

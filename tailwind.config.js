@@ -12,13 +12,13 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        // B2B Professional Typography Stack
-        sans: ['Outfit', 'system-ui', 'sans-serif'],           // Body text
-        heading: ['Syne', 'Georgia', 'serif'],                  // Headings
+        // B2B Sharp Typography Stack - Apple-grade professional
+        sans: ['Inter', 'system-ui', 'sans-serif'],            // Body text
+        heading: ['Syne', 'system-ui', 'sans-serif'],          // Headings
         display: ['Syne', 'system-ui', 'sans-serif'],          // Display/Hero
-        body: ['Outfit', 'system-ui', 'sans-serif'],           // Body
-        mono: ['Work Sans', 'monospace'],                       // Prices/Data
-        data: ['Work Sans', 'monospace'],                       // Prices/Numbers
+        body: ['Inter', 'system-ui', 'sans-serif'],            // Body
+        mono: ['JetBrains Mono', 'monospace'],                 // Prices/Data
+        data: ['JetBrains Mono', 'monospace'],                 // Prices/Numbers
       },
       fontSize: {
         'xs': ['0.75rem', { lineHeight: '1.25' }],
@@ -31,13 +31,15 @@ export default {
         '4xl': ['2.25rem', { lineHeight: '1.2' }],
       },
       borderRadius: {
-        "DEFAULT": "0.5rem",
-        "sm": "0.375rem",
-        "md": "0.5rem",
-        "lg": "0.75rem",
-        "xl": "1rem",
-        "2xl": "1.25rem",
-        "full": "9999px"
+        "none": "0",
+        "DEFAULT": "0.5rem",          // 8px default
+        "sm": "0.375rem",              // 6px
+        "md": "0.5rem",                // 8px
+        "lg": "0.75rem",               // 12px
+        "xl": "1rem",                  // 16px - inputs, buttons
+        "2xl": "1.5rem",               // 24px - cards
+        "3xl": "2rem",                 // 32px - premium cards
+        "full": "9999px"               // Circles/pills
       },
       boxShadow: {
         "soft": "0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.03)",

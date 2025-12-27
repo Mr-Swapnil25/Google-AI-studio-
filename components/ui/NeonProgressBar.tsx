@@ -111,7 +111,7 @@ export const NeonProgressBar: React.FC<NeonProgressBarProps> = ({
               {/* Step label */}
               <div className="flex flex-col items-center absolute top-full mt-3 w-32 md:w-40">
                 <span
-                  className={`text-xs md:text-sm font-extrabold tracking-tight px-2 py-0.5 rounded-md transition-all duration-300 ${
+                  className={`text-xs md:text-sm font-extrabold tracking-tight px-2 py-0.5 rounded-2xl transition-all duration-300 ${
                     isActive
                       ? 'text-stone-800 bg-white/80 shadow-sm backdrop-blur-sm'
                       : isPast

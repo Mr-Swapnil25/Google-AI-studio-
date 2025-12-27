@@ -260,13 +260,13 @@ export const FarmerKYC = ({ isOpen, currentUser, onClose, onComplete, required =
                         {(step > 1 || !required) && (
                             <button
                                 onClick={step === 1 ? onClose : handleBack}
-                                className="p-2 -ml-2 rounded-md hover:bg-gray-100 transition-colors text-gray-600"
+                                className="p-2 -ml-2 rounded-2xl hover:bg-gray-100 transition-colors text-gray-600"
                             >
                                 <span className="material-symbols-outlined text-xl">arrow_back</span>
                             </button>
                         )}
                         <div className="flex items-center gap-2">
-                            <div className="size-8 flex items-center justify-center bg-primary text-white rounded-md">
+                            <div className="size-8 flex items-center justify-center bg-primary text-white rounded-2xl">
                                 <span className="material-symbols-outlined text-lg">agriculture</span>
                             </div>
                             <span className="font-heading font-bold text-gray-900">Anna Bazaar</span>
@@ -275,7 +275,7 @@ export const FarmerKYC = ({ isOpen, currentUser, onClose, onComplete, required =
                     <div className="flex items-center gap-2">
                         <span className="text-xs text-gray-500 font-medium">Step {step} of 3</span>
                         {!required && (
-                            <button onClick={onClose} className="p-2 rounded-md hover:bg-gray-100">
+                            <button onClick={onClose} className="p-2 rounded-2xl hover:bg-gray-100">
                                 <XIcon className="h-5 w-5 text-gray-500" />
                             </button>
                         )}
@@ -445,11 +445,11 @@ export const FarmerKYC = ({ isOpen, currentUser, onClose, onComplete, required =
                             <div>
                                 <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">Aadhaar Card (Front) *</label>
                                 {documents.aadhaarPreview ? (
-                                    <div className="relative rounded-lg overflow-hidden border border-gray-200 bg-white">
+                                    <div className="relative rounded-2xl overflow-hidden border border-gray-200 bg-white">
                                         <img src={documents.aadhaarPreview} alt="Aadhaar" className="w-full h-40 object-cover" />
                                         <button
                                             onClick={removeAadhaar}
-                                            className="absolute top-2 right-2 bg-white/90 text-red-500 p-1.5 rounded-md hover:bg-white transition-colors shadow-sm"
+                                            className="absolute top-2 right-2 bg-white/90 text-red-500 p-1.5 rounded-2xl hover:bg-white transition-colors shadow-sm"
                                         >
                                             <XIcon className="h-4 w-4" />
                                         </button>
@@ -461,7 +461,7 @@ export const FarmerKYC = ({ isOpen, currentUser, onClose, onComplete, required =
                                 ) : (
                                     <div
                                         onClick={() => aadhaarInputRef.current?.click()}
-                                        className="relative aspect-[16/9] bg-white rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-gray-50 transition-colors"
+                                        className="relative aspect-[16/9] bg-white rounded-2xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-gray-50 transition-colors"
                                     >
                                         <div className="size-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 mb-2">
                                             <span className="material-symbols-outlined text-2xl">add_a_photo</span>
@@ -477,11 +477,11 @@ export const FarmerKYC = ({ isOpen, currentUser, onClose, onComplete, required =
                             <div>
                                 <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">Kisan Card *</label>
                                 {documents.kisanPreview ? (
-                                    <div className="relative rounded-lg overflow-hidden border border-gray-200 bg-white">
+                                    <div className="relative rounded-2xl overflow-hidden border border-gray-200 bg-white">
                                         <img src={documents.kisanPreview} alt="Kisan Card" className="w-full h-40 object-cover" />
                                         <button
                                             onClick={removeKisan}
-                                            className="absolute top-2 right-2 bg-white/90 text-red-500 p-1.5 rounded-md hover:bg-white transition-colors shadow-sm"
+                                            className="absolute top-2 right-2 bg-white/90 text-red-500 p-1.5 rounded-2xl hover:bg-white transition-colors shadow-sm"
                                         >
                                             <XIcon className="h-4 w-4" />
                                         </button>
@@ -493,7 +493,7 @@ export const FarmerKYC = ({ isOpen, currentUser, onClose, onComplete, required =
                                 ) : (
                                     <div
                                         onClick={() => kisanInputRef.current?.click()}
-                                        className="relative aspect-[16/9] bg-white rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-gray-50 transition-colors"
+                                        className="relative aspect-[16/9] bg-white rounded-2xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-gray-50 transition-colors"
                                     >
                                         <div className="size-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 mb-2">
                                             <span className="material-symbols-outlined text-2xl">credit_card</span>
@@ -601,19 +601,19 @@ export const FarmerKYC = ({ isOpen, currentUser, onClose, onComplete, required =
                 <div className="mt-8 pt-6 border-t border-gray-200">
                     <div className="grid grid-cols-3 gap-3">
                         <div className="text-center">
-                            <div className="size-10 mx-auto rounded-lg bg-green-50 flex items-center justify-center text-primary mb-1.5">
+                            <div className="size-10 mx-auto rounded-2xl bg-green-50 flex items-center justify-center text-primary mb-1.5">
                                 <span className="material-symbols-outlined text-lg">payments</span>
                             </div>
                             <span className="text-xs font-medium text-gray-700">Direct Pay</span>
                         </div>
                         <div className="text-center">
-                            <div className="size-10 mx-auto rounded-lg bg-green-50 flex items-center justify-center text-primary mb-1.5">
+                            <div className="size-10 mx-auto rounded-2xl bg-green-50 flex items-center justify-center text-primary mb-1.5">
                                 <span className="material-symbols-outlined text-lg">bolt</span>
                             </div>
                             <span className="text-xs font-medium text-gray-700">Fast Approval</span>
                         </div>
                         <div className="text-center">
-                            <div className="size-10 mx-auto rounded-lg bg-green-50 flex items-center justify-center text-primary mb-1.5">
+                            <div className="size-10 mx-auto rounded-2xl bg-green-50 flex items-center justify-center text-primary mb-1.5">
                                 <span className="material-symbols-outlined text-lg">verified_user</span>
                             </div>
                             <span className="text-xs font-medium text-gray-700">100% Secure</span>
@@ -628,7 +628,7 @@ export const FarmerKYC = ({ isOpen, currentUser, onClose, onComplete, required =
                     <button
                         onClick={step === 3 ? handleSubmit : handleNext}
                         disabled={isSubmitting}
-                        className="w-full h-11 bg-primary hover:bg-primary-dark text-white rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                        className="w-full h-11 bg-primary hover:bg-primary-dark text-white rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                         {isSubmitting ? (
                             <>
