@@ -43,7 +43,7 @@ export default function App() {
     const [negotiations, setNegotiations] = useState<Negotiation[]>([]);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [wishlist, setWishlist] = useState<string[]>([]);
-    
+
     const [activeNegotiation, setActiveNegotiation] = useState<Negotiation | Product | null>(null);
     const [activeChat, setActiveChat] = useState<Negotiation | null>(null);
 
@@ -56,7 +56,7 @@ export default function App() {
     ]);
     const [botIsLoading, setBotIsLoading] = useState(false);
     const [isLiveAssistantOpen, setIsLiveAssistantOpen] = useState(false);
-    
+
     const { showToast } = useToast();
 
     const handleAuthClose = () => {
@@ -175,17 +175,17 @@ export default function App() {
             showToast('Could not switch role. Please try again.', 'error');
             return;
         }
-        
+
         // Reset relevant state on role switch
         setIsCartViewOpen(false);
         setViewingFarmerId(null);
         setCart([]);
         setNegotiations([]);
         setMessages([]);
-        
+
         showToast(`Switched to ${nextRole} view.`, 'info');
     };
-    
+
     const handleAddToCart = (product: Product, quantity: number = 1) => {
         setCart(prevCart => {
             const existingItem = prevCart.find(item => item.id === product.id);
@@ -196,7 +196,7 @@ export default function App() {
         });
         showToast(`${product.name} added to cart!`, 'success');
     };
-    
+
     const handleUpdateCartQuantity = (productId: string, newQuantity: number) => {
         setCart(prevCart => {
             if (newQuantity <= 0) {
@@ -237,7 +237,7 @@ export default function App() {
         setIsCartViewOpen(false);
         setViewingFarmerId(farmerId);
     };
-    
+
     const handleVerifyFarmer = async (farmer: Farmer) => {
         try {
             const { isVerified, feedback } = await verifyFarmerProfile(farmer);
@@ -282,7 +282,7 @@ export default function App() {
                 showToast('Counter-offer sent!', 'success');
             }
             handleCloseNegotiation();
-        } catch(error) {
+        } catch (error) {
             console.error("Error submitting negotiation:", error);
             showToast('Failed to submit offer. Please try again.', 'error');
         }
@@ -300,8 +300,8 @@ export default function App() {
                 if (product && negotiation) {
                     // Check for any counter status (including legacy CounterOffer for read compatibility)
                     const hasCounter = negotiation.status === NegotiationStatus.CounterByFarmer ||
-                                       negotiation.status === NegotiationStatus.CounterByBuyer ||
-                                       negotiation.status === NegotiationStatus.CounterOffer;
+                        negotiation.status === NegotiationStatus.CounterByBuyer ||
+                        negotiation.status === NegotiationStatus.CounterOffer;
                     const finalPrice = hasCounter && negotiation.counterPrice
                         ? negotiation.counterPrice
                         : negotiation.offeredPrice;
@@ -327,7 +327,7 @@ export default function App() {
             showToast('Failed to respond to offer.', 'error');
         }
     };
-    
+
     const handleOpenChat = (negotiation: Negotiation) => setActiveChat(negotiation);
     const handleCloseChat = () => setActiveChat(null);
 
@@ -343,7 +343,7 @@ export default function App() {
 
     const handleSendMessage = async (text: string) => {
         if (!activeChat || !text.trim() || !currentUser) return;
-        
+
         // Optimistic UI: Add message immediately with temporary ID
         const tempId = `temp-${Date.now()}`;
         const optimisticMessage: ChatMessage = {
@@ -354,7 +354,7 @@ export default function App() {
             timestamp: new Date(),
         };
         setMessages(prev => [...prev, optimisticMessage]);
-        
+
         try {
             await firebaseService.sendMessage({
                 negotiation: activeChat,
@@ -362,7 +362,7 @@ export default function App() {
                 text,
             });
             // Firebase subscription will replace optimistic message with real one
-        } catch(error) {
+        } catch (error) {
             console.error("Error sending message:", error);
             showToast('Could not send message.', 'error');
             // Remove the optimistic message on error
@@ -374,7 +374,7 @@ export default function App() {
         if (!text.trim() || !currentUser) return;
         const negotiation = negotiations.find(n => n.id === negotiationId);
         if (!negotiation) return;
-        
+
         // Optimistic UI: Add message immediately with temporary ID
         const tempId = `temp-${Date.now()}`;
         const optimisticMessage: ChatMessage = {
@@ -385,7 +385,7 @@ export default function App() {
             timestamp: new Date(),
         };
         setMessages(prev => [...prev, optimisticMessage]);
-        
+
         try {
             await firebaseService.sendMessage({
                 negotiation,
@@ -393,7 +393,7 @@ export default function App() {
                 text,
             });
             // Firebase subscription will replace optimistic message with real one
-        } catch(error) {
+        } catch (error) {
             console.error("Error sending message:", error);
             showToast('Could not send message.', 'error');
             // Remove the optimistic message on error
@@ -416,7 +416,7 @@ export default function App() {
             setBotIsLoading(false);
         }
     };
-    
+
     const userRole = currentUser?.role ?? UserRole.Buyer;
     const appClasses = userRole === UserRole.Farmer ? 'bg-farmer-background' : 'bg-background';
 
@@ -425,12 +425,12 @@ export default function App() {
         if (viewingFarmerId) {
             const farmer = farmers.find(f => f.id === viewingFarmerId);
             if (!farmer) {
-                 return <div className="text-center py-10"><p>Farmer not found.</p></div>;
+                return <div className="text-center py-10"><p>Farmer not found.</p></div>;
             }
-            return <FarmerProfile {...{farmer, products: products.filter(p => p.farmerId === viewingFarmerId), onBack: handleBackToProducts, onAddToCart: handleAddToCart, onNegotiate: handleOpenNegotiation, wishlist, onToggleWishlist: handleToggleWishlist, onVerifyFarmer: handleVerifyFarmer, onContactFarmer: handleContactFarmer }} />;
+            return <FarmerProfile {...{ farmer, products: products.filter(p => p.farmerId === viewingFarmerId), onBack: handleBackToProducts, onAddToCart: handleAddToCart, onNegotiate: handleOpenNegotiation, wishlist, onToggleWishlist: handleToggleWishlist, onVerifyFarmer: handleVerifyFarmer, onContactFarmer: handleContactFarmer }} />;
         }
         if (isCartViewOpen && userRole === UserRole.Buyer) {
-            return <CartView {...{cart, cartTotal, onUpdateQuantity: handleUpdateCartQuantity, onClose: () => setIsCartViewOpen(false)}} />;
+            return <CartView {...{ cart, cartTotal, onUpdateQuantity: handleUpdateCartQuantity, onClose: () => setIsCartViewOpen(false), currentUser }} />;
         }
         if (userRole === UserRole.Farmer) {
             // CRITICAL: Block dashboard access if KYC not complete
@@ -459,21 +459,21 @@ export default function App() {
                     </div>
                 );
             }
-             return <FarmerView {...{
-                 onAddNewProduct: (data, file) => handleAddNewProduct(data, file), 
-                 onUpdateProduct: handleUpdateProduct, 
-                 onRespond: handleNegotiationResponse, 
-                 onCounter: handleOpenNegotiation, 
-                 onOpenChat: handleOpenChat, 
-                 onSendMessage: handleSendMessageToNegotiation,
-                 products: products.filter(p => p.farmerId === currentUser.uid), 
-                 negotiations: negotiations.filter(n => n.farmerId === currentUser.uid),
-                 messages: messages,
-                 currentUserId: currentUser.uid,
-                 currentUser: currentUser
-             }} />;
+            return <FarmerView {...{
+                onAddNewProduct: (data, file) => handleAddNewProduct(data, file),
+                onUpdateProduct: handleUpdateProduct,
+                onRespond: handleNegotiationResponse,
+                onCounter: handleOpenNegotiation,
+                onOpenChat: handleOpenChat,
+                onSendMessage: handleSendMessageToNegotiation,
+                products: products.filter(p => p.farmerId === currentUser.uid),
+                negotiations: negotiations.filter(n => n.farmerId === currentUser.uid),
+                messages: messages,
+                currentUserId: currentUser.uid,
+                currentUser: currentUser
+            }} />;
         }
-        return <BuyerView {...{products, cart, cartTotal, minCartValue: MIN_CART_VALUE, negotiations: negotiations.filter(n => n.buyerId === currentUser.uid), messages, currentUserId: currentUser.uid, onAddToCart: handleAddToCart, onStartNegotiation: handleOpenNegotiation, onRespondToCounter: handleNegotiationResponse, onOpenChat: handleOpenChat, onSendMessage: handleSendMessageToNegotiation, wishlist, onToggleWishlist: handleToggleWishlist, farmers, onViewFarmerProfile: handleViewFarmerProfile, onSwitchRole: handleSwitchRole, isLoadingProducts}} />;
+        return <BuyerView {...{ products, cart, cartTotal, minCartValue: MIN_CART_VALUE, negotiations: negotiations.filter(n => n.buyerId === currentUser.uid), messages, currentUserId: currentUser.uid, onAddToCart: handleAddToCart, onStartNegotiation: handleOpenNegotiation, onRespondToCounter: handleNegotiationResponse, onOpenChat: handleOpenChat, onSendMessage: handleSendMessageToNegotiation, wishlist, onToggleWishlist: handleToggleWishlist, farmers, onViewFarmerProfile: handleViewFarmerProfile, onSwitchRole: handleSwitchRole, isLoadingProducts }} />;
     }
 
     // Show landing page if not authenticated
@@ -503,15 +503,15 @@ export default function App() {
             <div className="relative z-10">
                 <main className={userRole === UserRole.Farmer ? '' : 'container mx-auto p-4 sm:p-6 lg:p-8'}>{renderMainContent()}</main>
 
-                {activeNegotiation && <NegotiationModal {...{isOpen: !!activeNegotiation, onClose: handleCloseNegotiation, item: activeNegotiation, userRole, onSubmit: handleNegotiationSubmit}} />}
-                {activeChat && currentUser && <ChatModal {...{isOpen: !!activeChat, onClose: handleCloseChat, negotiation: activeChat, messages: messages.filter(m => m.negotiationId === activeChat.id), currentUserId: currentUser.uid, onSendMessage: handleSendMessage, userRole}} />}
-                
+                {activeNegotiation && <NegotiationModal {...{ isOpen: !!activeNegotiation, onClose: handleCloseNegotiation, item: activeNegotiation, userRole, onSubmit: handleNegotiationSubmit }} />}
+                {activeChat && currentUser && <ChatModal {...{ isOpen: !!activeChat, onClose: handleCloseChat, negotiation: activeChat, messages: messages.filter(m => m.negotiationId === activeChat.id), currentUserId: currentUser.uid, onSendMessage: handleSendMessage, userRole }} />}
+
                 {userRole === UserRole.Buyer && cart.length > 0 && !isCartViewOpen && !viewingFarmerId &&
                     <div className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm p-4 border-t border-stone-200 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
                         <div className="container mx-auto flex justify-between items-center">
                             <div>
                                 <h3 className="font-heading font-bold text-lg">Cart Total: <span className="text-primary">₹{cartTotal.toFixed(2)}</span></h3>
-                                {cartTotal < MIN_CART_VALUE && <p className="text-sm text-red-600">Add ₹{(MIN_CART_VALUE-cartTotal).toFixed(2)} more to checkout.</p>}
+                                {cartTotal < MIN_CART_VALUE && <p className="text-sm text-red-600">Add ₹{(MIN_CART_VALUE - cartTotal).toFixed(2)} more to checkout.</p>}
                             </div>
                             <button onClick={() => setIsCartViewOpen(true)} disabled={cartTotal < MIN_CART_VALUE} className="bg-accent text-stone-900 px-8 py-3 rounded-full font-bold transition-all duration-300 disabled:bg-stone-400 disabled:cursor-not-allowed disabled:text-white hover:bg-yellow-400 hover:shadow-lg transform hover:-translate-y-0.5">Checkout</button>
                         </div>
@@ -524,14 +524,14 @@ export default function App() {
                     </button>
                 )}
 
-                <ChatBot {...{isOpen: isChatBotOpen, onClose: () => setIsChatBotOpen(false), messages: botMessages, onSendMessage: handleSendMessageToBot, isLoading: botIsLoading}} />
+                <ChatBot {...{ isOpen: isChatBotOpen, onClose: () => setIsChatBotOpen(false), messages: botMessages, onSendMessage: handleSendMessageToBot, isLoading: botIsLoading }} />
 
                 {!isLiveAssistantOpen && userRole === UserRole.Farmer && (
                     <button onClick={() => setIsLiveAssistantOpen(true)} className="fixed bottom-6 right-6 lg:bottom-8 lg:right-8 z-30 bg-farmer-primary text-white p-4 rounded-full shadow-lg hover:bg-farmer-primary-dark transition-all duration-300 transform hover:scale-110 hover:shadow-xl animate-fade-in" aria-label="Open live assistant">
                         <MicrophoneIcon className="h-7 w-7" />
                     </button>
                 )}
-                
+
                 <LiveAssistantModal isOpen={isLiveAssistantOpen} onClose={() => setIsLiveAssistantOpen(false)} />
 
                 <AuthModal

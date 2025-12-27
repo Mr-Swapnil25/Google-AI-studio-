@@ -1,16 +1,21 @@
 
-import React from 'react';
-import { CartItem } from '../types';
+import React, { useState } from 'react';
+import { CartItem, User } from '../types';
 import { ArrowLeftIcon, TrashIcon } from './icons';
+import { PaymentModal } from './PaymentModal';
+import { PaymentItem, PaymentType } from '../types/payment';
 
 interface CartViewProps {
-  cart: CartItem[];
-  cartTotal: number;
-  onUpdateQuantity: (productId: string, newQuantity: number) => void;
-  onClose: () => void;
+    cart: CartItem[];
+    cartTotal: number;
+    onUpdateQuantity: (productId: string, newQuantity: number) => void;
+    onClose: () => void;
+    currentUser?: User | null;
 }
 
-export const CartView = ({ cart, cartTotal, onUpdateQuantity, onClose }: CartViewProps) => {
+export const CartView = ({ cart, cartTotal, onUpdateQuantity, onClose, currentUser }: CartViewProps) => {
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+    const [paymentMethod, setPaymentMethod] = useState<'cod' | 'online'>('online');
 
     if (cart.length === 0) {
         return (
@@ -27,9 +32,37 @@ export const CartView = ({ cart, cartTotal, onUpdateQuantity, onClose }: CartVie
             </div>
         );
     }
-    
+
     const deliveryCharge = cartTotal > 500 ? 0 : 50;
     const grandTotal = cartTotal + deliveryCharge;
+
+    // Convert cart items to payment items format
+    const paymentItems: PaymentItem[] = cart.map(item => ({
+        productId: item.id,
+        productName: item.name,
+        quantity: item.cartQuantity,
+        unitPrice: item.price * 100, // Convert to paise
+    }));
+
+    const handleProceedToPayment = () => {
+        if (paymentMethod === 'online') {
+            setIsPaymentModalOpen(true);
+        } else {
+            // Handle COD - show confirmation or proceed with order
+            alert('Cash on Delivery order placed! Coming soon.');
+        }
+    };
+
+    const handlePaymentSuccess = (paymentId: string) => {
+        console.log('Payment successful:', paymentId);
+        setIsPaymentModalOpen(false);
+        // Optionally clear cart and show success message
+    };
+
+    const handlePaymentFailure = (error: Error) => {
+        console.error('Payment failed:', error);
+        // Error is already handled by the modal
+    };
 
     return (
         <div className="animate-fade-in">
@@ -76,7 +109,7 @@ export const CartView = ({ cart, cartTotal, onUpdateQuantity, onClose }: CartVie
 
                 {/* Order Summary & Checkout */}
                 <div className="lg:col-span-1 space-y-6">
-                     <div className="bg-background-alt/80 backdrop-blur-sm p-6 rounded-xl shadow-sm border border-stone-200/80">
+                    <div className="bg-background-alt/80 backdrop-blur-sm p-6 rounded-xl shadow-sm border border-stone-200/80">
                         <h2 className="text-xl font-bold font-heading text-stone-800 border-b pb-3 mb-4">Order Summary</h2>
                         <div className="space-y-2 text-sm">
                             <div className="flex justify-between text-stone-500"><span>Subtotal</span><span className="font-semibold text-stone-800">₹{cartTotal.toFixed(2)}</span></div>
@@ -99,22 +132,71 @@ export const CartView = ({ cart, cartTotal, onUpdateQuantity, onClose }: CartVie
                     <div className="bg-background-alt/80 backdrop-blur-sm p-6 rounded-xl shadow-sm border border-stone-200/80">
                         <h2 className="text-xl font-bold font-heading text-stone-800 mb-4">Payment Method</h2>
                         <div className="space-y-3">
-                            <label className="flex items-center p-3 border rounded-lg hover:bg-stone-50 has-[:checked]:bg-primary/10 has-[:checked]:border-primary transition-colors cursor-pointer">
-                                <input type="radio" name="payment" className="h-4 w-4 text-primary focus:ring-primary border-stone-300" defaultChecked />
-                                <span className="ml-3 font-medium text-sm text-stone-700">Cash on Delivery</span>
+                            <label className={`flex items-center p-3 border rounded-lg hover:bg-stone-50 transition-colors cursor-pointer ${paymentMethod === 'online' ? 'bg-primary/10 border-primary' : ''}`}>
+                                <input
+                                    type="radio"
+                                    name="payment"
+                                    className="h-4 w-4 text-primary focus:ring-primary border-stone-300"
+                                    checked={paymentMethod === 'online'}
+                                    onChange={() => setPaymentMethod('online')}
+                                />
+                                <div className="ml-3 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-primary">payments</span>
+                                    <span className="font-medium text-sm text-stone-700">Pay Online (UPI / Cards / Net Banking)</span>
+                                </div>
+                                <span className="ml-auto text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-bold">Recommended</span>
                             </label>
-                             <label className="flex items-center p-3 border rounded-lg hover:bg-stone-50 has-[:checked]:bg-primary/10 has-[:checked]:border-primary transition-colors cursor-pointer">
-                                <input type="radio" name="payment" className="h-4 w-4 text-primary focus:ring-primary border-stone-300" />
-                                <span className="ml-3 font-medium text-sm text-stone-700">UPI / Net Banking</span>
+                            <label className={`flex items-center p-3 border rounded-lg hover:bg-stone-50 transition-colors cursor-pointer ${paymentMethod === 'cod' ? 'bg-primary/10 border-primary' : ''}`}>
+                                <input
+                                    type="radio"
+                                    name="payment"
+                                    className="h-4 w-4 text-primary focus:ring-primary border-stone-300"
+                                    checked={paymentMethod === 'cod'}
+                                    onChange={() => setPaymentMethod('cod')}
+                                />
+                                <div className="ml-3 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-stone-600">local_shipping</span>
+                                    <span className="font-medium text-sm text-stone-700">Cash on Delivery</span>
+                                </div>
                             </label>
                         </div>
                     </div>
-                    
-                    <button className="w-full bg-accent text-stone-900 py-3 rounded-full font-bold text-lg hover:bg-yellow-400 hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02]">
-                        Proceed to Payment
+
+                    <button
+                        onClick={handleProceedToPayment}
+                        className="w-full bg-gradient-to-r from-accent to-yellow-400 text-stone-900 py-4 rounded-full font-bold text-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] flex items-center justify-center gap-2"
+                    >
+                        <span className="material-symbols-outlined">shopping_cart_checkout</span>
+                        {paymentMethod === 'online' ? `Pay ₹${grandTotal.toFixed(2)}` : 'Place Order (COD)'}
                     </button>
+
+                    {/* Secure payment badge */}
+                    <div className="flex items-center justify-center gap-4 text-xs text-stone-400">
+                        <div className="flex items-center gap-1">
+                            <span className="material-symbols-outlined text-green-600 text-base">lock</span>
+                            <span>SSL Secure</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <span className="material-symbols-outlined text-green-600 text-base">verified_user</span>
+                            <span>100% Safe</span>
+                        </div>
+                    </div>
                 </div>
             </div>
+
+            {/* Payment Modal */}
+            <PaymentModal
+                isOpen={isPaymentModalOpen}
+                onClose={() => setIsPaymentModalOpen(false)}
+                customerId={currentUser?.uid || 'guest'}
+                customerName={currentUser?.name || 'Guest User'}
+                customerEmail={currentUser?.email}
+                customerPhone={currentUser?.phone}
+                items={paymentItems}
+                totalAmount={grandTotal}
+                onPaymentSuccess={handlePaymentSuccess}
+                onPaymentFailure={handlePaymentFailure}
+            />
         </div>
     );
 };
