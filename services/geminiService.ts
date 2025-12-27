@@ -3,10 +3,11 @@
 import { GoogleGenAI, Type, Content } from "@google/genai";
 import { ProductCategory, Product, Farmer } from "../types";
 
-const API_KEY = process.env.API_KEY || "";
+// Use Vite's environment variable pattern
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
 
 if (!API_KEY) {
-  console.warn("API_KEY environment variable not set. AI features will be disabled.");
+  console.warn("VITE_GEMINI_API_KEY environment variable not set. AI features will be disabled.");
 }
 
 // FIX: Initialize GoogleGenAI with a named apiKey parameter.

@@ -165,18 +165,23 @@ export const firebaseService = {
   },
 
   async upsertUserProfile(user: User): Promise<void> {
+    // Check if user already exists to preserve createdAt
+    const existingDoc = await getDoc(doc(db, 'users', user.uid));
+    const baseData = {
+      name: user.name,
+      avatarUrl: user.avatarUrl ?? null,
+      phone: user.phone ?? null,
+      email: user.email ?? null,
+      location: user.location ?? null,
+      role: user.role,
+      updatedAt: serverTimestamp(),
+    };
+    
     await setDoc(
       doc(db, 'users', user.uid),
-      {
-        name: user.name,
-        avatarUrl: user.avatarUrl ?? null,
-        phone: user.phone ?? null,
-        email: user.email ?? null,
-        location: user.location ?? null,
-        role: user.role,
-        updatedAt: serverTimestamp(),
-        createdAt: serverTimestamp(),
-      },
+      existingDoc.exists() 
+        ? baseData 
+        : { ...baseData, createdAt: serverTimestamp() },
       { merge: true }
     );
   },
@@ -400,6 +405,17 @@ export const firebaseService = {
     return getDownloadURL(objectRef);
   },
 
+  /**
+   * Upload a KYC document to Firebase Storage
+   */
+  async uploadKYCDocument(file: File, farmerId: string, docType: 'aadhaar' | 'kisan' | 'photo'): Promise<string> {
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const objectPath = `kycDocuments/${farmerId}/${docType}/${Date.now()}-${safeName}`;
+    const objectRef = ref(storage, objectPath);
+    await uploadBytes(objectRef, file, { contentType: file.type || 'application/octet-stream' });
+    return getDownloadURL(objectRef);
+  },
+
   async addProduct(
     currentUser: User,
     productData: Omit<Product, 'id' | 'farmerId' | 'imageUrl' | 'isVerified' | 'verificationFeedback'>,
@@ -414,6 +430,13 @@ export const firebaseService = {
       isVerified: false,
       verificationFeedback: null,
       createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  },
+
+  async updateProduct(productId: string, updates: Partial<Omit<Product, 'id' | 'farmerId'>>): Promise<void> {
+    await updateDoc(doc(db, 'products', productId), {
+      ...updates,
       updatedAt: serverTimestamp(),
     });
   },
@@ -568,18 +591,34 @@ export const firebaseService = {
   },
 
   async getFarmerWalletBalance(farmerId: string): Promise<number> {
+    // First try to get cached balance from wallets collection
+    const walletSnap = await getDoc(doc(db, 'wallets', farmerId));
+    if (walletSnap.exists()) {
+      return Number(walletSnap.data().totalBalance ?? 0);
+    }
+    
+    // Calculate from transactions if wallet document doesn't exist
     const q = query(
       collection(db, 'transactions'),
       where('farmerId', '==', farmerId),
       where('status', '==', 'Completed')
     );
-    const snap = await getDoc(doc(db, 'wallets', farmerId));
-    if (snap.exists()) {
-      return Number(snap.data().totalBalance ?? 0);
-    }
-    // Calculate from transactions if wallet doesn't exist
-    const transactionsSnap = await getDoc(doc(db, 'transactions', farmerId));
-    return transactionsSnap.exists() ? Number(transactionsSnap.data().totalBalance ?? 0) : 0;
+    const transactionsSnap = await getDocs(q);
+    
+    let balance = 0;
+    transactionsSnap.docs.forEach((docSnap) => {
+      const data = docSnap.data();
+      const amount = Number(data.amount ?? 0);
+      const txType = data.type;
+      
+      if (txType === 'Payment' || txType === 'Subsidy' || txType === 'TopUp') {
+        balance += amount;
+      } else if (txType === 'Withdrawal') {
+        balance -= amount;
+      }
+    });
+    
+    return balance;
   },
 
   async recordNegotiationPayment(negotiation: any, buyerId: string, farmerId: string, agreedPrice: number, quantity: number): Promise<void> {

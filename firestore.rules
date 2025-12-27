@@ -79,10 +79,16 @@ service cloud.firestore {
     }
     
     // Transactions: Only farmer can read their own transactions
+    // Creating transactions should ideally be done via Cloud Functions for security
+    // For now, we restrict creation to the farmer themselves for top-ups
     match /transactions/{transactionId} {
       allow read: if isAuthenticated() 
                   && resource.data.farmerId == request.auth.uid;
-      allow create: if isAuthenticated(); // Created by system on negotiation acceptance
+      // Only allow creating transactions for your own wallet (e.g., TopUp requests)
+      // Payment transactions should be created via trusted backend/Cloud Functions
+      allow create: if isAuthenticated() 
+                    && request.resource.data.farmerId == request.auth.uid
+                    && request.resource.data.type in ['TopUp', 'Withdrawal'];
       allow update: if isAuthenticated() 
                     && resource.data.farmerId == request.auth.uid;
       allow delete: if false;

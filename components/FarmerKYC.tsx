@@ -209,14 +209,14 @@ export const FarmerKYC = ({ isOpen, currentUser, onClose, onComplete, required =
 
         setIsSubmitting(true);
         try {
-            // Upload documents to Firebase Storage
+            // Upload documents to Firebase Storage using dedicated KYC upload function
             let aadhaarUrl = '';
             let kisanUrl = '';
             if (documents.aadhaarFile) {
-                aadhaarUrl = await firebaseService.uploadProductImage(documents.aadhaarFile, `kyc/${currentUser.uid}/aadhaar`);
+                aadhaarUrl = await firebaseService.uploadKYCDocument(documents.aadhaarFile, currentUser.uid, 'aadhaar');
             }
             if (documents.kisanFile) {
-                kisanUrl = await firebaseService.uploadProductImage(documents.kisanFile, `kyc/${currentUser.uid}/kisan`);
+                kisanUrl = await firebaseService.uploadKYCDocument(documents.kisanFile, currentUser.uid, 'kisan');
             }
 
             // Save KYC data to Firestore

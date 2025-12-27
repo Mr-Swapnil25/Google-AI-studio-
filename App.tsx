@@ -221,8 +221,20 @@ export default function App() {
     };
 
     const handleUpdateProduct = async (updatedProduct: Product) => {
-        // Mock update
-        showToast('Product updated successfully!', 'success');
+        try {
+            await firebaseService.updateProduct(updatedProduct.id, {
+                name: updatedProduct.name,
+                description: updatedProduct.description,
+                price: updatedProduct.price,
+                quantity: updatedProduct.quantity,
+                category: updatedProduct.category,
+                type: updatedProduct.type,
+            });
+            showToast('Product updated successfully!', 'success');
+        } catch (error) {
+            console.error('Error updating product:', error);
+            showToast('Failed to update product. Please try again.', 'error');
+        }
     };
 
     const handleToggleWishlist = (productId: string) => {
@@ -255,6 +267,7 @@ export default function App() {
     const handleNegotiationSubmit = async (values: { price: number; quantity: number; notes: string }) => {
         if (!activeNegotiation || !currentUser) return;
         try {
+            // Creating a new negotiation from a bulk product
             if ('type' in activeNegotiation && activeNegotiation.type === ProductType.Bulk) {
                 await firebaseService.createNegotiation({
                     productId: activeNegotiation.id,
@@ -271,11 +284,18 @@ export default function App() {
                 });
                 showToast('Negotiation offer sent!', 'success');
             }
+            // Updating an existing negotiation (counter-offer)
             else if ('status' in activeNegotiation) {
+                // Determine counter status based on current user's role
+                const isFarmerCountering = currentUser.role === UserRole.Farmer;
+                const newStatus = isFarmerCountering 
+                    ? NegotiationStatus.CounterByFarmer 
+                    : NegotiationStatus.CounterByBuyer;
+                
                 await firebaseService.updateNegotiation(activeNegotiation.id, {
-                    status: NegotiationStatus.CounterByFarmer,
+                    status: newStatus,
                     counterPrice: values.price,
-                    offeredPrice: values.price, // Update offered price to farmer's counter
+                    offeredPrice: values.price,
                     notes: values.notes || activeNegotiation.notes,
                     lastUpdated: new Date(),
                 });

@@ -66,7 +66,30 @@ export const AuthModal = ({ isOpen, onClose, initialRole, onAuthenticated }: Aut
         try {
             if (!email.trim() || !password) {
                 setError('Email and password are required.');
+                setIsLoading(false);
                 return;
+            }
+
+            // Email format validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email.trim())) {
+                setError('Please enter a valid email address.');
+                setIsLoading(false);
+                return;
+            }
+
+            // Password validation for signup
+            if (isSignUp) {
+                if (password.length < 8) {
+                    setError('Password must be at least 8 characters long.');
+                    setIsLoading(false);
+                    return;
+                }
+                if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password)) {
+                    setError('Password must contain uppercase, lowercase, and a number.');
+                    setIsLoading(false);
+                    return;
+                }
             }
 
             const cred = isSignUp
@@ -79,7 +102,19 @@ export const AuthModal = ({ isOpen, onClose, initialRole, onAuthenticated }: Aut
             }
         } catch (err: any) {
             console.error(err);
-            setError(err?.message || 'Authentication failed.');
+            // Map Firebase error codes to user-friendly messages
+            const errorCode = err?.code || '';
+            const errorMessages: Record<string, string> = {
+                'auth/user-not-found': 'No account found with this email. Please sign up.',
+                'auth/wrong-password': 'Incorrect password. Please try again.',
+                'auth/email-already-in-use': 'An account already exists with this email.',
+                'auth/invalid-email': 'Please enter a valid email address.',
+                'auth/weak-password': 'Password is too weak. Please use at least 8 characters.',
+                'auth/too-many-requests': 'Too many attempts. Please wait a moment and try again.',
+                'auth/network-request-failed': 'Network error. Please check your connection.',
+                'auth/invalid-credential': 'Invalid email or password. Please try again.',
+            };
+            setError(errorMessages[errorCode] || 'Authentication failed. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -140,6 +175,7 @@ export const AuthModal = ({ isOpen, onClose, initialRole, onAuthenticated }: Aut
             const uid = auth.currentUser?.uid;
             if (!uid) {
                 setError('No active session found. Please sign in again.');
+                setIsLoading(false);
                 return;
             }
             
