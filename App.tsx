@@ -430,7 +430,12 @@ export default function App() {
             return <FarmerProfile {...{farmer, products: products.filter(p => p.farmerId === viewingFarmerId), onBack: handleBackToProducts, onAddToCart: handleAddToCart, onNegotiate: handleOpenNegotiation, wishlist, onToggleWishlist: handleToggleWishlist, onVerifyFarmer: handleVerifyFarmer, onContactFarmer: handleContactFarmer }} />;
         }
         if (isCartViewOpen && userRole === UserRole.Buyer) {
-            return <CartView {...{cart, cartTotal, onUpdateQuantity: handleUpdateCartQuantity, onClose: () => setIsCartViewOpen(false)}} />;
+            const handlePaymentSuccess = () => {
+                setCart([]);
+                setIsCartViewOpen(false);
+                showToast('Payment successful! Your order has been placed.', 'success');
+            };
+            return <CartView {...{cart, cartTotal, onUpdateQuantity: handleUpdateCartQuantity, onClose: () => setIsCartViewOpen(false), currentUserId: currentUser.uid, onPaymentSuccess: handlePaymentSuccess}} />;
         }
         if (userRole === UserRole.Farmer) {
             // CRITICAL: Block dashboard access if KYC not complete

@@ -40,3 +40,74 @@
     transform: translateX(-50%);
   }
 }
+
+/* Payment Gateway Animations */
+@keyframes payment-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes payment-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes payment-success-check {
+  0% {
+    stroke-dasharray: 0 100;
+  }
+  100% {
+    stroke-dasharray: 100 100;
+  }
+}
+
+@keyframes payment-fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes payment-success-ring {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.animate-payment-spin {
+  animation: payment-spin 3s linear infinite;
+}
+
+.animate-payment-pulse {
+  animation: payment-pulse 2s ease-in-out infinite;
+}
+
+.animate-payment-fade-in-up {
+  animation: payment-fade-in-up 0.5s ease-out forwards;
+}
+
+.animate-payment-success-ring {
+  animation: payment-success-ring 1s ease-out forwards;
+}

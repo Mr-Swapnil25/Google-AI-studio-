@@ -610,4 +610,101 @@ export const firebaseService = {
       { merge: true }
     );
   },
+
+  /**
+   * Record a payment for an order through the payment gateway
+   */
+  async recordOrderPayment(params: {
+    orderId: string;
+    buyerId: string;
+    totalAmount: number;
+    transactionId: string;
+    paymentMethod: string;
+    productName?: string;
+    items?: Array<{ productId: string; farmerId: string; quantity: number; price: number }>;
+  }): Promise<void> {
+    const { orderId, buyerId, totalAmount, transactionId, paymentMethod, productName, items } = params;
+
+    // Create the order document with paid status
+    await setDoc(
+      doc(db, 'orders', orderId),
+      {
+        orderId,
+        buyerId,
+        totalAmount,
+        transactionId,
+        paymentMethod,
+        productName: productName ?? 'Order Items',
+        status: 'Paid',
+        paidAt: serverTimestamp(),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    // If items are provided, distribute payments to farmers
+    if (items && items.length > 0) {
+      for (const item of items) {
+        const amount = item.price * item.quantity;
+        await firebaseService.createTransaction({
+          farmerId: item.farmerId,
+          type: 'Payment',
+          status: 'Completed',
+          amount,
+          description: `Payment for order #${orderId}`,
+          relatedId: orderId,
+          metadata: {
+            orderId,
+            buyerId,
+            productId: item.productId,
+            quantity: item.quantity,
+            transactionId,
+          },
+        });
+
+        // Update farmer's wallet balance
+        const currentBalance = await firebaseService.getFarmerWalletBalance(item.farmerId);
+        await setDoc(
+          doc(db, 'wallets', item.farmerId),
+          {
+            farmerId: item.farmerId,
+            totalBalance: currentBalance + amount,
+            lastUpdated: serverTimestamp(),
+          },
+          { merge: true }
+        );
+      }
+    }
+  },
+
+  /**
+   * Update order status
+   */
+  async updateOrderStatus(orderId: string, status: string): Promise<void> {
+    await updateDoc(doc(db, 'orders', orderId), {
+      status,
+      updatedAt: serverTimestamp(),
+    });
+  },
+
+  /**
+   * Get order by ID
+   */
+  async getOrder(orderId: string): Promise<any | null> {
+    try {
+      const snap = await getDoc(doc(db, 'orders', orderId));
+      if (!snap.exists()) return null;
+      const data = snap.data();
+      return {
+        id: snap.id,
+        ...data,
+        paidAt: toDate(data.paidAt),
+        createdAt: toDate(data.createdAt),
+        updatedAt: toDate(data.updatedAt),
+      };
+    } catch {
+      return null;
+    }
+  },
 };

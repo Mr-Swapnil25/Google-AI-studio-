@@ -3,6 +3,7 @@ import { XIcon, LoaderIcon } from './icons';
 import { useToast } from '../context/ToastContext';
 import { firebaseService } from '../services/firebaseService';
 import { User } from '../types';
+import { NeonProgressBar, KYC_STEPS } from './ui/NeonProgressBar';
 
 interface FarmerKYCProps {
     isOpen: boolean;
@@ -20,6 +21,8 @@ interface PersonalInfo {
     mobile: string;
     dateOfBirth: string;
     village: string;
+    photoFile: File | null;
+    photoPreview: string | null;
 }
 
 interface DocumentInfo {
@@ -35,49 +38,6 @@ interface BankInfo {
     ifscCode: string;
     bankName: string;
 }
-
-const StepIndicator = ({
-    currentStep,
-    stepNumber,
-    label,
-    icon,
-    isCompleted,
-}: {
-    currentStep: KYCStep;
-    stepNumber: KYCStep;
-    label: string;
-    icon: string;
-    isCompleted: boolean;
-}) => {
-    const isActive = currentStep === stepNumber;
-    const isPast = currentStep > stepNumber || isCompleted;
-
-    return (
-        <div className={`flex flex-col items-center gap-3 relative z-10 transition-opacity duration-300 ${isActive ? 'opacity-100' : isPast ? 'opacity-100' : 'opacity-60'}`}>
-            <div
-                className={`relative flex items-center justify-center rounded-full font-bold shadow-sm transition-all duration-500 ${
-                    isActive
-                        ? 'size-14 bg-gradient-to-br from-primary to-green-600 text-white ring-4 ring-primary/20 scale-110'
-                        : isPast
-                            ? 'size-12 bg-primary text-white'
-                            : 'size-12 bg-white/70 backdrop-blur-sm text-stone-400 border-2 border-stone-200'
-                }`}
-            >
-                {isPast && !isActive ? (
-                    <span className="material-symbols-outlined text-2xl">check</span>
-                ) : (
-                    <span className="material-symbols-outlined text-2xl">{icon}</span>
-                )}
-                {isActive && (
-                    <div className="absolute inset-0 rounded-full border-2 border-primary animate-ping opacity-20"></div>
-                )}
-            </div>
-            <span className={`text-sm font-bold transition-colors duration-300 ${isActive ? 'text-primary' : isPast ? 'text-stone-700' : 'text-stone-400'} hidden sm:block`}>
-                {label}
-            </span>
-        </div>
-    );
-};
 
 const fileToDataUrl = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
@@ -97,7 +57,11 @@ export const FarmerKYC = ({ isOpen, currentUser, onClose, onComplete, required =
         mobile: currentUser.phone || '',
         dateOfBirth: '',
         village: currentUser.location || '',
+        photoFile: null,
+        photoPreview: currentUser.avatarUrl || null,
     });
+
+    const photoInputRef = useRef<HTMLInputElement>(null);
 
     const [documents, setDocuments] = useState<DocumentInfo>({
         aadhaarFile: null,
@@ -125,6 +89,8 @@ export const FarmerKYC = ({ isOpen, currentUser, onClose, onComplete, required =
                 mobile: currentUser.phone || '',
                 dateOfBirth: '',
                 village: currentUser.location || '',
+                photoFile: null,
+                photoPreview: currentUser.avatarUrl || null,
             });
             setDocuments({ aadhaarFile: null, aadhaarPreview: null, kisanFile: null, kisanPreview: null });
             setBankInfo({ accountHolder: currentUser.name || '', accountNumber: '', ifscCode: '', bankName: '' });
@@ -139,6 +105,13 @@ export const FarmerKYC = ({ isOpen, currentUser, onClose, onComplete, required =
     const handlePersonalInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setPersonalInfo((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const preview = await fileToDataUrl(file);
+        setPersonalInfo((prev) => ({ ...prev, photoFile: file, photoPreview: preview }));
     };
 
     const handleBankInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -278,8 +251,6 @@ export const FarmerKYC = ({ isOpen, currentUser, onClose, onComplete, required =
 
     if (!isOpen) return null;
 
-    const progressWidth = step === 1 ? '15%' : step === 2 ? '50%' : '100%';
-
     return (
         <div className="fixed inset-0 z-[100] bg-gradient-to-br from-stone-50 via-green-50/30 to-stone-50 overflow-y-auto">
             {/* Background decorations */}
@@ -322,25 +293,11 @@ export const FarmerKYC = ({ isOpen, currentUser, onClose, onComplete, required =
 
                 {/* Main Content */}
                 <main className="flex-1 w-full max-w-5xl mx-auto px-4 py-8 md:py-12 flex flex-col items-center gap-10 pb-32">
-                    {/* Progress Stepper */}
-                    <div className="w-full max-w-3xl">
-                        <div className="relative flex items-center justify-between w-full px-4">
-                            {/* Background track */}
-                            <div className="absolute left-8 right-8 top-1/2 -translate-y-1/2 h-1 bg-stone-200/60 rounded-full -z-10"></div>
-                            {/* Progress fill */}
-                            <div
-                                className="absolute left-8 top-1/2 -translate-y-1/2 h-1 bg-gradient-to-r from-primary to-green-500 rounded-full -z-10 transition-all duration-700 ease-out"
-                                style={{ width: `calc(${progressWidth} - 2rem)` }}
-                            ></div>
-
-                            <StepIndicator currentStep={step} stepNumber={1} label="Personal Info" icon="person" isCompleted={step > 1} />
-                            <StepIndicator currentStep={step} stepNumber={2} label="ID Upload" icon="badge" isCompleted={step > 2} />
-                            <StepIndicator currentStep={step} stepNumber={3} label="Bank Details" icon="account_balance" isCompleted={false} />
-                        </div>
-                    </div>
+                    {/* Neon Progress Stepper */}
+                    <NeonProgressBar steps={KYC_STEPS} currentStep={step} className="mt-6" />
 
                     {/* Step Content with slide animation */}
-                    <div className="w-full max-w-2xl overflow-hidden">
+                    <div className="w-full max-w-3xl overflow-hidden mt-8">
                         <div
                             className={`transform transition-all duration-500 ease-out ${
                                 slideDirection === 'right' ? 'animate-slide-in-right' : 'animate-slide-in-left'
@@ -348,87 +305,150 @@ export const FarmerKYC = ({ isOpen, currentUser, onClose, onComplete, required =
                             key={step}
                         >
                             {step === 1 && (
-                                <div className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-xl p-1 md:p-2 border border-white/60 relative overflow-hidden">
-                                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary via-green-400 to-primary"></div>
-                                    <div className="bg-white/40 rounded-2xl p-6 md:p-10 backdrop-blur-sm">
-                                        <div className="text-center mb-10">
-                                            <div className="inline-flex justify-center items-center p-4 bg-gradient-to-br from-green-50 to-white rounded-full shadow-inner mb-4">
-                                                <span className="material-symbols-outlined text-primary text-5xl md:text-6xl">face</span>
+                                <div className="relative group perspective-1000">
+                                    {/* Background decorative blobs */}
+                                    <div className="absolute -top-20 -left-20 w-56 h-56 bg-yellow-300/20 rounded-full blur-3xl animate-float pointer-events-none" style={{ animationDelay: '0s' }} />
+                                    <div className="absolute top-1/2 -right-20 w-64 h-64 bg-primary/15 rounded-full blur-3xl animate-float pointer-events-none" style={{ animationDelay: '2s' }} />
+                                    
+                                    {/* Glass card */}
+                                    <div className="relative bg-white/65 backdrop-blur-2xl rounded-[2.5rem] p-1 border border-white/80 overflow-hidden shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)]">
+                                        {/* Inner highlight gradient */}
+                                        <div className="absolute inset-0 bg-gradient-to-b from-white/60 via-white/20 to-transparent pointer-events-none" />
+                                        
+                                        <div className="relative bg-white/40 rounded-[2.3rem] p-6 md:p-12 backdrop-blur-xl z-10">
+                                            {/* Header */}
+                                            <div className="text-center mb-10">
+                                                <h1 className="text-3xl md:text-5xl font-black mb-4 tracking-tight leading-tight">
+                                                    <span className="bg-gradient-to-r from-stone-900 via-primary to-sky-500 bg-clip-text text-transparent bg-[length:200%_200%] animate-shimmer">
+                                                        Tell Us About Yourself
+                                                    </span>
+                                                </h1>
+                                                <p className="text-lg md:text-2xl text-stone-700 font-bold max-w-md mx-auto leading-relaxed drop-shadow-sm">
+                                                    Your details help us serve you better.
+                                                </p>
                                             </div>
-                                            <h1 className="text-3xl md:text-4xl font-black text-stone-900 mb-3 tracking-tight">Tell Us About Yourself</h1>
-                                            <p className="text-lg md:text-xl text-stone-600 font-medium max-w-md mx-auto">Your details help us serve you better.</p>
-                                        </div>
 
-                                        <form className="space-y-6 md:space-y-8" onSubmit={(e) => e.preventDefault()}>
-                                            <div className="group/input">
-                                                <label className="block text-stone-700 font-bold text-sm mb-2 ml-1">FULL NAME</label>
-                                                <div className="relative transition-all duration-300 transform group-hover/input:-translate-y-1">
-                                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                                        <span className="material-symbols-outlined text-primary text-2xl">badge</span>
+                                            {/* Profile Photo Upload */}
+                                            <div className="mb-12 flex flex-col items-center">
+                                                <input
+                                                    ref={photoInputRef}
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={handlePhotoUpload}
+                                                    className="hidden"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => photoInputRef.current?.click()}
+                                                    className="group relative cursor-pointer"
+                                                >
+                                                    <div className="w-36 h-36 md:w-44 md:h-44 rounded-full bg-white/60 backdrop-blur-md flex flex-col items-center justify-center border-2 border-dashed border-primary/60 hover:border-primary transition-all duration-300 shadow-inner hover:shadow-[0_0_25px_rgba(19,236,30,0.3)] overflow-hidden relative z-10">
+                                                        {personalInfo.photoPreview ? (
+                                                            <img 
+                                                                src={personalInfo.photoPreview} 
+                                                                alt="Profile preview" 
+                                                                className="w-full h-full object-cover"
+                                                            />
+                                                        ) : (
+                                                            <div className="flex flex-col items-center gap-2 transition-opacity duration-300 group-hover:opacity-100 z-20">
+                                                                <div className="size-14 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-1 animate-pulse border border-primary/20">
+                                                                    <span className="material-symbols-outlined text-4xl">add_a_photo</span>
+                                                                </div>
+                                                                <span className="text-xs font-black text-stone-600 uppercase tracking-widest bg-white/60 px-2 py-1 rounded-full">Add Photo</span>
+                                                            </div>
+                                                        )}
+                                                        <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                                                     </div>
-                                                    <input
-                                                        type="text"
-                                                        name="fullName"
-                                                        value={personalInfo.fullName}
-                                                        onChange={handlePersonalInfoChange}
-                                                        className="w-full h-16 pl-14 pr-4 rounded-2xl bg-white/50 backdrop-blur-sm border border-stone-200/50 text-stone-900 font-bold text-lg placeholder:text-stone-400 focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all shadow-sm"
-                                                        placeholder="Enter your full name"
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <div className="group/input">
-                                                <label className="block text-stone-700 font-bold text-sm mb-2 ml-1">MOBILE NUMBER</label>
-                                                <div className="relative transition-all duration-300 transform group-hover/input:-translate-y-1">
-                                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                                        <span className="material-symbols-outlined text-primary text-2xl">smartphone</span>
-                                                    </div>
-                                                    <input
-                                                        type="tel"
-                                                        name="mobile"
-                                                        value={personalInfo.mobile}
-                                                        onChange={handlePersonalInfoChange}
-                                                        className="w-full h-16 pl-14 pr-4 rounded-2xl bg-white/50 backdrop-blur-sm border border-stone-200/50 text-stone-900 font-bold text-lg placeholder:text-stone-400 focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all shadow-sm"
-                                                        placeholder="+91 Enter your mobile number"
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-                                                <div className="group/input">
-                                                    <label className="block text-stone-700 font-bold text-sm mb-2 ml-1">DATE OF BIRTH</label>
-                                                    <div className="relative transition-all duration-300 transform group-hover/input:-translate-y-1">
-                                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                                            <span className="material-symbols-outlined text-primary text-2xl">cake</span>
+                                                    {personalInfo.photoPreview && (
+                                                        <div className="absolute bottom-2 right-2 size-10 rounded-full bg-primary text-white flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <span className="material-symbols-outlined text-xl">edit</span>
                                                         </div>
-                                                        <input
-                                                            type="date"
-                                                            name="dateOfBirth"
-                                                            value={personalInfo.dateOfBirth}
-                                                            onChange={handlePersonalInfoChange}
-                                                            className="w-full h-16 pl-14 pr-4 rounded-2xl bg-white/50 backdrop-blur-sm border border-stone-200/50 text-stone-900 font-bold text-lg focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all shadow-sm cursor-pointer"
-                                                        />
-                                                    </div>
-                                                </div>
+                                                    )}
+                                                </button>
+                                            </div>
 
-                                                <div className="group/input">
-                                                    <label className="block text-stone-700 font-bold text-sm mb-2 ml-1">VILLAGE / LOCALITY</label>
-                                                    <div className="relative transition-all duration-300 transform group-hover/input:-translate-y-1">
-                                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                                            <span className="material-symbols-outlined text-primary text-2xl">home_pin</span>
+                                            <form className="space-y-8" onSubmit={(e) => e.preventDefault()}>
+                                                {/* Full Name Input */}
+                                                <div className="group/input relative">
+                                                    <label className="block text-stone-500 font-extrabold text-xs uppercase tracking-widest mb-3 ml-4">Full Name</label>
+                                                    <div className="relative transition-transform duration-300 group-hover/input:-translate-y-1">
+                                                        <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none z-10">
+                                                            <div className="size-12 rounded-xl bg-gradient-to-br from-white to-stone-50 border border-white shadow-sm flex items-center justify-center text-stone-400 group-focus-within/input:text-primary group-focus-within/input:shadow-[0_0_10px_rgba(19,236,30,0.3)] transition-all duration-300">
+                                                                <span className="material-symbols-outlined text-3xl">person</span>
+                                                            </div>
                                                         </div>
                                                         <input
                                                             type="text"
-                                                            name="village"
-                                                            value={personalInfo.village}
+                                                            name="fullName"
+                                                            value={personalInfo.fullName}
                                                             onChange={handlePersonalInfoChange}
-                                                            className="w-full h-16 pl-14 pr-4 rounded-2xl bg-white/50 backdrop-blur-sm border border-stone-200/50 text-stone-900 font-bold text-lg placeholder:text-stone-400 focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all shadow-sm"
-                                                            placeholder="Enter your village"
+                                                            className="w-full h-20 pl-20 pr-6 rounded-2xl bg-white/60 backdrop-blur-xl border border-white/80 text-stone-800 font-black text-xl md:text-2xl placeholder:text-stone-400 placeholder:font-bold focus:ring-0 focus:bg-white/95 focus:border-primary/50 focus:shadow-[0_0_0_4px_rgba(19,236,30,0.15),0_10px_20px_-5px_rgba(0,0,0,0.05)] focus:-translate-y-0.5 transition-all shadow-[0_4px_6px_-1px_rgba(0,0,0,0.02),inset_0_2px_4px_0_rgba(255,255,255,0.5)]"
+                                                            placeholder="Enter your full name"
                                                         />
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </form>
+
+                                                {/* Mobile Number Input */}
+                                                <div className="group/input relative">
+                                                    <label className="block text-stone-500 font-extrabold text-xs uppercase tracking-widest mb-3 ml-4">Mobile Number</label>
+                                                    <div className="relative transition-transform duration-300 group-hover/input:-translate-y-1">
+                                                        <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none z-10">
+                                                            <div className="size-12 rounded-xl bg-gradient-to-br from-white to-stone-50 border border-white shadow-sm flex items-center justify-center text-stone-400 group-focus-within/input:text-primary group-focus-within/input:shadow-[0_0_10px_rgba(19,236,30,0.3)] transition-all duration-300">
+                                                                <span className="material-symbols-outlined text-3xl">smartphone</span>
+                                                            </div>
+                                                        </div>
+                                                        <input
+                                                            type="tel"
+                                                            name="mobile"
+                                                            value={personalInfo.mobile}
+                                                            onChange={handlePersonalInfoChange}
+                                                            className="w-full h-20 pl-20 pr-6 rounded-2xl bg-white/60 backdrop-blur-xl border border-white/80 text-stone-800 font-black text-xl md:text-2xl placeholder:text-stone-400 placeholder:font-bold focus:ring-0 focus:bg-white/95 focus:border-primary/50 focus:shadow-[0_0_0_4px_rgba(19,236,30,0.15),0_10px_20px_-5px_rgba(0,0,0,0.05)] focus:-translate-y-0.5 transition-all shadow-[0_4px_6px_-1px_rgba(0,0,0,0.02),inset_0_2px_4px_0_rgba(255,255,255,0.5)]"
+                                                            placeholder="+91 Enter your mobile number"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {/* Date of Birth & Village Grid */}
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                    <div className="group/input relative">
+                                                        <label className="block text-stone-500 font-extrabold text-xs uppercase tracking-widest mb-3 ml-4">Date of Birth</label>
+                                                        <div className="relative transition-transform duration-300 group-hover/input:-translate-y-1">
+                                                            <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none z-10">
+                                                                <div className="size-12 rounded-xl bg-gradient-to-br from-white to-stone-50 border border-white shadow-sm flex items-center justify-center text-stone-400 group-focus-within/input:text-primary group-focus-within/input:shadow-[0_0_10px_rgba(19,236,30,0.3)] transition-all duration-300">
+                                                                    <span className="material-symbols-outlined text-3xl">calendar_month</span>
+                                                                </div>
+                                                            </div>
+                                                            <input
+                                                                type="date"
+                                                                name="dateOfBirth"
+                                                                value={personalInfo.dateOfBirth}
+                                                                onChange={handlePersonalInfoChange}
+                                                                className="w-full h-20 pl-20 pr-6 rounded-2xl bg-white/60 backdrop-blur-xl border border-white/80 text-stone-800 font-black text-xl md:text-2xl focus:ring-0 focus:bg-white/95 focus:border-primary/50 focus:shadow-[0_0_0_4px_rgba(19,236,30,0.15),0_10px_20px_-5px_rgba(0,0,0,0.05)] focus:-translate-y-0.5 transition-all shadow-[0_4px_6px_-1px_rgba(0,0,0,0.02),inset_0_2px_4px_0_rgba(255,255,255,0.5)] cursor-pointer"
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="group/input relative">
+                                                        <label className="block text-stone-500 font-extrabold text-xs uppercase tracking-widest mb-3 ml-4">Village / Locality</label>
+                                                        <div className="relative transition-transform duration-300 group-hover/input:-translate-y-1">
+                                                            <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none z-10">
+                                                                <div className="size-12 rounded-xl bg-gradient-to-br from-white to-stone-50 border border-white shadow-sm flex items-center justify-center text-stone-400 group-focus-within/input:text-primary group-focus-within/input:shadow-[0_0_10px_rgba(19,236,30,0.3)] transition-all duration-300">
+                                                                    <span className="material-symbols-outlined text-3xl">home_pin</span>
+                                                                </div>
+                                                            </div>
+                                                            <input
+                                                                type="text"
+                                                                name="village"
+                                                                value={personalInfo.village}
+                                                                onChange={handlePersonalInfoChange}
+                                                                className="w-full h-20 pl-20 pr-6 rounded-2xl bg-white/60 backdrop-blur-xl border border-white/80 text-stone-800 font-black text-xl md:text-2xl placeholder:text-stone-400 placeholder:font-bold focus:ring-0 focus:bg-white/95 focus:border-primary/50 focus:shadow-[0_0_0_4px_rgba(19,236,30,0.15),0_10px_20px_-5px_rgba(0,0,0,0.05)] focus:-translate-y-0.5 transition-all shadow-[0_4px_6px_-1px_rgba(0,0,0,0.02),inset_0_2px_4px_0_rgba(255,255,255,0.5)]"
+                                                                placeholder="Enter village"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </form>
+                                        </div>
                                     </div>
                                 </div>
                             )}
