@@ -11,9 +11,20 @@ export enum ProductCategory {
 }
 
 export enum ProductType {
+  /** @deprecated Platform is B2B bulk-only. Kept for legacy data compatibility. */
   Retail = 'Retail',
   Bulk = 'Bulk',
 }
+
+/** Bulk lot size units for B2B trading */
+export enum BulkUnit {
+  Kg = 'kg',
+  Quintal = 'quintal',   // 100 kg
+  Ton = 'ton',           // 1000 kg
+}
+
+/** Minimum bulk order quantity in kg (1 quintal) */
+export const MIN_BULK_QUANTITY_KG = 100;
 
 export interface Product {
   id: string;
@@ -59,11 +70,23 @@ export interface Negotiation {
   initialPrice: number;
   offeredPrice: number;
   counterPrice?: number;
-  quantity: number;
+  quantity: number; // in kg
   status: NegotiationStatus;
   notes: string;
   lastUpdated: Date;
+  // Dynamic pricing fields
+  floorPrice?: number;      // Minimum acceptable price (per kg)
+  targetPrice?: number;     // Suggested fair price (per kg)
+  priceSource?: string;     // Where the floor/target came from
+  priceVerified?: boolean;  // Whether mandi data was available
+  qualityGrade?: string;    // AI-assessed grade (A, B, C)
+  farmerLocation?: {        // For price calculation
+    state?: string;
+    district?: string;
+  };
 }
+
+export type MessageStatus = 'sending' | 'sent' | 'failed';
 
 export interface ChatMessage {
   id: string;
@@ -71,6 +94,7 @@ export interface ChatMessage {
   senderId: string; // e.g., 'b1' for buyer, 'f1' for farmer
   text: string;
   timestamp: Date;
+  status?: MessageStatus; // Optional for backward compatibility
 }
 
 export interface BotChatMessage {

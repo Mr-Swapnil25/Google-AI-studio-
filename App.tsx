@@ -264,12 +264,19 @@ export default function App() {
     const handleOpenNegotiation = (item: Product | Negotiation) => setActiveNegotiation(item);
     const handleCloseNegotiation = () => setActiveNegotiation(null);
 
-    const handleNegotiationSubmit = async (values: { price: number; quantity: number; notes: string }) => {
+    const handleNegotiationSubmit = async (values: { price: number; quantity: number; notes: string; priceBand?: { floorPrice: number; targetPrice: number; priceSource: string; isVerified: boolean } }) => {
         if (!activeNegotiation || !currentUser) return;
         try {
-            // Creating a new negotiation from a bulk product
-            if ('type' in activeNegotiation && activeNegotiation.type === ProductType.Bulk) {
-                await firebaseService.createNegotiation({
+            // Creating a new negotiation from a bulk product (B2B only)
+            if ('type' in activeNegotiation) {
+                // All products are now bulk B2B - enforce minimum quantity
+                const MIN_BULK_QTY = 100;
+                if (values.quantity < MIN_BULK_QTY) {
+                    showToast(`Minimum bulk order is ${MIN_BULK_QTY}kg (1 quintal). This is a B2B platform.`, 'error');
+                    return;
+                }
+                
+                const result = await firebaseService.createNegotiation({
                     productId: activeNegotiation.id,
                     productName: activeNegotiation.name,
                     productImageUrl: activeNegotiation.imageUrl,
@@ -281,8 +288,19 @@ export default function App() {
                     status: NegotiationStatus.Pending,
                     notes: values.notes,
                     lastUpdated: new Date(),
+                    // Include price band if available from modal
+                    floorPrice: values.priceBand?.floorPrice,
+                    targetPrice: values.priceBand?.targetPrice,
+                    priceSource: values.priceBand?.priceSource,
+                    priceVerified: values.priceBand?.isVerified,
+                    qualityGrade: activeNegotiation.isVerified ? 'A' : 'B',
                 });
-                showToast('Negotiation offer sent!', 'success');
+                
+                if (!result.success) {
+                    showToast(result.error || 'Failed to create negotiation', 'error');
+                    return;
+                }
+                showToast('Bulk negotiation offer sent!', 'success');
             }
             // Updating an existing negotiation (counter-offer)
             else if ('status' in activeNegotiation) {
@@ -292,13 +310,18 @@ export default function App() {
                     ? NegotiationStatus.CounterByFarmer 
                     : NegotiationStatus.CounterByBuyer;
                 
-                await firebaseService.updateNegotiation(activeNegotiation.id, {
+                const result = await firebaseService.updateNegotiation(activeNegotiation.id, {
                     status: newStatus,
                     counterPrice: values.price,
                     offeredPrice: values.price,
                     notes: values.notes || activeNegotiation.notes,
                     lastUpdated: new Date(),
                 });
+                
+                if (!result.success) {
+                    showToast(result.error || 'Failed to send counter-offer', 'error');
+                    return;
+                }
                 showToast('Counter-offer sent!', 'success');
             }
             handleCloseNegotiation();
@@ -311,13 +334,17 @@ export default function App() {
     const handleNegotiationResponse = async (negotiationId: string, response: 'Accepted' | 'Rejected') => {
         const newStatus = response === 'Accepted' ? NegotiationStatus.Accepted : NegotiationStatus.Rejected;
         try {
-            await firebaseService.updateNegotiation(negotiationId, { status: newStatus });
+            const result = await firebaseService.updateNegotiation(negotiationId, { status: newStatus });
+            if (!result.success) {
+                showToast(result.error || 'Failed to respond to offer', 'error');
+                return;
+            }
             showToast(`Offer ${response.toLowerCase()}!`, 'success');
 
             if (response === 'Accepted') {
                 const negotiation = negotiations.find(n => n.id === negotiationId);
                 const product = products.find(p => p.id === negotiation?.productId);
-                if (product && negotiation) {
+                if (product && negotiation && currentUser) {
                     // Check for any counter status (including legacy CounterOffer for read compatibility)
                     const hasCounter = negotiation.status === NegotiationStatus.CounterByFarmer ||
                                        negotiation.status === NegotiationStatus.CounterByBuyer ||
@@ -325,7 +352,9 @@ export default function App() {
                     const finalPrice = hasCounter && negotiation.counterPrice
                         ? negotiation.counterPrice
                         : negotiation.offeredPrice;
-                    handleAddToCart({ ...product, price: finalPrice }, negotiation.quantity);
+                    
+                    // For B2B bulk, don't add to cart - just record the deal
+                    showToast(`Bulk deal confirmed: ${negotiation.quantity}kg at ₹${finalPrice}/kg`, 'success');
 
                     // Record payment in farmer's wallet
                     try {
@@ -364,7 +393,7 @@ export default function App() {
     const handleSendMessage = async (text: string) => {
         if (!activeChat || !text.trim() || !currentUser) return;
         
-        // Optimistic UI: Add message immediately with temporary ID
+        // Optimistic UI: Add message immediately with temporary ID and 'sending' status
         const tempId = `temp-${Date.now()}`;
         const optimisticMessage: ChatMessage = {
             id: tempId,
@@ -372,6 +401,7 @@ export default function App() {
             senderId: currentUser.uid,
             text: text.trim(),
             timestamp: new Date(),
+            status: 'sending',
         };
         setMessages(prev => [...prev, optimisticMessage]);
         
@@ -382,11 +412,43 @@ export default function App() {
                 text,
             });
             // Firebase subscription will replace optimistic message with real one
+            // Update status to 'sent' in case subscription is slow
+            setMessages(prev => prev.map(m => m.id === tempId ? { ...m, status: 'sent' } : m));
         } catch(error) {
             console.error("Error sending message:", error);
-            showToast('Could not send message.', 'error');
-            // Remove the optimistic message on error
-            setMessages(prev => prev.filter(m => m.id !== tempId));
+            showToast('Could not send message. Tap to retry.', 'error');
+            // Mark message as failed instead of removing (allows retry)
+            setMessages(prev => prev.map(m => m.id === tempId ? { ...m, status: 'failed' } : m));
+        }
+    };
+
+    // Retry sending a failed message
+    const handleRetryMessage = async (messageId: string) => {
+        const failedMessage = messages.find(m => m.id === messageId && m.status === 'failed');
+        if (!failedMessage || !currentUser) return;
+
+        const negotiation = negotiations.find(n => n.id === failedMessage.negotiationId);
+        if (!negotiation) {
+            showToast('Negotiation not found. Cannot retry.', 'error');
+            return;
+        }
+
+        // Mark as sending
+        setMessages(prev => prev.map(m => m.id === messageId ? { ...m, status: 'sending' } : m));
+
+        try {
+            await firebaseService.sendMessage({
+                negotiation,
+                senderId: currentUser.uid,
+                text: failedMessage.text,
+            });
+            // Remove failed message (Firebase subscription will add the real one)
+            setMessages(prev => prev.filter(m => m.id !== messageId));
+            showToast('Message sent successfully!', 'success');
+        } catch (error) {
+            console.error("Retry failed:", error);
+            showToast('Failed to send. Try again later.', 'error');
+            setMessages(prev => prev.map(m => m.id === messageId ? { ...m, status: 'failed' } : m));
         }
     };
 
@@ -395,7 +457,7 @@ export default function App() {
         const negotiation = negotiations.find(n => n.id === negotiationId);
         if (!negotiation) return;
         
-        // Optimistic UI: Add message immediately with temporary ID
+        // Optimistic UI: Add message immediately with temporary ID and 'sending' status
         const tempId = `temp-${Date.now()}`;
         const optimisticMessage: ChatMessage = {
             id: tempId,
@@ -403,6 +465,7 @@ export default function App() {
             senderId: currentUser.uid,
             text: text.trim(),
             timestamp: new Date(),
+            status: 'sending',
         };
         setMessages(prev => [...prev, optimisticMessage]);
         
@@ -413,11 +476,12 @@ export default function App() {
                 text,
             });
             // Firebase subscription will replace optimistic message with real one
+            setMessages(prev => prev.map(m => m.id === tempId ? { ...m, status: 'sent' } : m));
         } catch(error) {
             console.error("Error sending message:", error);
-            showToast('Could not send message.', 'error');
-            // Remove the optimistic message on error
-            setMessages(prev => prev.filter(m => m.id !== tempId));
+            showToast('Could not send message. Tap to retry.', 'error');
+            // Mark message as failed instead of removing (allows retry)
+            setMessages(prev => prev.map(m => m.id === tempId ? { ...m, status: 'failed' } : m));
         }
     };
 
@@ -529,7 +593,7 @@ export default function App() {
                 <main className={userRole === UserRole.Farmer ? '' : 'container mx-auto p-4 sm:p-6 lg:p-8'}>{renderMainContent()}</main>
 
                 {activeNegotiation && <NegotiationModal {...{isOpen: !!activeNegotiation, onClose: handleCloseNegotiation, item: activeNegotiation, userRole, onSubmit: handleNegotiationSubmit}} />}
-                {activeChat && currentUser && <ChatModal {...{isOpen: !!activeChat, onClose: handleCloseChat, negotiation: activeChat, messages: messages.filter(m => m.negotiationId === activeChat.id), currentUserId: currentUser.uid, onSendMessage: handleSendMessage, userRole}} />}
+                {activeChat && currentUser && <ChatModal {...{isOpen: !!activeChat, onClose: handleCloseChat, negotiation: activeChat, messages: messages.filter(m => m.negotiationId === activeChat.id), currentUserId: currentUser.uid, onSendMessage: handleSendMessage, onRetryMessage: handleRetryMessage, userRole}} />}
                 
                 {userRole === UserRole.Buyer && cart.length > 0 && !isCartViewOpen && !viewingFarmerId &&
                     <div className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm p-4 border-t border-stone-200 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">

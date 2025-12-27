@@ -371,23 +371,20 @@ export const ProductUploadPage: React.FC<ProductUploadPageProps> = ({ onBack, on
                                     </div>
                                 </div>
 
-                                {/* Product Type Toggle */}
-                                <div className="bg-white p-5 rounded-xl border border-[#dee3de] shadow-sm">
+                                {/* B2B Bulk Platform Notice */}
+                                <div className="bg-white p-5 rounded-xl border border-blue-200 shadow-sm">
                                     <div className="flex flex-col gap-3">
-                                        <span className="text-lg font-bold text-gray-900">Listing Type</span>
-                                        <div className="flex gap-3">
-                                            <button 
-                                                onClick={() => setProductType(ProductType.Retail)}
-                                                className={`flex-1 py-3 rounded-lg font-bold transition-all ${productType === ProductType.Retail ? 'bg-[#2E7D32] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-                                            >
-                                                Retail (Fixed Price)
-                                            </button>
-                                            <button 
-                                                onClick={() => setProductType(ProductType.Bulk)}
-                                                className={`flex-1 py-3 rounded-lg font-bold transition-all ${productType === ProductType.Bulk ? 'bg-[#2E7D32] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-                                            >
-                                                Bulk (Negotiable)
-                                            </button>
+                                        <div className="flex items-center gap-2">
+                                            <span className="material-symbols-outlined text-blue-600">business</span>
+                                            <span className="text-lg font-bold text-gray-900">B2B Bulk Listing</span>
+                                        </div>
+                                        <p className="text-sm text-gray-600">
+                                            All listings on Anna Bazaar are for bulk wholesale orders. Minimum order quantity is 1 quintal (100kg). 
+                                            Buyers will negotiate prices directly through the platform.
+                                        </p>
+                                        <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
+                                            <span className="material-symbols-outlined text-blue-600 text-sm">handshake</span>
+                                            <span className="text-sm font-medium text-blue-800">Price is negotiable by buyers</span>
                                         </div>
                                     </div>
                                 </div>

@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Negotiation, NegotiationStatus, ChatMessage, Farmer } from '../types';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { Negotiation, NegotiationStatus, ChatMessage, Farmer, MIN_BULK_QUANTITY_KG } from '../types';
+import { classifyOffer, type OfferClassification, type PriceBand } from '../services/mandiPriceService';
 
 interface BuyerNegotiationConsoleProps {
     negotiation: Negotiation;
@@ -29,6 +30,38 @@ export const BuyerNegotiationConsole: React.FC<BuyerNegotiationConsoleProps> = (
     const [counterQuantity, setCounterQuantity] = useState(negotiation.quantity);
     const chatContainerRef = useRef<HTMLDivElement>(null);
 
+    // Get price band from negotiation (computed on creation)
+    const priceBand: PriceBand | null = useMemo(() => {
+        if (negotiation.floorPrice != null && negotiation.targetPrice != null) {
+            return {
+                floorPrice: negotiation.floorPrice,
+                targetPrice: negotiation.targetPrice,
+                stretchPrice: negotiation.targetPrice * 1.1,
+                baseMandiPrice: 0, // Not needed for display
+                qualityFactor: 1,
+                isVerified: negotiation.priceVerified ?? false,
+                priceSource: negotiation.priceSource ?? 'Market data',
+                updatedAt: null,
+            };
+        }
+        return null;
+    }, [negotiation.floorPrice, negotiation.targetPrice, negotiation.priceVerified, negotiation.priceSource]);
+
+    // Classify the current offer
+    const offerClassification: OfferClassification | null = useMemo(() => {
+        if (!priceBand) return null;
+        return classifyOffer(counterPrice, priceBand);
+    }, [counterPrice, priceBand]);
+
+    // Check if offer is valid (not below floor)
+    const isOfferValid = !offerClassification || offerClassification.status !== 'INVALID';
+    
+    // Check if quantity is valid (bulk minimum)
+    const isQuantityValid = counterQuantity >= MIN_BULK_QUANTITY_KG;
+    
+    // Can submit only if both price and quantity are valid
+    const canSubmitOffer = isOfferValid && isQuantityValid;
+
     useEffect(() => {
         if (chatContainerRef.current) {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
@@ -42,6 +75,7 @@ export const BuyerNegotiationConsole: React.FC<BuyerNegotiationConsoleProps> = (
     };
 
     const handleUpdateOffer = () => {
+        if (!canSubmitOffer) return;
         onUpdateOffer(counterPrice, counterQuantity);
     };
 
@@ -243,12 +277,53 @@ export const BuyerNegotiationConsole: React.FC<BuyerNegotiationConsoleProps> = (
                     {isPending && (
                         <div className="absolute bottom-0 left-0 w-full bg-white dark:bg-[#1a262d] border-t border-stone-200 dark:border-[#27333a] p-4 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
                             <div className="max-w-4xl mx-auto flex flex-col gap-4">
+                                {/* Price Floor Indicator */}
+                                {priceBand && (
+                                    <div className="flex items-center justify-between px-3 py-2 bg-stone-50 dark:bg-stone-900 rounded-lg border border-stone-200 dark:border-stone-700">
+                                        <div className="flex items-center gap-4 text-xs">
+                                            <div className="flex items-center gap-1">
+                                                <span className="text-stone-500 dark:text-stone-400">Min Floor:</span>
+                                                <span className="font-bold text-red-600">₹{priceBand.floorPrice}/kg</span>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <span className="text-stone-500 dark:text-stone-400">Fair Target:</span>
+                                                <span className="font-bold text-green-600">₹{priceBand.targetPrice}/kg</span>
+                                            </div>
+                                            {!priceBand.isVerified && (
+                                                <span className="text-xs text-orange-600 flex items-center gap-1">
+                                                    <span className="material-symbols-outlined text-sm">warning</span>
+                                                    Unverified mandi data
+                                                </span>
+                                            )}
+                                        </div>
+                                        <span className="text-[10px] text-stone-400">{priceBand.priceSource}</span>
+                                    </div>
+                                )}
+
+                                {/* Offer Classification Badge */}
+                                {offerClassification && (
+                                    <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${offerClassification.bgClass}`}>
+                                        <span className={`material-symbols-outlined text-sm ${offerClassification.colorClass}`}>
+                                            {offerClassification.status === 'INVALID' ? 'block' :
+                                             offerClassification.status === 'LOW' ? 'trending_down' :
+                                             offerClassification.status === 'FAIR' ? 'check_circle' : 'trending_up'}
+                                        </span>
+                                        <span className={`text-xs font-bold ${offerClassification.colorClass}`}>
+                                            {offerClassification.status}: {offerClassification.message}
+                                        </span>
+                                    </div>
+                                )}
+
                                 <div className="flex items-center justify-between">
-                                    <h4 className="text-xs font-bold uppercase tracking-wider text-stone-600 dark:text-stone-400">Make Counter-Offer</h4>
+                                    <h4 className="text-xs font-bold uppercase tracking-wider text-stone-600 dark:text-stone-400">Make Counter-Offer (Bulk B2B)</h4>
                                 </div>
                                 <div className="flex flex-col md:flex-row gap-4 items-stretch">
                                     {/* Price Spinner */}
-                                    <div className="flex-1 flex items-center bg-stone-100 dark:bg-stone-800 rounded-xl border border-stone-300 dark:border-stone-700 px-2 py-1">
+                                    <div className={`flex-1 flex items-center rounded-xl px-2 py-1 ${
+                                        !isOfferValid 
+                                            ? 'bg-red-50 dark:bg-red-900/20 border-2 border-red-400' 
+                                            : 'bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700'
+                                    }`}>
                                         <button
                                             onClick={() => setCounterPrice(Math.max(1, counterPrice - 1))}
                                             className="size-10 flex items-center justify-center rounded-lg hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-600 dark:text-stone-400"
@@ -256,9 +331,11 @@ export const BuyerNegotiationConsole: React.FC<BuyerNegotiationConsoleProps> = (
                                             <span className="material-symbols-outlined">remove</span>
                                         </button>
                                         <div className="flex-1 text-center border-x border-stone-300 dark:border-stone-700 mx-2 py-1">
-                                            <span className="block text-xs text-stone-600 dark:text-stone-400 font-medium">Price (₹)</span>
+                                            <span className={`block text-xs font-medium ${!isOfferValid ? 'text-red-600' : 'text-stone-600 dark:text-stone-400'}`}>
+                                                Price (₹/kg)
+                                            </span>
                                             <input
-                                                className="w-full bg-transparent text-center font-bold text-xl border-none focus:ring-0 p-0"
+                                                className={`w-full bg-transparent text-center font-bold text-xl border-none focus:ring-0 p-0 ${!isOfferValid ? 'text-red-600' : ''}`}
                                                 type="number"
                                                 value={counterPrice}
                                                 onChange={(e) => setCounterPrice(Math.max(1, parseInt(e.target.value) || 1))}
@@ -272,38 +349,52 @@ export const BuyerNegotiationConsole: React.FC<BuyerNegotiationConsoleProps> = (
                                         </button>
                                     </div>
 
-                                    {/* Qty Spinner */}
-                                    <div className="flex-1 flex items-center bg-stone-100 dark:bg-stone-800 rounded-xl border border-stone-300 dark:border-stone-700 px-2 py-1">
+                                    {/* Qty Spinner - Bulk Lot (min 100kg) */}
+                                    <div className={`flex-1 flex items-center rounded-xl px-2 py-1 ${
+                                        !isQuantityValid 
+                                            ? 'bg-red-50 dark:bg-red-900/20 border-2 border-red-400' 
+                                            : 'bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700'
+                                    }`}>
                                         <button
-                                            onClick={() => setCounterQuantity(Math.max(1, counterQuantity - 10))}
+                                            onClick={() => setCounterQuantity(Math.max(MIN_BULK_QUANTITY_KG, counterQuantity - 100))}
                                             className="size-10 flex items-center justify-center rounded-lg hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-600 dark:text-stone-400"
                                         >
                                             <span className="material-symbols-outlined">remove</span>
                                         </button>
                                         <div className="flex-1 text-center border-x border-stone-300 dark:border-stone-700 mx-2 py-1">
-                                            <span className="block text-xs text-stone-600 dark:text-stone-400 font-medium">Quantity (kg)</span>
+                                            <span className={`block text-xs font-medium ${!isQuantityValid ? 'text-red-600' : 'text-stone-600 dark:text-stone-400'}`}>
+                                                Bulk Lot (kg) - Min {MIN_BULK_QUANTITY_KG}
+                                            </span>
                                             <input
-                                                className="w-full bg-transparent text-center font-bold text-xl border-none focus:ring-0 p-0"
+                                                className={`w-full bg-transparent text-center font-bold text-xl border-none focus:ring-0 p-0 ${!isQuantityValid ? 'text-red-600' : ''}`}
                                                 type="number"
+                                                min={MIN_BULK_QUANTITY_KG}
                                                 value={counterQuantity}
-                                                onChange={(e) => setCounterQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                                                onChange={(e) => setCounterQuantity(Math.max(1, parseInt(e.target.value) || MIN_BULK_QUANTITY_KG))}
                                             />
                                         </div>
                                         <button
-                                            onClick={() => setCounterQuantity(counterQuantity + 10)}
+                                            onClick={() => setCounterQuantity(counterQuantity + 100)}
                                             className="size-10 flex items-center justify-center rounded-lg hover:bg-stone-200 dark:hover:bg-stone-700 text-emerald-600 dark:text-emerald-400"
                                         >
                                             <span className="material-symbols-outlined">add</span>
                                         </button>
                                     </div>
 
-                                    {/* Action Button */}
+                                    {/* Action Button - DISABLED if below floor */}
                                     <button
                                         onClick={handleUpdateOffer}
-                                        className="flex-[0.5] bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-bold px-6 py-2 shadow-md transition-all flex flex-col items-center justify-center min-w-[120px] active:scale-95"
+                                        disabled={!canSubmitOffer}
+                                        className={`flex-[0.5] rounded-xl font-bold px-6 py-2 shadow-md transition-all flex flex-col items-center justify-center min-w-[120px] ${
+                                            canSubmitOffer 
+                                                ? 'bg-orange-600 hover:bg-orange-700 text-white active:scale-95 cursor-pointer'
+                                                : 'bg-stone-400 text-stone-200 cursor-not-allowed'
+                                        }`}
                                     >
-                                        <span className="text-sm">Update Offer</span>
-                                        <span className="text-[10px] opacity-80">Send Card</span>
+                                        <span className="text-sm">{canSubmitOffer ? 'Update Offer' : 'Invalid Offer'}</span>
+                                        <span className="text-[10px] opacity-80">
+                                            {!isOfferValid ? 'Below floor price' : !isQuantityValid ? 'Qty too low' : 'Send Card'}
+                                        </span>
                                     </button>
                                 </div>
 

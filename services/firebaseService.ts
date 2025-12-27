@@ -103,6 +103,13 @@ const mapNegotiations = (snap: QuerySnapshot<DocumentData>): Negotiation[] =>
       status: data.status,
       notes: data.notes ?? '',
       lastUpdated: toDate(data.lastUpdated),
+      // Dynamic pricing fields
+      floorPrice: data.floorPrice != null ? Number(data.floorPrice) : undefined,
+      targetPrice: data.targetPrice != null ? Number(data.targetPrice) : undefined,
+      priceSource: data.priceSource,
+      priceVerified: data.priceVerified ?? false,
+      qualityGrade: data.qualityGrade,
+      farmerLocation: data.farmerLocation,
     } satisfies Negotiation;
   });
 
@@ -441,19 +448,79 @@ export const firebaseService = {
     });
   },
 
-  async createNegotiation(negotiation: Omit<Negotiation, 'id'>): Promise<void> {
+  /**
+   * Create a new negotiation with price floor validation
+   * Throws an error if the offered price is below the floor price
+   */
+  async createNegotiation(negotiation: Omit<Negotiation, 'id'>): Promise<{ success: boolean; error?: string }> {
+    // SERVER-SIDE PRICE FLOOR ENFORCEMENT
+    // If floorPrice is set and offeredPrice is below it, reject the write
+    if (negotiation.floorPrice != null && negotiation.offeredPrice < negotiation.floorPrice) {
+      return {
+        success: false,
+        error: `Offer of ₹${negotiation.offeredPrice}/kg is below the floor price of ₹${negotiation.floorPrice}/kg. Minimum allowed: ₹${negotiation.floorPrice}/kg`,
+      };
+    }
+
+    // BULK QUANTITY VALIDATION (minimum 1 quintal = 100kg)
+    const MIN_BULK_QUANTITY = 100;
+    if (negotiation.quantity < MIN_BULK_QUANTITY) {
+      return {
+        success: false,
+        error: `Minimum bulk order is ${MIN_BULK_QUANTITY}kg (1 quintal). You specified: ${negotiation.quantity}kg`,
+      };
+    }
+
     await addDoc(collection(db, 'negotiations'), {
       ...negotiation,
       lastUpdated: Timestamp.fromDate(negotiation.lastUpdated ?? new Date()),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
+    
+    return { success: true };
   },
 
-  async updateNegotiation(id: string, updates: Partial<Negotiation>): Promise<void> {
+  /**
+   * Update an existing negotiation with price floor validation
+   * Throws an error if the new price is below the floor price
+   */
+  async updateNegotiation(id: string, updates: Partial<Negotiation>): Promise<{ success: boolean; error?: string }> {
+    // If updating price, validate against floor price
+    if (updates.offeredPrice != null || updates.counterPrice != null) {
+      // Fetch the existing negotiation to get floor price
+      const negDoc = await getDoc(doc(db, 'negotiations', id));
+      if (negDoc.exists()) {
+        const existingData = negDoc.data();
+        const floorPrice = existingData.floorPrice;
+        
+        // Check offered price
+        if (floorPrice != null && updates.offeredPrice != null && updates.offeredPrice < floorPrice) {
+          return {
+            success: false,
+            error: `Offer of ₹${updates.offeredPrice}/kg is below the floor price of ₹${floorPrice}/kg`,
+          };
+        }
+        
+        // Check counter price (farmers can counter at any price, but buyers cannot go below floor)
+        // Note: Farmers countering is allowed at any price, but if buyer is counter-offering, must be >= floor
+        if (floorPrice != null && updates.counterPrice != null && updates.counterPrice < floorPrice) {
+          // Only enforce for buyer counter-offers (status would be CounterByBuyer)
+          if (updates.status === 'Counter-By-Buyer') {
+            return {
+              success: false,
+              error: `Counter-offer of ₹${updates.counterPrice}/kg is below the floor price of ₹${floorPrice}/kg`,
+            };
+          }
+        }
+      }
+    }
+    
     const payload: any = { ...updates, updatedAt: serverTimestamp() };
     if (updates.lastUpdated) payload.lastUpdated = Timestamp.fromDate(updates.lastUpdated);
     await updateDoc(doc(db, 'negotiations', id), payload);
+    
+    return { success: true };
   },
 
   async sendMessage(params: {

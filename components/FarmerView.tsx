@@ -47,8 +47,8 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
 
-    const [activeFormTab, setActiveFormTab] = useState<ProductType>(ProductType.Retail);
-    const initialFormState = { name: '', category: ProductCategory.Other, description: '', price: 0, quantity: 0, type: ProductType.Retail };
+    const [activeFormTab, setActiveFormTab] = useState<ProductType>(ProductType.Bulk);
+    const initialFormState = { name: '', category: ProductCategory.Other, description: '', price: 0, quantity: 100, type: ProductType.Bulk };
     const [newProductForm, setNewProductForm] = useState(initialFormState);
     const [formErrors, setFormErrors] = useState<FormErrors>({});
     const [touched, setTouched] = useState<{ [key: string]: boolean }>({});
@@ -782,32 +782,18 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                 <div className="fixed inset-0 bg-black/50 z-[100] flex justify-center items-center p-4" onClick={() => setIsAddModalOpen(false)}>
                     <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4 font-sans animate-fade-in" onClick={e => e.stopPropagation()}>
                         <div className="p-6 border-b border-[#e9dece] flex justify-between items-center sticky top-0 bg-white z-10">
-                            <h2 className="text-2xl font-bold font-display text-[#1c160d]">List New Crop</h2>
+                            <h2 className="text-2xl font-bold font-display text-[#1c160d]">List Bulk Produce</h2>
                             <button onClick={() => setIsAddModalOpen(false)} className="text-[#4e4639] hover:text-[#1c160d] p-2 rounded-full hover:bg-[#f4efe6]"><XIcon className="h-6 w-6" /></button>
                         </div>
 
                         <div className="p-6">
-                            <div className="flex border-b border-[#e9dece] mb-6">
-                                <button
-                                    type="button"
-                                    onClick={() => setActiveFormTab(ProductType.Retail)}
-                                    className={`-mb-px border-b-2 px-4 py-3 text-sm font-semibold transition-colors duration-200 ${activeFormTab === ProductType.Retail
-                                        ? 'border-[#f9a824] text-[#f9a824]'
-                                        : 'border-transparent text-[#4e4639] hover:border-[#e9dece] hover:text-[#1c160d]'
-                                        }`}
-                                >
-                                    Retail Product
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setActiveFormTab(ProductType.Bulk)}
-                                    className={`-mb-px border-b-2 px-4 py-3 text-sm font-semibold transition-colors duration-200 ${activeFormTab === ProductType.Bulk
-                                        ? 'border-[#f9a824] text-[#f9a824]'
-                                        : 'border-transparent text-[#4e4639] hover:border-[#e9dece] hover:text-[#1c160d]'
-                                        }`}
-                                >
-                                    Bulk Product (Negotiable)
-                                </button>
+                            {/* B2B Bulk Platform Notice */}
+                            <div className="flex items-center gap-3 mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                                <span className="material-symbols-outlined text-blue-600">business</span>
+                                <div>
+                                    <p className="font-bold text-blue-900">B2B Bulk Trading Platform</p>
+                                    <p className="text-sm text-blue-700">All listings are for bulk orders (minimum 1 quintal / 100kg). Buyers negotiate prices directly.</p>
+                                </div>
                             </div>
 
                             <form onSubmit={handleSubmit} className="space-y-6 relative">

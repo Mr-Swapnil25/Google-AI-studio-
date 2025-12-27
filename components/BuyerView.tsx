@@ -46,7 +46,8 @@ export const BuyerView = ({
 }: BuyerViewProps) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterCategory, setFilterCategory] = useState<ProductCategory | 'All'>('All');
-    const [filterType, setFilterType] = useState<'All' | 'Retail' | 'Bulk'>('All');
+    // B2B platform - always show bulk listings only
+    const [filterType] = useState<'Bulk'>('Bulk');
     const [sortOrder, setSortOrder] = useState<'relevance' | 'price-asc' | 'price-desc'>('relevance');
     const [selectedGrades, setSelectedGrades] = useState<string[]>(['A', 'B']);
     const [priceRange, setPriceRange] = useState({ min: 0, max: 500 });
@@ -71,9 +72,9 @@ export const BuyerView = ({
             filtered = filtered.filter(p => p.category === filterCategory);
         }
 
-        if (filterType !== 'All') {
-            filtered = filtered.filter(p => p.type === (filterType === 'Retail' ? ProductType.Retail : ProductType.Bulk));
-        }
+        // B2B bulk only - filter to bulk products (or show all for legacy compatibility)
+        // Legacy retail products will still show but only negotiation option available
+        filtered = filtered.filter(p => p.type === ProductType.Bulk || p.type === ProductType.Retail);
 
         filtered = filtered.filter(p => p.price >= priceRange.min && p.price <= priceRange.max);
 
@@ -90,7 +91,7 @@ export const BuyerView = ({
         }
         
         return filtered;
-    }, [products, filterCategory, filterType, sortOrder, searchQuery, priceRange, selectedGrades]);
+    }, [products, filterCategory, sortOrder, searchQuery, priceRange, selectedGrades]);
 
     const categoryChips = [
         { id: 'All', label: 'All', icon: 'grid_view' },
@@ -228,7 +229,6 @@ export const BuyerView = ({
                         <button 
                             onClick={() => {
                                 setFilterCategory('All');
-                                setFilterType('All');
                                 setSelectedGrades(['A', 'B']);
                                 setPriceRange({ min: 0, max: 500 });
                             }}
@@ -238,25 +238,13 @@ export const BuyerView = ({
                         </button>
                     </div>
 
-                    {/* Product Type */}
-                    <div className="mb-8">
-                        <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Product Type</h3>
-                        <div className="space-y-2">
-                            {['All', 'Retail', 'Bulk'].map(type => (
-                                <label key={type} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 cursor-pointer group">
-                                    <input 
-                                        type="radio" 
-                                        name="productType"
-                                        checked={filterType === type}
-                                        onChange={() => setFilterType(type as 'All' | 'Retail' | 'Bulk')}
-                                        className="border-gray-300 text-[#2f7f33] focus:ring-[#2f7f33] w-5 h-5"
-                                    />
-                                    <span className="flex-1 font-medium text-gray-700 group-hover:text-[#2f7f33] transition-colors">
-                                        {type === 'All' ? 'All Products' : type === 'Retail' ? 'Retail (Fixed Price)' : 'Bulk (Negotiable)'}
-                                    </span>
-                                </label>
-                            ))}
+                    {/* B2B Platform Notice */}
+                    <div className="mb-6 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <div className="flex items-center gap-2 text-blue-700 text-sm font-medium">
+                            <span className="material-symbols-outlined text-[18px]">business</span>
+                            B2B Bulk Platform
                         </div>
+                        <p className="text-xs text-blue-600 mt-1">All listings are bulk wholesale with minimum 100kg orders.</p>
                     </div>
 
                     {/* Crop Category */}
@@ -454,29 +442,20 @@ export const BuyerView = ({
                                                 <span className="material-symbols-outlined text-[18px] text-[#2f7f33]">location_on</span>
                                                 <span className="font-medium text-gray-900">{farmer?.location || 'Unknown'}</span>
                                             </div>
-                                            <div className="flex items-center gap-2 text-xs bg-gray-100 w-fit px-2 py-1 rounded text-gray-600">
-                                                <span className="material-symbols-outlined text-[14px]">inventory_2</span>
-                                                {product.type === ProductType.Retail ? 'Retail' : `Min: ${product.quantity}kg`}
+                                            <div className="flex items-center gap-2 text-xs bg-blue-50 w-fit px-2 py-1 rounded text-blue-700 border border-blue-200">
+                                                <span className="material-symbols-outlined text-[14px]">business</span>
+                                                Bulk: Min {product.quantity >= 100 ? product.quantity : 100}kg
                                             </div>
                                         </div>
                                         <div className="mt-auto pt-3 border-t border-gray-200">
-                                            {product.type === ProductType.Retail ? (
-                                                <button 
-                                                    onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
-                                                    className="w-full h-10 rounded-lg bg-[#2f7f33] text-white font-bold hover:bg-[#256629] transition-all flex items-center justify-center gap-2"
-                                                >
-                                                    <span className="material-symbols-outlined text-lg">add_shopping_cart</span>
-                                                    Add to Cart
-                                                </button>
-                                            ) : (
-                                                <button 
-                                                    onClick={(e) => { e.stopPropagation(); onStartNegotiation(product); }}
-                                                    className="w-full h-10 rounded-lg border-2 border-[#2f7f33] text-[#2f7f33] font-bold hover:bg-[#2f7f33] hover:text-white transition-all flex items-center justify-center gap-2 group/btn"
-                                                >
-                                                    Start Negotiation
-                                                    <span className="material-symbols-outlined text-lg group-hover/btn:translate-x-1 transition-transform">arrow_forward</span>
-                                                </button>
-                                            )}
+                                            {/* B2B Platform - All products are negotiable */}
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); onStartNegotiation(product); }}
+                                                className="w-full h-10 rounded-lg border-2 border-[#2f7f33] text-[#2f7f33] font-bold hover:bg-[#2f7f33] hover:text-white transition-all flex items-center justify-center gap-2 group/btn"
+                                            >
+                                                Start Bulk Negotiation
+                                                <span className="material-symbols-outlined text-lg group-hover/btn:translate-x-1 transition-transform">arrow_forward</span>
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -487,7 +466,7 @@ export const BuyerView = ({
                     {displayedProducts.length === 0 && (
                         <div className="text-center py-20">
                             <span className="material-symbols-outlined text-6xl text-gray-300 mb-4">search_off</span>
-                            <h3 className="text-xl font-bold text-gray-600 mb-2">No products found</h3>
+                            <h3 className="text-xl font-bold text-gray-600 mb-2">No bulk listings found</h3>
                             <p className="text-gray-500">Try adjusting your filters or search query</p>
                         </div>
                     )}

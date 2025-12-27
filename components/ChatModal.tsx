@@ -10,10 +10,11 @@ interface ChatModalProps {
     messages: ChatMessage[];
     currentUserId: string;
     onSendMessage: (text: string) => void;
+    onRetryMessage?: (messageId: string) => void;
     userRole: UserRole;
 }
 
-export const ChatModal = ({ isOpen, onClose, negotiation, messages, currentUserId, onSendMessage, userRole }: ChatModalProps) => {
+export const ChatModal = ({ isOpen, onClose, negotiation, messages, currentUserId, onSendMessage, onRetryMessage, userRole }: ChatModalProps) => {
     const [newMessage, setNewMessage] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -64,14 +65,47 @@ export const ChatModal = ({ isOpen, onClose, negotiation, messages, currentUserI
                     <div className="space-y-2">
                         {messages.map((msg) => {
                             const isCurrentUser = msg.senderId === currentUserId;
+                            const isFailed = msg.status === 'failed';
+                            const isSending = msg.status === 'sending';
                             return (
-                                <div key={msg.id} className={`flex items-end gap-2 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
-                                    <div className={`max-w-xs md:max-w-md px-4 py-3 rounded-2xl ${isCurrentUser ? `${primaryBgClass} text-white rounded-br-lg` : 'bg-white text-stone-800 rounded-bl-lg shadow-sm border border-stone-200/80'}`}>
-                                        <p className="text-sm">{msg.text}</p>
-                                        <p className={`text-xs mt-1 ${isCurrentUser ? 'text-white/70' : 'text-stone-400'} text-right`}>
-                                            {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Sending...'}
-                                        </p>
+                                <div key={msg.id} className={`flex flex-col ${isCurrentUser ? 'items-end' : 'items-start'}`}>
+                                    <div className={`flex items-end gap-2 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
+                                        <div className={`max-w-xs md:max-w-md px-4 py-3 rounded-2xl ${
+                                            isFailed 
+                                                ? 'bg-red-100 border border-red-300 text-red-800 rounded-br-lg' 
+                                                : isCurrentUser 
+                                                    ? `${primaryBgClass} text-white rounded-br-lg ${isSending ? 'opacity-70' : ''}` 
+                                                    : 'bg-white text-stone-800 rounded-bl-lg shadow-sm border border-stone-200/80'
+                                        }`}>
+                                            <p className="text-sm">{msg.text}</p>
+                                            <div className={`flex items-center justify-end gap-1 mt-1 ${isCurrentUser && !isFailed ? 'text-white/70' : 'text-stone-400'}`}>
+                                                {isSending && (
+                                                    <span className="text-xs">Sending...</span>
+                                                )}
+                                                {isFailed && (
+                                                    <span className="text-xs text-red-600">Failed to send</span>
+                                                )}
+                                                {!isSending && !isFailed && (
+                                                    <span className="text-xs">
+                                                        {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                                                    </span>
+                                                )}
+                                                {msg.status === 'sent' || (!msg.status && !isFailed && !isSending) ? (
+                                                    <span className="material-symbols-outlined text-[12px]" style={{ fontVariationSettings: "'FILL' 1" }}>done_all</span>
+                                                ) : null}
+                                            </div>
+                                        </div>
                                     </div>
+                                    {/* Retry button for failed messages */}
+                                    {isFailed && onRetryMessage && (
+                                        <button 
+                                            onClick={() => onRetryMessage(msg.id)}
+                                            className="mt-1 flex items-center gap-1 text-xs text-red-600 hover:text-red-800 font-medium"
+                                        >
+                                            <span className="material-symbols-outlined text-[14px]">refresh</span>
+                                            Tap to retry
+                                        </button>
+                                    )}
                                 </div>
                             );
                         })}
