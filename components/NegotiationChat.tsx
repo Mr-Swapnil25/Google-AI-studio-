@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Negotiation, NegotiationStatus, ChatMessage } from '../types';
+import { Negotiation, NegotiationStatus, ChatMessage, PricingEngineResult } from '../types';
 import { XIcon } from './icons';
 
 interface NegotiationChatProps {
@@ -11,6 +11,8 @@ interface NegotiationChatProps {
     onRespond: (negotiationId: string, response: 'Accepted' | 'Rejected') => void;
     onCounter: (negotiation: Negotiation) => void;
     initialNegotiationId?: string;
+    // NEW: Pricing engine integration
+    pricingMap?: Map<string, PricingEngineResult>; // productId -> pricing
 }
 
 export const NegotiationChat: React.FC<NegotiationChatProps> = ({
@@ -22,6 +24,7 @@ export const NegotiationChat: React.FC<NegotiationChatProps> = ({
     onRespond,
     onCounter,
     initialNegotiationId,
+    pricingMap,
 }) => {
     const [selectedNegotiation, setSelectedNegotiation] = useState<Negotiation | null>(
         initialNegotiationId 
@@ -199,6 +202,31 @@ export const NegotiationChat: React.FC<NegotiationChatProps> = ({
                                 <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>call</span>
                             </button>
                         </div>
+
+                        {/* Market Reference Badge - NEW */}
+                        {pricingMap && selectedNegotiation && pricingMap.get(selectedNegotiation.productId) && (
+                            <div className="mx-6 mt-2 flex items-center justify-between bg-blue-50 rounded-lg px-4 py-2 border border-blue-200">
+                                <div className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-blue-600 text-lg">store</span>
+                                    <div>
+                                        <span className="text-sm font-medium text-blue-800">
+                                            {pricingMap.get(selectedNegotiation.productId)?.mandiReference?.marketName || 'Market Reference'}
+                                        </span>
+                                        <span className="text-xs text-blue-600 ml-2">
+                                            Modal: ₹{pricingMap.get(selectedNegotiation.productId)?.mandiReference?.modalPricePerKg?.toFixed(0) || pricingMap.get(selectedNegotiation.productId)?.targetPrice.toFixed(0)}/kg
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3 text-xs font-bold">
+                                    <span className="text-red-600 bg-red-50 px-2 py-0.5 rounded">
+                                        Min: ₹{pricingMap.get(selectedNegotiation.productId)?.floorPrice.toFixed(0)}
+                                    </span>
+                                    <span className="text-green-600 bg-green-50 px-2 py-0.5 rounded">
+                                        Fair: ₹{pricingMap.get(selectedNegotiation.productId)?.targetPrice.toFixed(0)}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Chat Content */}
                         <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-6 space-y-6 flex flex-col">

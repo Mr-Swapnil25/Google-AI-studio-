@@ -493,6 +493,7 @@ export const firebaseService = {
       documents: {
         aadhaarUrl: string;
         kisanUrl: string;
+        photoUrl?: string;
       };
       bankInfo: {
         accountHolder: string;
@@ -516,11 +517,24 @@ export const firebaseService = {
     );
 
     // Also update farmer profile with KYC status
-    await updateDoc(doc(db, 'farmers', farmerId), {
+    // Use setDoc with merge to create the document if it doesn't exist
+    const farmerUpdate: Record<string, any> = {
       kycStatus: data.status,
       location: data.personalInfo.village,
+      name: data.personalInfo.fullName,
       updatedAt: serverTimestamp(),
-    });
+    };
+    
+    // Add profile image if photo was uploaded
+    if (data.documents.photoUrl) {
+      farmerUpdate.profileImageUrl = data.documents.photoUrl;
+    }
+    
+    await setDoc(
+      doc(db, 'farmers', farmerId),
+      farmerUpdate,
+      { merge: true }
+    );
   },
 
   async getFarmerKYCStatus(farmerId: string): Promise<'none' | 'pending' | 'approved' | 'rejected'> {

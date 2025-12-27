@@ -1,6 +1,8 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
-import { Farmer, FarmerDashboardWeather, MarketRate, Negotiation, ProductCategory, NegotiationStatus, Product, ProductType, ChatMessage, User } from '../types';
+import { Farmer, FarmerDashboardWeather, MarketRate, Negotiation, ProductCategory, NegotiationStatus, Product, ProductType, ChatMessage, User, PricingEngineResult, GeoLocation } from '../types';
 import { generateProductDetails } from '../services/geminiService';
+import { getMandiPrice, autoDetectLocation } from '../services/marketService';
+import { calculatePricing, parseGradeLabel } from '../lib/pricingEngine';
 import { XIcon, LoaderIcon, PlusIcon } from './icons';
 import { useToast } from '../context/ToastContext';
 import { ProductUploadPage } from './ProductUploadPage';
@@ -71,6 +73,11 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
     const [marketRates, setMarketRates] = useState<MarketRate[]>([]);
     const [buyerProfiles, setBuyerProfiles] = useState<Record<string, User>>({});
 
+    // NEW: Mandi Pricing State
+    const [farmerLocation, setFarmerLocation] = useState<GeoLocation | null>(null);
+    const [productPricingMap, setProductPricingMap] = useState<Map<string, PricingEngineResult>>(new Map());
+    const [isLoadingMandiPrices, setIsLoadingMandiPrices] = useState(false);
+
     const { showToast } = useToast();
 
     const myProducts = useMemo(
@@ -114,6 +121,60 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
         const unsub = firebaseService.subscribeUserProfiles(buyerIdsInOffers, setBuyerProfiles);
         return () => unsub();
     }, [buyerIdsInOffers]);
+
+    // NEW: Auto-detect farmer location and fetch mandi prices
+    useEffect(() => {
+        const detectFarmerLocation = async () => {
+            try {
+                const location = await autoDetectLocation();
+                if (location.state) {
+                    setFarmerLocation(location);
+                } else if (farmerProfile?.location || currentUser.location) {
+                    // Fallback: parse from existing location string
+                    const locationStr = farmerProfile?.location || currentUser.location || '';
+                    const parts = locationStr.split(',').map(s => s.trim());
+                    setFarmerLocation({
+                        state: parts[1] || parts[0] || 'Maharashtra',
+                        district: parts[0] || '',
+                        isAutoDetected: false,
+                    });
+                }
+            } catch (error) {
+                console.warn('Could not detect farmer location:', error);
+            }
+        };
+        detectFarmerLocation();
+    }, [farmerProfile?.location, currentUser.location]);
+
+    // Fetch mandi prices for farmer's products
+    useEffect(() => {
+        if (!farmerLocation?.state || myProducts.length === 0) return;
+        
+        const fetchProductPricing = async () => {
+            setIsLoadingMandiPrices(true);
+            const pricingMap = new Map<string, PricingEngineResult>();
+            
+            for (const product of myProducts) {
+                try {
+                    const mandiPrice = await getMandiPrice(
+                        product.name,
+                        farmerLocation.state,
+                        farmerLocation.district
+                    );
+                    const grade = product.isVerified ? 'A' : 'B';
+                    const pricing = calculatePricing(mandiPrice, product.name, grade, product.category);
+                    pricingMap.set(product.id, pricing);
+                } catch (error) {
+                    console.error(`Failed to fetch pricing for ${product.name}:`, error);
+                }
+            }
+            
+            setProductPricingMap(pricingMap);
+            setIsLoadingMandiPrices(false);
+        };
+        
+        fetchProductPricing();
+    }, [farmerLocation, myProducts]);
 
     useEffect(() => {
         setNewProductForm(prev => ({ ...prev, type: activeFormTab }));
@@ -308,6 +369,7 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                 negotiations={negotiations}
                 messages={messages}
                 currentUserId={currentUserId}
+                pricingMap={productPricingMap}
                 onClose={() => setShowNegotiationChat(false)}
                 onSendMessage={onSendMessage}
                 onRespond={onRespond}
@@ -323,6 +385,7 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
             <ProductUploadPage
                 onBack={() => setShowUploadPage(false)}
                 onSubmit={handleUploadSubmit}
+                currentUser={currentUser}
             />
         );
     }

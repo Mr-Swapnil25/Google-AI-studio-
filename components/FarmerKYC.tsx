@@ -212,19 +212,30 @@ export const FarmerKYC = ({ isOpen, currentUser, onClose, onComplete, required =
             // Upload documents to Firebase Storage using dedicated KYC upload function
             let aadhaarUrl = '';
             let kisanUrl = '';
+            let photoUrl = '';
+            
             if (documents.aadhaarFile) {
                 aadhaarUrl = await firebaseService.uploadKYCDocument(documents.aadhaarFile, currentUser.uid, 'aadhaar');
             }
             if (documents.kisanFile) {
                 kisanUrl = await firebaseService.uploadKYCDocument(documents.kisanFile, currentUser.uid, 'kisan');
             }
+            if (personalInfo.photoFile) {
+                photoUrl = await firebaseService.uploadKYCDocument(personalInfo.photoFile, currentUser.uid, 'photo');
+            }
 
-            // Save KYC data to Firestore
+            // Save KYC data to Firestore - only pass serializable data (no File objects)
             await firebaseService.saveFarmerKYC(currentUser.uid, {
-                personalInfo,
+                personalInfo: {
+                    fullName: personalInfo.fullName,
+                    mobile: personalInfo.mobile,
+                    dateOfBirth: personalInfo.dateOfBirth,
+                    village: personalInfo.village,
+                },
                 documents: {
                     aadhaarUrl,
                     kisanUrl,
+                    photoUrl,
                 },
                 bankInfo,
                 status: 'pending',

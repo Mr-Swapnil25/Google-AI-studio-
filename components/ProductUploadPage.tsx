@@ -1,6 +1,8 @@
-import React, { useState, useRef } from 'react';
-import { ProductCategory, ProductType } from '../types';
+import React, { useState, useRef, useEffect } from 'react';
+import { ProductCategory, ProductType, GeoLocation, PricingEngineResult, User } from '../types';
 import { generateProductDetails } from '../services/geminiService';
+import { autoDetectLocation, getMarketPricing, INDIAN_STATES, MAJOR_DISTRICTS } from '../services/marketService';
+import { formatPrice, parseGradeLabel } from '../lib/pricingEngine';
 import { useToast } from '../context/ToastContext';
 import { XIcon, LoaderIcon } from './icons';
 
@@ -15,6 +17,7 @@ interface ProductUploadPageProps {
         type: ProductType;
         farmerNote: string;
     }, imageFile: File) => Promise<void>;
+    currentUser?: User;
 }
 
 interface AIAnalysisResult {
@@ -28,6 +31,8 @@ interface AIAnalysisResult {
     defects: string;
     name: string;
     category: ProductCategory;
+    isValidAgri: boolean;
+    isVerified: boolean; // True if AI verified, false if manual override
 }
 
 const fileToBase64 = (file: File): Promise<string> =>
@@ -46,7 +51,7 @@ const fileToDataUrl = (file: File): Promise<string> =>
         reader.onerror = (error) => reject(error);
     });
 
-export const ProductUploadPage: React.FC<ProductUploadPageProps> = ({ onBack, onSubmit }) => {
+export const ProductUploadPage: React.FC<ProductUploadPageProps> = ({ onBack, onSubmit, currentUser }) => {
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -59,6 +64,92 @@ export const ProductUploadPage: React.FC<ProductUploadPageProps> = ({ onBack, on
     const [productType, setProductType] = useState<ProductType>(ProductType.Bulk);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { showToast } = useToast();
+
+    // Location & Pricing State
+    const [location, setLocation] = useState<GeoLocation | null>(null);
+    const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+    const [locationError, setLocationError] = useState<string | null>(null);
+    const [showManualLocation, setShowManualLocation] = useState(false);
+    const [manualState, setManualState] = useState('');
+    const [manualDistrict, setManualDistrict] = useState('');
+    
+    // Mandi Pricing State
+    const [pricingResult, setPricingResult] = useState<PricingEngineResult | null>(null);
+    const [isLoadingPricing, setIsLoadingPricing] = useState(false);
+
+    // Auto-detect location on mount
+    useEffect(() => {
+        detectLocation();
+    }, []);
+
+    const detectLocation = async () => {
+        setIsLoadingLocation(true);
+        setLocationError(null);
+        try {
+            const detectedLocation = await autoDetectLocation();
+            if (detectedLocation.state && detectedLocation.isAutoDetected) {
+                setLocation(detectedLocation);
+                showToast(`Location detected: ${detectedLocation.district}, ${detectedLocation.state}`, 'success');
+            } else {
+                setShowManualLocation(true);
+                setLocationError('Could not detect your location. Please select manually.');
+            }
+        } catch (error) {
+            console.error('Location detection failed:', error);
+            setShowManualLocation(true);
+            setLocationError('Location access denied. Please select manually.');
+        } finally {
+            setIsLoadingLocation(false);
+        }
+    };
+
+    const handleManualLocationSubmit = () => {
+        if (manualState && manualDistrict) {
+            setLocation({
+                state: manualState,
+                district: manualDistrict,
+                isAutoDetected: false,
+            });
+            setShowManualLocation(false);
+            setLocationError(null);
+            showToast(`Location set: ${manualDistrict}, ${manualState}`, 'success');
+        }
+    };
+
+    // Fetch mandi pricing when we have both location and analysis result
+    useEffect(() => {
+        if (location && analysisResult) {
+            fetchMandiPricing();
+        }
+    }, [location, analysisResult]);
+
+    const fetchMandiPricing = async () => {
+        if (!location || !analysisResult) return;
+        
+        setIsLoadingPricing(true);
+        try {
+            const response = await getMarketPricing({
+                commodityName: analysisResult.name,
+                category: analysisResult.category,
+                grade: analysisResult.grade,
+                location,
+            });
+            
+            setPricingResult(response.pricing);
+            
+            // Auto-fill with target price (recommended fair price)
+            setEditablePrice(Math.round(response.pricing.targetPrice));
+            
+            if (response.pricing.isFallback) {
+                showToast('Using national average prices (local mandi data unavailable)', 'info');
+            }
+        } catch (error) {
+            console.error('Failed to fetch mandi pricing:', error);
+            showToast('Could not fetch market prices', 'error');
+        } finally {
+            setIsLoadingPricing(false);
+        }
+    };
 
     const handleFileSelect = async (file: File) => {
         if (!file.type.startsWith('image/')) {
@@ -75,37 +166,71 @@ export const ProductUploadPage: React.FC<ProductUploadPageProps> = ({ onBack, on
             const base64Image = await fileToBase64(file);
             const details = await generateProductDetails(base64Image, file.type);
             
-            // Simulate AI analysis with the returned details
-            const mockAnalysis: AIAnalysisResult = {
-                grade: 'A',
-                gradeLabel: 'Premium',
+            // Check if agricultural product is valid
+            if (!details.isValidAgri) {
+                // REJECTED - Not an agricultural product
+                showToast(
+                    details.rejectionMessage || 
+                    'यह कृषि उत्पाद नहीं है / This is not an agricultural product. Please upload vegetables, fruits, or grains only.',
+                    'error'
+                );
+                
+                // Allow manual override but mark as unverified
+                setAnalysisResult({
+                    grade: 'C',
+                    gradeLabel: 'Unverified',
+                    description: 'Product could not be verified. Please enter details manually.',
+                    estimatedPrice: 0,
+                    mspStatus: { isAbove: false, percentage: 0 },
+                    confidence: 0,
+                    moisture: 'Unknown',
+                    defects: 'Unable to verify',
+                    name: '',
+                    category: ProductCategory.Other,
+                    isValidAgri: false,
+                    isVerified: false,
+                });
+                setEditablePrice(0);
+                return;
+            }
+            
+            // VALID agricultural product - use AI-verified details
+            const realAnalysis: AIAnalysisResult = {
+                grade: details.grade,
+                gradeLabel: details.gradeLabel,
                 description: details.description || 'High quality produce with optimal characteristics',
-                estimatedPrice: Math.floor(Math.random() * 30) + 15,
-                mspStatus: { isAbove: true, percentage: Math.floor(Math.random() * 20) + 5 },
-                confidence: Math.floor(Math.random() * 10) + 90,
-                moisture: 'Optimal (12%)',
-                defects: 'None Detected',
+                estimatedPrice: 0, // Will be set by pricing engine
+                mspStatus: { isAbove: true, percentage: 0 }, // Will be calculated
+                confidence: details.confidence,
+                moisture: details.moistureEstimate,
+                defects: details.visualDefects,
                 name: details.name || 'Fresh Produce',
                 category: details.category || ProductCategory.Vegetable,
+                isValidAgri: true,
+                isVerified: true,
             };
             
-            setAnalysisResult(mockAnalysis);
-            setEditablePrice(mockAnalysis.estimatedPrice);
-            showToast('AI analysis complete!', 'success');
+            setAnalysisResult(realAnalysis);
+            // Price will be set by fetchMandiPricing effect
+            showToast('✓ Agricultural product verified!', 'success');
         } catch (error) {
-            showToast(error instanceof Error ? error.message : 'Analysis failed', 'error');
-            // Set default values even on error
+            console.error('Analysis failed:', error);
+            showToast(error instanceof Error ? error.message : 'Analysis failed - entering manual mode', 'error');
+            
+            // Manual Overdrive Mode - allow manual entry but mark as unverified
             setAnalysisResult({
                 grade: 'B',
-                gradeLabel: 'Standard',
-                description: 'Unable to analyze completely. Please verify details.',
+                gradeLabel: 'Manual Entry',
+                description: 'Unable to analyze. Please verify details manually.',
                 estimatedPrice: 20,
                 mspStatus: { isAbove: true, percentage: 10 },
-                confidence: 70,
+                confidence: 0,
                 moisture: 'Unknown',
                 defects: 'Unable to detect',
                 name: 'Product',
                 category: ProductCategory.Other,
+                isValidAgri: true, // Allow submission
+                isVerified: false, // But mark as unverified
             });
             setEditablePrice(20);
         } finally {
@@ -198,12 +323,12 @@ export const ProductUploadPage: React.FC<ProductUploadPageProps> = ({ onBack, on
                     </div>
                     <div className="flex items-center gap-4">
                         <div className="hidden md:flex flex-col items-end mr-2">
-                            <span className="text-sm font-bold">Ramesh Kumar</span>
-                            <span className="text-xs text-gray-500">Farmer • Nashik, MH</span>
+                            <span className="text-sm font-bold">{currentUser?.name || 'Farmer'}</span>
+                            <span className="text-xs text-gray-500">Farmer • {location ? `${location.district}, ${location.state?.slice(0,2).toUpperCase()}` : 'India'}</span>
                         </div>
                         <div 
                             className="bg-center bg-no-repeat bg-cover rounded-full size-12 border-2 border-white shadow-md cursor-pointer" 
-                            style={{ backgroundImage: "url('https://i.pravatar.cc/150?u=mockFarmerId')" }}
+                            style={{ backgroundImage: `url('${currentUser?.avatarUrl || `https://ui-avatars.com/api/?name=${currentUser?.name || 'F'}&background=2E7D32&color=fff`}')` }}
                         ></div>
                     </div>
                 </div>
@@ -316,13 +441,27 @@ export const ProductUploadPage: React.FC<ProductUploadPageProps> = ({ onBack, on
                                 {/* Main Result Card */}
                                 <div className="bg-white rounded-xl shadow-lg p-1 border border-gray-100">
                                     {/* Grade Badge */}
-                                    <div className="bg-gradient-to-br from-green-50 to-emerald-100 p-6 rounded-lg mb-1">
+                                    <div className={`p-6 rounded-lg mb-1 ${
+                                        analysisResult.isVerified 
+                                            ? 'bg-gradient-to-br from-green-50 to-emerald-100' 
+                                            : 'bg-gradient-to-br from-yellow-50 to-amber-100'
+                                    }`}>
                                         <div className="flex justify-between items-start mb-4">
-                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/80 text-xs font-bold uppercase tracking-wider text-[#2E7D32] border border-[#2E7D32]/20">
-                                                <span className="material-symbols-outlined text-base">verified</span>
-                                                Quality Grade
-                                            </span>
-                                            <span className="material-symbols-outlined text-[#2E7D32] text-4xl opacity-20">workspace_premium</span>
+                                            {/* Verification Status Badge */}
+                                            {analysisResult.isVerified ? (
+                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/80 text-xs font-bold uppercase tracking-wider text-[#2E7D32] border border-[#2E7D32]/20">
+                                                    <span className="material-symbols-outlined text-base">verified</span>
+                                                    AI Verified
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-100 text-xs font-bold uppercase tracking-wider text-yellow-700 border border-yellow-400">
+                                                    <span className="material-symbols-outlined text-base">warning</span>
+                                                    Unverified - Manual Entry
+                                                </span>
+                                            )}
+                                            <span className={`material-symbols-outlined text-4xl opacity-20 ${
+                                                analysisResult.isVerified ? 'text-[#2E7D32]' : 'text-yellow-600'
+                                            }`}>workspace_premium</span>
                                         </div>
                                         <div className="flex flex-col gap-1 mb-6">
                                             <h4 className="text-4xl md:text-5xl font-black text-[#131613] tracking-tight">
@@ -345,6 +484,136 @@ export const ProductUploadPage: React.FC<ProductUploadPageProps> = ({ onBack, on
                                             </div>
                                         </div>
                                     </div>
+                                </div>
+
+                                {/* Mandi Price Reference Card - NEW */}
+                                {(pricingResult || isLoadingPricing) && (
+                                    <div className={`bg-white p-5 rounded-xl border shadow-sm ${pricingResult?.isFallback ? 'border-orange-200 bg-orange-50/50' : 'border-blue-200 bg-blue-50/50'}`}>
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <div className={`size-10 rounded-full flex items-center justify-center ${pricingResult?.isFallback ? 'bg-orange-100' : 'bg-blue-100'}`}>
+                                                <span className={`material-symbols-outlined ${pricingResult?.isFallback ? 'text-orange-600' : 'text-blue-600'}`}>
+                                                    {isLoadingPricing ? 'sync' : 'store'}
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold text-gray-900">
+                                                    {isLoadingPricing ? 'Fetching Market Prices...' : 'Live Mandi Reference'}
+                                                </h4>
+                                                {pricingResult?.mandiReference && (
+                                                    <p className="text-xs text-gray-500">
+                                                        {pricingResult.mandiReference.marketName} • Updated {new Date(pricingResult.mandiReference.priceDate).toLocaleDateString('en-IN')}
+                                                    </p>
+                                                )}
+                                                {pricingResult?.isFallback && (
+                                                    <p className="text-xs text-orange-600">Using national average prices</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                        
+                                        {isLoadingPricing ? (
+                                            <div className="flex items-center justify-center py-4">
+                                                <LoaderIcon className="h-6 w-6 text-blue-500 animate-spin" />
+                                            </div>
+                                        ) : pricingResult && (
+                                            <div className="grid grid-cols-3 gap-3">
+                                                <div className="bg-white p-3 rounded-lg border border-gray-200 text-center">
+                                                    <p className="text-xs text-gray-500 font-medium">Floor Price</p>
+                                                    <p className="text-lg font-bold text-red-600">₹{pricingResult.floorPrice.toFixed(0)}/kg</p>
+                                                    <p className="text-[10px] text-gray-400">Minimum</p>
+                                                </div>
+                                                <div className="bg-white p-3 rounded-lg border-2 border-green-400 text-center ring-2 ring-green-100">
+                                                    <p className="text-xs text-gray-500 font-medium">Target Price</p>
+                                                    <p className="text-lg font-bold text-green-600">₹{pricingResult.targetPrice.toFixed(0)}/kg</p>
+                                                    <p className="text-[10px] text-green-600">Recommended</p>
+                                                </div>
+                                                <div className="bg-white p-3 rounded-lg border border-gray-200 text-center">
+                                                    <p className="text-xs text-gray-500 font-medium">Premium Price</p>
+                                                    <p className="text-lg font-bold text-blue-600">₹{pricingResult.stretchPrice.toFixed(0)}/kg</p>
+                                                    <p className="text-[10px] text-gray-400">Generous</p>
+                                                </div>
+                                            </div>
+                                        )}
+                                        
+                                        {pricingResult?.mandiReference && (
+                                            <p className="text-xs text-gray-500 mt-3 text-center">
+                                                Mandi Modal: ₹{pricingResult.mandiReference.modalPricePerQuintal}/quintal 
+                                                (₹{pricingResult.mandiReference.modalPricePerKg.toFixed(2)}/kg)
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Location Badge */}
+                                <div className="bg-white p-4 rounded-xl border border-[#dee3de] shadow-sm">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`size-10 rounded-full flex items-center justify-center ${location ? 'bg-green-100' : 'bg-gray-100'}`}>
+                                                <span className={`material-symbols-outlined ${location ? 'text-green-600' : 'text-gray-400'}`}>
+                                                    {isLoadingLocation ? 'sync' : 'location_on'}
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-gray-900">
+                                                    {isLoadingLocation ? 'Detecting location...' : 
+                                                     location ? `${location.district}, ${location.state}` : 
+                                                     'Location not set'}
+                                                </p>
+                                                <p className="text-xs text-gray-500">
+                                                    {location?.isAutoDetected ? 'Auto-detected' : location ? 'Manually set' : 'Required for mandi prices'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => setShowManualLocation(true)}
+                                            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                                        >
+                                            Change
+                                        </button>
+                                    </div>
+                                    
+                                    {/* Manual Location Selector */}
+                                    {showManualLocation && (
+                                        <div className="mt-4 pt-4 border-t border-gray-200 space-y-3">
+                                            <select
+                                                value={manualState}
+                                                onChange={(e) => { setManualState(e.target.value); setManualDistrict(''); }}
+                                                className="w-full p-3 border border-gray-300 rounded-lg focus:border-green-500 focus:ring-1 focus:ring-green-500"
+                                            >
+                                                <option value="">Select State</option>
+                                                {INDIAN_STATES.map(state => (
+                                                    <option key={state} value={state}>{state}</option>
+                                                ))}
+                                            </select>
+                                            {manualState && MAJOR_DISTRICTS[manualState] && (
+                                                <select
+                                                    value={manualDistrict}
+                                                    onChange={(e) => setManualDistrict(e.target.value)}
+                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:border-green-500 focus:ring-1 focus:ring-green-500"
+                                                >
+                                                    <option value="">Select District</option>
+                                                    {MAJOR_DISTRICTS[manualState].map(district => (
+                                                        <option key={district} value={district}>{district}</option>
+                                                    ))}
+                                                </select>
+                                            )}
+                                            {manualState && !MAJOR_DISTRICTS[manualState] && (
+                                                <input
+                                                    type="text"
+                                                    placeholder="Enter district name"
+                                                    value={manualDistrict}
+                                                    onChange={(e) => setManualDistrict(e.target.value)}
+                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:border-green-500 focus:ring-1 focus:ring-green-500"
+                                                />
+                                            )}
+                                            <button
+                                                onClick={handleManualLocationSubmit}
+                                                disabled={!manualState || !manualDistrict}
+                                                className="w-full py-2 bg-green-600 text-white rounded-lg font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
+                                            >
+                                                Confirm Location
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Quantity Input */}

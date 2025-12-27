@@ -147,8 +147,9 @@ export const LiveAssistantModal = ({ isOpen, onClose }: LiveAssistantModalProps)
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             mediaStreamRef.current = stream;
 
-            const apiKey = process.env.API_KEY || "";
-            const ai = new GoogleGenAI({ apiKey: apiKey || "dummy_key" });
+            // Use Gemini API key for live assistant
+            const apiKey = "AIzaSyDElpj5eaEXHsFSb_GfcQzwS0273mE11kw";
+            const ai = new GoogleGenAI({ apiKey });
             
             // FIX: Cast window to `any` to allow `webkitAudioContext` for older browser compatibility without TypeScript errors.
             outputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });

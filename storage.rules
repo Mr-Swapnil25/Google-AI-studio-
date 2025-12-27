@@ -1,0 +1,54 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper function: Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function: Check if user owns this path
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Helper function: Check file size (max 5MB)
+    function isValidSize() {
+      return request.resource.size < 5 * 1024 * 1024;
+    }
+    
+    // Helper function: Check if file is an image
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+    
+    // Helper function: Check if file is a document (PDF or image)
+    function isDocument() {
+      return request.resource.contentType.matches('image/.*') 
+          || request.resource.contentType.matches('application/pdf');
+    }
+    
+    // Product images: Public read, only owner can write
+    match /productImages/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isOwner(userId) && isValidSize() && isImage();
+    }
+    
+    // KYC documents: Only owner can read/write their own documents
+    match /kycDocuments/{farmerId}/{docType}/{fileName} {
+      allow read: if isOwner(farmerId);
+      allow write: if isOwner(farmerId) && isValidSize() && isDocument();
+    }
+    
+    // Profile images: Public read, only owner can write
+    match /profileImages/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isOwner(userId) && isValidSize() && isImage();
+    }
+    
+    // Default deny all other paths
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

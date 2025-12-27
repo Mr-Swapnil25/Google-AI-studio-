@@ -3,16 +3,59 @@
 import { GoogleGenAI, Type, Content } from "@google/genai";
 import { ProductCategory, Product, Farmer } from "../types";
 
-// Use Vite's environment variable pattern
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
+// Use provided Gemini API key directly
+const API_KEY = "AIzaSyDElpj5eaEXHsFSb_GfcQzwS0273mE11kw";
 
 if (!API_KEY) {
-  console.warn("VITE_GEMINI_API_KEY environment variable not set. AI features will be disabled.");
+  console.warn("GEMINI_API_KEY not configured. AI features will be disabled.");
 }
 
-// FIX: Initialize GoogleGenAI with a named apiKey parameter.
-// Provide a dummy key if missing to prevent crash on initialization, but API calls will fail.
-const ai = new GoogleGenAI({ apiKey: API_KEY || "dummy_key" });
+// Initialize GoogleGenAI with the API key
+const ai = new GoogleGenAI({ apiKey: API_KEY });
+
+/**
+ * AGRICULTURAL GATEKEEPER SYSTEM INSTRUCTION
+ * Strict verification to ensure only agricultural products are listed
+ */
+const AGRICULTURAL_GATEKEEPER_INSTRUCTION = `You are an Agricultural Verification Expert for Anna Bazaar, India's premier agricultural marketplace.
+
+YOUR MISSION: Ensure ONLY genuine agricultural products are listed. Protect farmers from fraudulent listings.
+
+STRICT VERIFICATION PROTOCOL:
+1. ANALYZE the input image thoroughly for agricultural content.
+2. STRICT FILTER: If the image does NOT contain a vegetable, fruit, grain, spice, pulse, oilseed, or agricultural produce:
+   - REJECT immediately with error_code: "INVALID_COMMODITY"
+   - is_valid_agri: false
+3. REJECTED ITEMS (provide polite refusal in Hindi and English):
+   - Clothing, textiles, fabrics
+   - Electronics, phones, computers
+   - Vehicles, machinery (except farm equipment in context)
+   - Processed/packaged foods with brand labels
+   - Animals (live or meat)
+   - Non-food items
+4. QUALITY ANALYSIS (if valid agricultural product):
+   - Grade 'A': Premium quality - vibrant color, no defects, optimal size, fresh appearance
+   - Grade 'B': Standard quality - minor imperfections, good overall condition
+   - Grade 'C': Economy quality - visible defects, discoloration, or aging signs
+5. Estimate moisture content based on visual appearance (produce shine, wrinkling, firmness indicators)
+6. Detect any visual defects: spots, rot, pest damage, discoloration
+
+ALWAYS return valid JSON. No conversational text outside the JSON structure.`;
+
+// Response type for agricultural verification
+export interface AgriculturalVerificationResult {
+  is_valid_agri: boolean;
+  error_code?: 'INVALID_COMMODITY';
+  rejection_message?: string;
+  commodity?: string;
+  grade?: 'A' | 'B' | 'C';
+  grade_label?: string;
+  moisture_estimate?: string;
+  visual_defects?: string;
+  confidence?: number;
+  category?: string;
+  description?: string;
+}
 
 const fileToGenerativePart = (base64: string, mimeType: string) => {
   return {
@@ -23,8 +66,14 @@ const fileToGenerativePart = (base64: string, mimeType: string) => {
   };
 };
 
-// FIX: Updated function to return ProductCategory enum type for category to match component state type.
-export const generateProductDetails = async (imageBase64: string, mimeType: string): Promise<{ name: string; category: ProductCategory; description: string }> => {
+/**
+ * AGRICULTURAL GATEKEEPER - Verify and analyze agricultural products
+ * Returns detailed verification result with strict agriculture-only filtering
+ */
+export const verifyAgriculturalProduct = async (
+  imageBase64: string, 
+  mimeType: string
+): Promise<AgriculturalVerificationResult> => {
   if (!API_KEY) {
     throw new Error("Gemini API key is not configured.");
   }
@@ -32,40 +81,98 @@ export const generateProductDetails = async (imageBase64: string, mimeType: stri
   try {
     const imagePart = fileToGenerativePart(imageBase64, mimeType);
     const result = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: {
-          parts: [
-            imagePart,
-            { text: "Analyze this image of an agricultural product. Suggest a product name, a category from ('Fruit', 'Vegetable', 'Grain', 'Other'), and a brief, appealing description for a marketplace listing. Return the result as JSON." },
-          ]
+        parts: [
+          imagePart,
+          { text: "Analyze this image. Verify if it's a valid agricultural product (vegetable, fruit, grain, spice, pulse). If not agricultural, reject it. If valid, provide quality grading." },
+        ]
       },
       config: {
+        systemInstruction: AGRICULTURAL_GATEKEEPER_INSTRUCTION,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            name: { type: Type.STRING, description: "The suggested name of the product." },
-            category: { type: Type.STRING, description: "The suggested category: Fruit, Vegetable, Grain, or Other." },
-            description: { type: Type.STRING, description: "A brief, appealing description for the product." }
+            is_valid_agri: { type: Type.BOOLEAN, description: "True only if image contains valid agricultural produce" },
+            error_code: { type: Type.STRING, description: "INVALID_COMMODITY if not agricultural" },
+            rejection_message: { type: Type.STRING, description: "Polite refusal in Hindi and English if rejected" },
+            commodity: { type: Type.STRING, description: "Name of the agricultural product" },
+            grade: { type: Type.STRING, description: "Quality grade: A, B, or C" },
+            grade_label: { type: Type.STRING, description: "Premium, Standard, or Economy" },
+            moisture_estimate: { type: Type.STRING, description: "Estimated moisture content" },
+            visual_defects: { type: Type.STRING, description: "Any visible defects" },
+            confidence: { type: Type.NUMBER, description: "Confidence score 0-100" },
+            category: { type: Type.STRING, description: "Fruit, Vegetable, Grain, or Other" },
+            description: { type: Type.STRING, description: "Brief marketplace description" },
           },
-          required: ["name", "category", "description"],
+          required: ["is_valid_agri"],
         },
       },
     });
 
     const text = result.text.trim();
-    const parsedResult = JSON.parse(text) as { name: string; category: string; description: string };
+    return JSON.parse(text) as AgriculturalVerificationResult;
+  } catch (error) {
+    console.error("Error in agricultural verification:", error);
+    throw new Error("Failed to verify product. Please try again or enter details manually.");
+  }
+};
 
-    // Validate category and convert string to ProductCategory enum
-    const categoryString = parsedResult.category || '';
+// FIX: Updated function to return ProductCategory enum type for category to match component state type.
+export const generateProductDetails = async (imageBase64: string, mimeType: string): Promise<{ 
+  name: string; 
+  category: ProductCategory; 
+  description: string;
+  isValidAgri: boolean;
+  grade: 'A' | 'B' | 'C';
+  gradeLabel: string;
+  moistureEstimate: string;
+  visualDefects: string;
+  confidence: number;
+  rejectionMessage?: string;
+}> => {
+  if (!API_KEY) {
+    throw new Error("Gemini API key is not configured.");
+  }
+
+  try {
+    // Use the agricultural gatekeeper for strict verification
+    const verification = await verifyAgriculturalProduct(imageBase64, mimeType);
+    
+    // If not valid agricultural product, return rejection
+    if (!verification.is_valid_agri) {
+      return {
+        name: '',
+        category: ProductCategory.Other,
+        description: '',
+        isValidAgri: false,
+        grade: 'C',
+        gradeLabel: 'Rejected',
+        moistureEstimate: 'N/A',
+        visualDefects: 'N/A',
+        confidence: 0,
+        rejectionMessage: verification.rejection_message || 
+          'यह एक कृषि उत्पाद नहीं है। कृपया केवल सब्जियां, फल, या अनाज अपलोड करें। / This is not an agricultural product. Please upload only vegetables, fruits, or grains.',
+      };
+    }
+
+    // Valid agricultural product - return full details
+    const categoryString = verification.category || 'Other';
     const categoryEnumValue = Object.values(ProductCategory).find(
       (c) => c.toLowerCase() === categoryString.toLowerCase()
     );
 
     return {
-      name: parsedResult.name,
-      description: parsedResult.description,
+      name: verification.commodity || 'Fresh Produce',
       category: categoryEnumValue || ProductCategory.Other,
+      description: verification.description || 'Quality agricultural produce from local farms.',
+      isValidAgri: true,
+      grade: (verification.grade as 'A' | 'B' | 'C') || 'B',
+      gradeLabel: verification.grade_label || 'Standard',
+      moistureEstimate: verification.moisture_estimate || 'Optimal',
+      visualDefects: verification.visual_defects || 'None Detected',
+      confidence: verification.confidence || 85,
     };
   } catch (error) {
     console.error("Error generating product details with Gemini:", error);

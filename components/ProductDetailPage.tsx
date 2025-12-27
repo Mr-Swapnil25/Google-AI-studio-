@@ -29,7 +29,8 @@ const generateAIInspectionData = (product: Product) => {
         pestDamage: false,
         sampleSize: '5kg',
         inspectionDate: new Date().toLocaleDateString(),
-        freshnessDays: Math.floor(Math.random() * 3) + 1,
+        // Calculate freshness based on product creation date (days since listing)
+        freshnessDays: Math.max(1, Math.min(3, Math.ceil((Date.now() - (product.createdAt?.getTime?.() || Date.now())) / (1000 * 60 * 60 * 24)) || 1)),
     };
 };
 

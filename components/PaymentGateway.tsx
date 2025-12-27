@@ -875,7 +875,10 @@ export const PaymentGateway: React.FC<PaymentGatewayProps> = ({
       setSelectedMethod('upi');
       setProgress(0);
       setTransactionId('');
-      setOrderId(initialOrderId || `AB-${Math.floor(10000 + Math.random() * 90000)}`);
+      // Generate deterministic order ID based on timestamp
+      const timestamp = Date.now();
+      const orderSuffix = (timestamp % 100000).toString().padStart(5, '0');
+      setOrderId(initialOrderId || `AB-${orderSuffix}`);
     }
   }, [isOpen, initialOrderId]);
 
@@ -886,14 +889,14 @@ export const PaymentGateway: React.FC<PaymentGatewayProps> = ({
     const newTransactionId = `TXN_${Date.now()}`;
     setTransactionId(newTransactionId);
 
-    // Simulate progress
+    // Simulate progress with deterministic increments
     const progressInterval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
           clearInterval(progressInterval);
           return 100;
         }
-        return prev + Math.random() * 15;
+        return prev + 10; // Deterministic 10% increment
       });
     }, 300);
 
@@ -902,8 +905,9 @@ export const PaymentGateway: React.FC<PaymentGatewayProps> = ({
       clearInterval(progressInterval);
       setProgress(100);
       
-      // 80% success rate for demo
-      const isSuccess = Math.random() < 0.8;
+      // In production, payment success is verified by payment gateway webhook
+      // For development, always succeed (real verification happens server-side)
+      const isSuccess = true;
       
       setTimeout(async () => {
         if (isSuccess) {

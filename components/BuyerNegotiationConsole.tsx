@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Negotiation, NegotiationStatus, ChatMessage, Farmer } from '../types';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { Negotiation, NegotiationStatus, ChatMessage, Farmer, PricingEngineResult, OfferAnalysis } from '../types';
+import { analyzeOffer } from '../lib/pricingEngine';
 
 interface BuyerNegotiationConsoleProps {
     negotiation: Negotiation;
@@ -11,6 +12,9 @@ interface BuyerNegotiationConsoleProps {
     onUpdateOffer: (price: number, quantity: number) => void;
     onAcceptOffer: () => void;
     onDeclineOffer: () => void;
+    // NEW: Pricing engine integration
+    pricing?: PricingEngineResult;
+    farmerDistrict?: string;
 }
 
 export const BuyerNegotiationConsole: React.FC<BuyerNegotiationConsoleProps> = ({
@@ -23,11 +27,23 @@ export const BuyerNegotiationConsole: React.FC<BuyerNegotiationConsoleProps> = (
     onUpdateOffer,
     onAcceptOffer,
     onDeclineOffer,
+    pricing,
+    farmerDistrict,
 }) => {
     const [messageInput, setMessageInput] = useState('');
     const [counterPrice, setCounterPrice] = useState(negotiation.offeredPrice);
     const [counterQuantity, setCounterQuantity] = useState(negotiation.quantity);
     const chatContainerRef = useRef<HTMLDivElement>(null);
+
+    // Offer analysis based on pricing engine
+    const offerAnalysis: OfferAnalysis | null = useMemo(() => {
+        if (!pricing) return null;
+        return analyzeOffer(counterPrice, pricing, farmerDistrict);
+    }, [counterPrice, pricing, farmerDistrict]);
+
+    // Check if offer is valid (above floor price)
+    const isOfferValid = !pricing || (counterPrice >= pricing.floorPrice);
+    const canSubmitOffer = isOfferValid && counterPrice > 0;
 
     useEffect(() => {
         if (chatContainerRef.current) {
@@ -243,12 +259,42 @@ export const BuyerNegotiationConsole: React.FC<BuyerNegotiationConsoleProps> = (
                     {isPending && (
                         <div className="absolute bottom-0 left-0 w-full bg-white dark:bg-[#1a262d] border-t border-stone-200 dark:border-[#27333a] p-4 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
                             <div className="max-w-4xl mx-auto flex flex-col gap-4">
+                                {/* Market Reference Badge - NEW */}
+                                {pricing && (
+                                    <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 rounded-lg px-4 py-2 border border-blue-200 dark:border-blue-800">
+                                        <div className="flex items-center gap-2">
+                                            <span className="material-symbols-outlined text-blue-600 text-lg">store</span>
+                                            <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                                                {pricing.mandiReference 
+                                                    ? `${pricing.mandiReference.marketName}: ₹${pricing.mandiReference.modalPricePerKg.toFixed(0)}/kg`
+                                                    : `National Avg: ₹${pricing.targetPrice.toFixed(0)}/kg`
+                                                }
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-4 text-xs">
+                                            <span className="text-red-600 font-bold">Floor: ₹{pricing.floorPrice.toFixed(0)}</span>
+                                            <span className="text-green-600 font-bold">Target: ₹{pricing.targetPrice.toFixed(0)}</span>
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div className="flex items-center justify-between">
                                     <h4 className="text-xs font-bold uppercase tracking-wider text-stone-600 dark:text-stone-400">Make Counter-Offer</h4>
+                                    {/* Offer Classification Chip - NEW */}
+                                    {offerAnalysis && (
+                                        <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${offerAnalysis.colorClass}`}>
+                                            <span className="material-symbols-outlined text-sm">{offerAnalysis.icon}</span>
+                                            <span>{offerAnalysis.classification === 'invalid' ? 'BLOCKED' : offerAnalysis.classification.toUpperCase()}</span>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="flex flex-col md:flex-row gap-4 items-stretch">
-                                    {/* Price Spinner */}
-                                    <div className="flex-1 flex items-center bg-stone-100 dark:bg-stone-800 rounded-xl border border-stone-300 dark:border-stone-700 px-2 py-1">
+                                    {/* Price Spinner - Enhanced with validation */}
+                                    <div className={`flex-1 flex items-center rounded-xl border px-2 py-1 transition-colors ${
+                                        !isOfferValid 
+                                            ? 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700' 
+                                            : 'bg-stone-100 dark:bg-stone-800 border-stone-300 dark:border-stone-700'
+                                    }`}>
                                         <button
                                             onClick={() => setCounterPrice(Math.max(1, counterPrice - 1))}
                                             className="size-10 flex items-center justify-center rounded-lg hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-600 dark:text-stone-400"
@@ -258,7 +304,9 @@ export const BuyerNegotiationConsole: React.FC<BuyerNegotiationConsoleProps> = (
                                         <div className="flex-1 text-center border-x border-stone-300 dark:border-stone-700 mx-2 py-1">
                                             <span className="block text-xs text-stone-600 dark:text-stone-400 font-medium">Price (₹)</span>
                                             <input
-                                                className="w-full bg-transparent text-center font-bold text-xl border-none focus:ring-0 p-0"
+                                                className={`w-full bg-transparent text-center font-bold text-xl border-none focus:ring-0 p-0 ${
+                                                    !isOfferValid ? 'text-red-600' : ''
+                                                }`}
                                                 type="number"
                                                 value={counterPrice}
                                                 onChange={(e) => setCounterPrice(Math.max(1, parseInt(e.target.value) || 1))}
@@ -297,15 +345,29 @@ export const BuyerNegotiationConsole: React.FC<BuyerNegotiationConsoleProps> = (
                                         </button>
                                     </div>
 
-                                    {/* Action Button */}
+                                    {/* Action Button - DISABLED when below floor */}
                                     <button
                                         onClick={handleUpdateOffer}
-                                        className="flex-[0.5] bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-bold px-6 py-2 shadow-md transition-all flex flex-col items-center justify-center min-w-[120px] active:scale-95"
+                                        disabled={!canSubmitOffer}
+                                        className={`flex-[0.5] rounded-xl font-bold px-6 py-2 shadow-md transition-all flex flex-col items-center justify-center min-w-[120px] ${
+                                            canSubmitOffer 
+                                                ? 'bg-orange-600 hover:bg-orange-700 text-white active:scale-95 cursor-pointer' 
+                                                : 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed'
+                                        }`}
+                                        title={!canSubmitOffer && pricing ? `Minimum offer: ₹${pricing.floorPrice.toFixed(0)}/kg` : ''}
                                     >
-                                        <span className="text-sm">Update Offer</span>
-                                        <span className="text-[10px] opacity-80">Send Card</span>
+                                        <span className="text-sm">{canSubmitOffer ? 'Update Offer' : 'Blocked'}</span>
+                                        <span className="text-[10px] opacity-80">{canSubmitOffer ? 'Send Card' : 'Too Low'}</span>
                                     </button>
                                 </div>
+
+                                {/* Validation Message - NEW */}
+                                {offerAnalysis && (
+                                    <div className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm ${offerAnalysis.colorClass}`}>
+                                        <span className="material-symbols-outlined text-lg">{offerAnalysis.icon}</span>
+                                        <span className="font-medium">{offerAnalysis.message}</span>
+                                    </div>
+                                )}
 
                                 {/* Simple Chat Input for Text */}
                                 <div className="flex gap-3 items-center mt-2 border-t border-stone-300 dark:border-stone-700 pt-3">

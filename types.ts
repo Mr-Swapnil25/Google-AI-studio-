@@ -157,3 +157,69 @@ export interface FarmerWallet {
   totalBalance: number;
   lastUpdated: Date;
 }
+
+// ============================================
+// DYNAMIC MANDI PRICE ENGINE TYPES
+// ============================================
+
+/** Represents a live mandi (market) price record */
+export interface MandiPrice {
+  id: string;
+  commodityName: string;
+  state: string;
+  district: string;
+  marketName: string;
+  minPrice: number;      // ₹ per quintal
+  maxPrice: number;      // ₹ per quintal
+  modalPrice: number;    // ₹ per quintal (most common price)
+  updatedAt: Date;
+  source: 'agmarknet' | 'datagov' | 'state_portal' | 'fallback';
+  isStale: boolean;      // True if data > 48 hours old
+}
+
+/** Result from the pricing engine calculations */
+export interface PricingEngineResult {
+  floorPrice: number;       // ₹/kg - absolute minimum (buyer cannot go below)
+  targetPrice: number;      // ₹/kg - recommended fair price
+  stretchPrice: number;     // ₹/kg - premium/generous price
+  qualityMultiplier: number;
+  logisticsDeduction: number;
+  mandiReference: {
+    marketName: string;
+    modalPricePerQuintal: number;
+    modalPricePerKg: number;
+    priceDate: Date;
+  } | null;
+  isFallback: boolean;      // True if using national average
+  fallbackReason?: string;
+}
+
+/** Classification of a buyer's offer */
+export type OfferClassification = 
+  | 'invalid'    // Below floor - blocked
+  | 'low'        // Above floor but below target - orange warning
+  | 'fair'       // Around target - green
+  | 'generous';  // Above target - blue/premium
+
+/** Detailed offer analysis result */
+export interface OfferAnalysis {
+  classification: OfferClassification;
+  colorClass: string;
+  icon: string;
+  message: string;
+  percentageDiff: number;  // vs target price (negative = below)
+  canSubmit: boolean;
+}
+
+/** Location data extracted from geolocation */
+export interface GeoLocation {
+  state: string;
+  district: string;
+  pincode?: string;
+  latitude?: number;
+  longitude?: number;
+  isAutoDetected: boolean;
+}
+
+/** Quality grade for pricing calculations */
+export type QualityGrade = 'A' | 'B' | 'C';
