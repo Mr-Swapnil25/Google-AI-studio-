@@ -20,11 +20,26 @@ import {
     CreatePaymentRequest,
     DodoCheckoutResponse,
     PaymentRecord,
+    BillingAddress,
 } from '../types/payment';
 
 // Dodo Payments API configuration
 const DODO_API_BASE_URL = import.meta.env.VITE_DODO_API_URL || 'https://test.dodopayments.com';
 const DODO_API_KEY = import.meta.env.VITE_DODO_API_KEY || '';
+
+/**
+ * Get default billing address based on user info
+ * Uses sensible defaults for Indian addresses when not provided
+ */
+const getDefaultBillingAddress = (customerName: string, customerLocation?: string): BillingAddress => {
+    return {
+        street: customerLocation || 'Not specified',
+        city: customerLocation || 'Not specified',
+        state: 'Not specified',
+        country: 'IN',
+        zipcode: '000000', // Placeholder - Dodo may require valid zipcode
+    };
+};
 
 /**
  * Create a Dodo checkout session
@@ -39,6 +54,19 @@ export const createCheckoutSession = async (
         throw new Error('Dodo Payments API key not configured. Please add VITE_DODO_API_KEY to your .env.local file.');
     }
 
+    // Validate required fields
+    if (!request.customerId || !request.customerName) {
+        throw new Error('Customer ID and name are required for payment.');
+    }
+
+    if (!request.items || request.items.length === 0) {
+        throw new Error('At least one item is required for payment.');
+    }
+
+    if (request.amount <= 0) {
+        throw new Error('Payment amount must be greater than zero.');
+    }
+
     try {
         // Create payment record in Firestore first
         const paymentRef = await addDoc(collection(db, 'payments'), {
@@ -51,6 +79,7 @@ export const createCheckoutSession = async (
             status: PaymentStatus.Pending,
             paymentType: request.paymentType,
             items: request.items,
+            billingAddress: request.billingAddress || null,
             metadata: request.metadata || {},
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
@@ -58,46 +87,27 @@ export const createCheckoutSession = async (
 
         const paymentId = paymentRef.id;
 
-        // Prepare Dodo API request
-        // Using the product_cart format as per Dodo API docs
+        // Use provided billing address or generate default
+        const billing = request.billingAddress || getDefaultBillingAddress(
+            request.customerName,
+            request.metadata?.farmerId ? undefined : undefined
+        );
+
+        // Map cart items to Dodo's product_cart format
+        // NOTE: For this to work, you need to create products in Dodo dashboard
+        // or use their dynamic payment links feature
         const productCart = request.items.map(item => ({
             product_id: item.productId,
             quantity: item.quantity,
         }));
 
-        // For dynamic pricing, we'll use the total amount
-        const dodoRequest = {
-            billing: {
-                city: 'India',
-                country: 'IN',
-                state: 'Unknown',
-                street: 'Not provided',
-                zipcode: '000000',
-            },
-            customer: {
-                name: request.customerName,
-                email: request.customerEmail || `${request.customerId}@annabazaar.app`,
-                phone_number: request.customerPhone || null,
-            },
-            payment_link: true, // Use payment link mode for flexibility
-            return_url: request.returnUrl,
-            // Include metadata for tracking
-            metadata: {
-                payment_id: paymentId,
-                customer_id: request.customerId,
-                payment_type: request.paymentType,
-                ...request.metadata,
-            },
-            // For custom amounts, we'll create a dynamic product
-            product_cart: [
-                {
-                    product_id: 'dynamic_payment', // Placeholder - in production, create products in Dodo dashboard
-                    quantity: 1,
-                }
-            ],
-        };
+        // Build customer email - use provided or construct a valid one
+        const customerEmail = request.customerEmail ||
+            (request.customerPhone ? `${request.customerPhone.replace(/\D/g, '')}@customer.annabazaar.in` :
+                `${request.customerId}@customer.annabazaar.in`);
 
         // Make API call to Dodo
+        // Using payment link mode which allows dynamic amounts
         const response = await fetch(`${DODO_API_BASE_URL}/payments`, {
             method: 'POST',
             headers: {
@@ -105,16 +115,31 @@ export const createCheckoutSession = async (
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                billing: dodoRequest.billing,
-                customer: dodoRequest.customer,
+                billing: {
+                    city: billing.city,
+                    country: billing.country,
+                    state: billing.state,
+                    street: billing.street,
+                    zipcode: billing.zipcode,
+                },
+                customer: {
+                    name: request.customerName,
+                    email: customerEmail,
+                    phone_number: request.customerPhone || null,
+                },
                 payment_link: true,
                 return_url: request.returnUrl,
-                metadata: dodoRequest.metadata,
-                // For one-time payments with custom amount
-                product_cart: [{
-                    product_id: 'prod_dynamic', // You'll need to create this in Dodo dashboard
-                    quantity: 1,
-                }],
+                metadata: {
+                    payment_id: paymentId,
+                    customer_id: request.customerId,
+                    payment_type: request.paymentType,
+                    amount_paise: String(request.amount), // Store amount for verification
+                    items_count: String(request.items.length),
+                    ...request.metadata,
+                },
+                // Send actual cart items if products exist in Dodo dashboard
+                // Otherwise Dodo will use the payment link mode
+                product_cart: productCart,
             }),
         });
 
@@ -125,14 +150,14 @@ export const createCheckoutSession = async (
             // Update payment status to failed
             await updateDoc(doc(db, 'payments', paymentId), {
                 status: PaymentStatus.Failed,
-                failureReason: `API Error: ${response.status}`,
+                failureReason: `API Error: ${response.status} - ${errorData}`,
                 updatedAt: serverTimestamp(),
             });
 
             throw new Error(`Payment creation failed: ${response.status}`);
         }
 
-        const dodoResponse = await response.json();
+        const dodoResponse: DodoCheckoutResponse = await response.json();
 
         // Update payment record with Dodo checkout ID
         await updateDoc(doc(db, 'payments', paymentId), {
@@ -142,8 +167,14 @@ export const createCheckoutSession = async (
             updatedAt: serverTimestamp(),
         });
 
+        const checkoutUrl = dodoResponse.payment_link || dodoResponse.checkout_url;
+
+        if (!checkoutUrl) {
+            throw new Error('No checkout URL received from payment gateway');
+        }
+
         return {
-            checkoutUrl: dodoResponse.payment_link || dodoResponse.checkout_url,
+            checkoutUrl,
             paymentId,
         };
     } catch (error) {
@@ -164,7 +195,8 @@ export const createCartPayment = async (
     items: PaymentItem[],
     totalAmount: number,
     returnUrl: string,
-    metadata?: Record<string, string>
+    metadata?: Record<string, string>,
+    billingAddress?: BillingAddress
 ): Promise<{ checkoutUrl: string; paymentId: string }> => {
     return createCheckoutSession({
         customerId,
@@ -175,6 +207,7 @@ export const createCartPayment = async (
         currency: 'INR',
         paymentType: PaymentType.CartCheckout,
         items,
+        billingAddress,
         metadata,
         returnUrl,
     });
@@ -193,7 +226,8 @@ export const createNegotiationPayment = async (
     productName: string,
     quantity: number,
     agreedPrice: number,
-    returnUrl: string
+    returnUrl: string,
+    billingAddress?: BillingAddress
 ): Promise<{ checkoutUrl: string; paymentId: string }> => {
     const items: PaymentItem[] = [{
         productId: negotiationId,
@@ -211,6 +245,7 @@ export const createNegotiationPayment = async (
         currency: 'INR',
         paymentType: PaymentType.NegotiationPayment,
         items,
+        billingAddress,
         metadata: {
             negotiationId,
             farmerId,
@@ -281,17 +316,75 @@ export const updatePaymentStatus = async (
 };
 
 /**
- * Verify webhook signature (for Cloud Function use)
- * This should be implemented in the Cloud Function
+ * Webhook signature verification
+ * 
+ * IMPORTANT: This function is a placeholder for client-side documentation.
+ * Actual webhook verification MUST be done server-side (Firebase Cloud Functions).
+ * 
+ * For production, create a Cloud Function that:
+ * 1. Receives the webhook POST request from Dodo
+ * 2. Extracts the signature from headers (usually 'x-dodo-signature' or similar)
+ * 3. Computes HMAC-SHA256 of the raw body using your webhook secret
+ * 4. Compares the computed signature with the received signature
+ * 5. Only processes the webhook if signatures match
+ * 
+ * Example Cloud Function implementation:
+ * 
+ * ```typescript
+ * import * as functions from 'firebase-functions';
+ * import * as crypto from 'crypto';
+ * 
+ * export const dodoWebhook = functions.https.onRequest(async (req, res) => {
+ *     const signature = req.headers['x-dodo-signature'] as string;
+ *     const webhookSecret = functions.config().dodo.webhook_secret;
+ *     const payload = JSON.stringify(req.body);
+ *     
+ *     const expectedSignature = crypto
+ *         .createHmac('sha256', webhookSecret)
+ *         .update(payload)
+ *         .digest('hex');
+ *     
+ *     if (!crypto.timingSafeEqual(
+ *         Buffer.from(signature),
+ *         Buffer.from(expectedSignature)
+ *     )) {
+ *         res.status(401).send('Invalid signature');
+ *         return;
+ *     }
+ *     
+ *     // Process the verified webhook...
+ *     const { payment_id, status, metadata } = req.body;
+ *     await updatePaymentStatus(metadata.payment_id, status);
+ *     
+ *     res.status(200).send('OK');
+ * });
+ * ```
+ * 
+ * DO NOT USE THIS FUNCTION FOR ACTUAL VERIFICATION IN PRODUCTION.
  */
 export const verifyWebhookSignature = (
     payload: string,
     signature: string,
     secret: string
 ): boolean => {
-    // Implementation for webhook signature verification
-    // This uses HMAC-SHA256 typically
-    // Should be done server-side in Cloud Function
-    console.warn('Webhook verification should be done server-side');
+    // This is intentionally not implemented client-side for security reasons
+    // Webhook verification MUST happen on the server
+    console.error(
+        '[SECURITY WARNING] Webhook verification must be done server-side. ' +
+        'Deploy a Firebase Cloud Function to handle Dodo webhooks securely. ' +
+        'See the function documentation above for implementation details.'
+    );
+
+    // Always return false to prevent client-side webhook processing
     return false;
+};
+
+/**
+ * Check and update payment status by polling (fallback when webhooks aren't set up)
+ * This is less reliable than webhooks but works for development
+ */
+export const pollPaymentStatus = async (paymentId: string): Promise<PaymentRecord | null> => {
+    // For now, just return the stored status
+    // In production, you might call Dodo's API to get current status
+    return getPaymentStatus(paymentId);
 };

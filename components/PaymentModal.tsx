@@ -50,25 +50,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         }
     }, [isOpen]);
 
-    // Check for payment return
-    useEffect(() => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const paymentStatus = urlParams.get('payment_status');
-        const storedPaymentId = sessionStorage.getItem('pending_payment_id');
-
-        if (paymentStatus === 'complete' && storedPaymentId) {
-            // Clear session storage
-            sessionStorage.removeItem('pending_payment_id');
-
-            // Clean URL
-            window.history.replaceState({}, document.title, window.location.pathname);
-
-            // Check payment status
-            checkPaymentStatus(storedPaymentId);
-        }
-    }, []);
-
-    const checkPaymentStatus = async (id: string) => {
+    // Memoized function to check payment status - defined before useEffect that uses it
+    const checkPaymentStatus = useCallback(async (id: string) => {
         try {
             const payment = await getPaymentStatus(id);
             if (payment) {
@@ -81,12 +64,50 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                     setStep('failure');
                     setError(payment.failureReason || 'Payment failed');
                     onPaymentFailure?.(new Error(payment.failureReason || 'Payment failed'));
+                } else if (payment.status === PaymentStatus.Processing) {
+                    // Payment is still processing - user may need to wait
+                    showToast('Payment is being processed. Please wait...', 'info');
                 }
             }
         } catch (err) {
             console.error('Error checking payment status:', err);
         }
-    };
+    }, [onPaymentSuccess, onPaymentFailure, showToast]);
+
+    // Check for payment return - runs on mount and when URL changes
+    useEffect(() => {
+        const checkForPaymentReturn = () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const paymentStatusParam = urlParams.get('payment_status');
+            const storedPaymentId = sessionStorage.getItem('pending_payment_id');
+
+            if (paymentStatusParam === 'complete' && storedPaymentId) {
+                // Clear session storage
+                sessionStorage.removeItem('pending_payment_id');
+
+                // Clean URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+
+                // Check payment status
+                checkPaymentStatus(storedPaymentId);
+            }
+        };
+
+        // Check immediately on mount
+        checkForPaymentReturn();
+
+        // Also listen for popstate (back/forward navigation)
+        const handlePopState = () => {
+            checkForPaymentReturn();
+        };
+
+        window.addEventListener('popstate', handlePopState);
+
+        // Cleanup listener
+        return () => {
+            window.removeEventListener('popstate', handlePopState);
+        };
+    }, [checkPaymentStatus]); // Properly depends on the memoized callback
 
     const getReturnUrl = useCallback(() => {
         return `${window.location.origin}?payment_status=complete`;

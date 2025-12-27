@@ -28,6 +28,14 @@ export interface PaymentItem {
     unitPrice: number; // in smallest currency unit (paise for INR)
 }
 
+export interface BillingAddress {
+    street: string;
+    city: string;
+    state: string;
+    country: string;
+    zipcode: string;
+}
+
 export interface CreatePaymentRequest {
     customerId: string;
     customerName: string;
@@ -37,6 +45,7 @@ export interface CreatePaymentRequest {
     currency: string;
     paymentType: PaymentType;
     items: PaymentItem[];
+    billingAddress?: BillingAddress; // Optional billing address
     metadata?: {
         negotiationId?: string;
         farmerId?: string;
@@ -47,9 +56,12 @@ export interface CreatePaymentRequest {
 }
 
 export interface DodoCheckoutResponse {
-    checkout_id: string;
-    checkout_url: string;
-    expires_at: string;
+    // Actual fields returned by Dodo Payments API
+    payment_id: string;
+    payment_link: string;
+    id?: string;           // Alternative ID field
+    checkout_url?: string; // Alternative URL field
+    expires_at?: string;
     status: string;
 }
 

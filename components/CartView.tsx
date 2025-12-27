@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { CartItem, User } from '../types';
-import { ArrowLeftIcon, TrashIcon } from './icons';
+import { ArrowLeftIcon } from './icons';
 import { PaymentModal } from './PaymentModal';
 import { PaymentItem, PaymentType } from '../types/payment';
 

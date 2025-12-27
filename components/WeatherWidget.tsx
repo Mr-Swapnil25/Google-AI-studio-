@@ -60,7 +60,7 @@ const WeatherSkeleton: React.FC = () => (
 );
 
 // Error state component
-const WeatherError: React.FC<{ onRetry: () => void; isRetrying: boolean }> = ({ onRetry, isRetrying }) => (
+const WeatherError: React.FC<{ onRetry: () => void; isRetrying: boolean; errorMessage?: string }> = ({ onRetry, isRetrying, errorMessage }) => (
     <div className="xl:col-span-4 relative group">
         <div className="absolute inset-0 bg-gradient-to-br from-red-400/20 to-stone-400/20 rounded-[2.5rem] blur-xl opacity-20"></div>
         <div className="relative h-full flex flex-col items-center justify-center rounded-[2rem] p-8 bg-white/50 backdrop-blur-xl border border-white/60 shadow-card text-center gap-4">
@@ -69,7 +69,7 @@ const WeatherError: React.FC<{ onRetry: () => void; isRetrying: boolean }> = ({ 
             </div>
             <div>
                 <h4 className="text-lg font-bold text-stone-800">Weather Unavailable</h4>
-                <p className="text-sm text-stone-500 mt-1">Unable to load weather data</p>
+                <p className="text-sm text-stone-500 mt-1">{errorMessage || 'Unable to load weather data'}</p>
             </div>
             <button
                 onClick={onRetry}
@@ -88,6 +88,29 @@ const WeatherError: React.FC<{ onRetry: () => void; isRetrying: boolean }> = ({ 
                     </>
                 )}
             </button>
+        </div>
+    </div>
+);
+
+// API key not configured state
+const WeatherApiKeyMissing: React.FC = () => (
+    <div className="xl:col-span-4 relative group">
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-400/20 to-orange-400/20 rounded-[2.5rem] blur-xl opacity-20"></div>
+        <div className="relative h-full flex flex-col items-center justify-center rounded-[2rem] p-8 bg-white/50 backdrop-blur-xl border border-white/60 shadow-card text-center gap-4">
+            <div className="h-16 w-16 rounded-full bg-amber-100 flex items-center justify-center">
+                <span className="material-symbols-outlined text-3xl text-amber-600">vpn_key_off</span>
+            </div>
+            <div>
+                <h4 className="text-lg font-bold text-stone-800">Weather API Setup Required</h4>
+                <p className="text-sm text-stone-500 mt-1">
+                    To enable weather, add your API key to <code className="bg-stone-100 px-1 rounded">.env.local</code>
+                </p>
+            </div>
+            <div className="text-xs text-stone-400 bg-stone-50 p-3 rounded-lg font-mono text-left">
+                <p>1. Get a free key from <a href="https://weatherapi.com" target="_blank" rel="noopener noreferrer" className="text-primary underline">weatherapi.com</a></p>
+                <p>2. Add: VITE_WEATHER_API_KEY="your_key"</p>
+                <p>3. Restart the dev server</p>
+            </div>
         </div>
     </div>
 );
@@ -166,6 +189,11 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({
     // Show skeleton while loading
     if (isLoading) {
         return <WeatherSkeleton />;
+    }
+
+    // Show API key missing state with setup instructions
+    if (!apiKey) {
+        return <WeatherApiKeyMissing />;
     }
 
     // Show error state
