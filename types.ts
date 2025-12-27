@@ -120,6 +120,7 @@ export interface FarmerDashboardWeather {
   locationLabel: string;
   temperatureC: number;
   conditionLabel: string;
+  weatherIcon: string;
   humidityPct: number;
   windKmh: number;
   rainPct: number;
