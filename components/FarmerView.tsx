@@ -7,6 +7,7 @@ import { ProductUploadPage } from './ProductUploadPage';
 import { NegotiationChat } from './NegotiationChat';
 import { FarmerWallet } from './FarmerWallet';
 import { firebaseService } from '../services/firebaseService';
+import { WeatherWidget } from './WeatherWidget';
 
 interface FarmerViewProps {
     products: Product[];
@@ -25,13 +26,13 @@ interface FarmerViewProps {
 type FormErrors = { [key in keyof Omit<Product, 'id' | 'farmerId' | 'imageUrl' | 'isVerified' | 'verificationFeedback'>]?: string } & { image?: string };
 
 const fileToBase64 = (file: File): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve((reader.result as string).split(',')[1]);
-    reader.onerror = (error) => reject(error);
-  });
-  
+    new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve((reader.result as string).split(',')[1]);
+        reader.onerror = (error) => reject(error);
+    });
+
 const fileToDataUrl = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -51,7 +52,7 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
     const [newProductForm, setNewProductForm] = useState(initialFormState);
     const [formErrors, setFormErrors] = useState<FormErrors>({});
     const [touched, setTouched] = useState<{ [key: string]: boolean }>({});
-    
+
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [showUploadPage, setShowUploadPage] = useState(false);
@@ -61,7 +62,7 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
     const [editForm, setEditForm] = useState<Product | null>(null);
     const [editFormErrors, setEditFormErrors] = useState<FormErrors>({});
     const [editTouched, setEditTouched] = useState<{ [key: string]: boolean }>({});
-    
+
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [activeNav, setActiveNav] = useState('home');
 
@@ -117,7 +118,7 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
     useEffect(() => {
         setNewProductForm(prev => ({ ...prev, type: activeFormTab }));
     }, [activeFormTab]);
-    
+
     const validateForm = (form: Omit<Product, 'id' | 'farmerId' | 'isVerified' | 'verificationFeedback' | 'imageUrl'>, forEdit = false): FormErrors => {
         const errors: FormErrors = {};
         if (!forEdit && !imageFile) errors.image = 'Product image is required.';
@@ -132,7 +133,7 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
         const { name, value } = e.target;
         setNewProductForm(prev => ({ ...prev, [name]: name === 'price' || name === 'quantity' ? parseFloat(value) || 0 : value }));
     };
-    
+
     const handleInputBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         setTouched(prev => ({ ...prev, [e.target.name]: true }));
         setFormErrors(validateForm(newProductForm));
@@ -144,14 +145,14 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
 
         setImageFile(file);
         setImagePreviewUrl(await fileToDataUrl(file));
-        setTouched(prev => ({...prev, image: true}));
-        setFormErrors(prev => ({...prev, image: undefined}));
+        setTouched(prev => ({ ...prev, image: true }));
+        setFormErrors(prev => ({ ...prev, image: undefined }));
 
         setAiIsLoading(true);
         try {
             const base64Image = await fileToBase64(file);
             const details = await generateProductDetails(base64Image, file.type);
-            setNewProductForm(prev => ({...prev, ...details}));
+            setNewProductForm(prev => ({ ...prev, ...details }));
             showToast('AI analysis complete!', 'info');
         } catch (error) {
             showToast(error instanceof Error ? error.message : "An unknown error occurred", 'error');
@@ -191,7 +192,7 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
             setFormIsSubmitting(false);
         }
     };
-    
+
     const handleOpenEditModal = (product: Product) => {
         setEditingProduct(product);
         setEditForm(product);
@@ -211,10 +212,10 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
         const { name, value } = e.target;
         setEditForm({ ...editForm, [name]: name === 'price' || name === 'quantity' ? parseFloat(value) || 0 : value });
     };
-    
+
     const handleEditInputBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         if (!editForm) return;
-        setEditTouched(prev => ({...prev, [e.target.name]: true}));
+        setEditTouched(prev => ({ ...prev, [e.target.name]: true }));
         setEditFormErrors(validateForm(editForm, true));
     };
 
@@ -229,10 +230,9 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
         onUpdateProduct(editForm);
         handleCloseEditModal();
     };
-    
+
     const inputClasses = (hasError: boolean) =>
-        `mt-1 block w-full rounded-lg bg-[#fcfaf8] border text-[#1c160d] sm:text-sm px-3 py-2.5 focus:border-[#f9a824] focus:ring-2 focus:ring-[#f9a824]/50 ${
-            hasError ? 'border-red-500' : 'border-[#e9dece]'
+        `mt-1 block w-full rounded-lg bg-[#fcfaf8] border text-[#1c160d] sm:text-sm px-3 py-2.5 focus:border-[#f9a824] focus:ring-2 focus:ring-[#f9a824]/50 ${hasError ? 'border-red-500' : 'border-[#e9dece]'
         }`;
 
     const navItems = [
@@ -264,15 +264,8 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
         }
     }, []);
 
-    const weather = dashboardWeather ?? {
-        locationLabel: farmerProfile?.location || 'India',
-        temperatureC: 32,
-        conditionLabel: 'Sunny & Clear',
-        humidityPct: 45,
-        windKmh: 12,
-        rainPct: 0,
-        updatedAt: new Date(),
-    } satisfies FarmerDashboardWeather;
+    // Weather is now handled by WeatherWidget component
+    const farmerLocationForWeather = farmerProfile?.location || currentUser.location || 'India';
 
     const handleUploadSubmit = async (product: {
         name: string;
@@ -302,7 +295,7 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
     const handleNavClick = (navId: string) => {
         setActiveNav(navId);
         setIsSidebarOpen(false);
-        
+
         if (navId === 'messages') {
             handleOpenNegotiationChat();
         }
@@ -327,8 +320,8 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
     // Show Upload Page when New Listing is clicked
     if (showUploadPage) {
         return (
-            <ProductUploadPage 
-                onBack={() => setShowUploadPage(false)} 
+            <ProductUploadPage
+                onBack={() => setShowUploadPage(false)}
                 onSubmit={handleUploadSubmit}
             />
         );
@@ -337,7 +330,7 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
     // Show Wallet when Wallet is clicked
     if (activeNav === 'wallet') {
         return (
-            <FarmerWallet 
+            <FarmerWallet
                 farmerId={currentUserId}
                 onNavigate={(section) => setActiveNav(section)}
             />
@@ -483,57 +476,13 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                         <div className="max-w-[1600px] mx-auto flex flex-col gap-8">
                             {/* Top grid */}
                             <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-                                {/* Weather */}
-                                <div className="xl:col-span-4 relative group">
-                                    <div className="absolute inset-0 bg-gradient-to-br from-secondary/40 to-primary/20 rounded-[2.5rem] blur-xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
-                                    <div className="relative h-full flex flex-col justify-between rounded-[2rem] p-8 overflow-hidden bg-white/50 backdrop-blur-xl border border-white/60 shadow-card">
-                                        <div className="absolute -top-10 -right-10 w-40 h-40 bg-accent/20 rounded-full blur-2xl"></div>
-                                        <div className="flex justify-between items-start z-10">
-                                            <div>
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <span className="material-symbols-outlined text-red-500 animate-pulse">location_on</span>
-                                                    <span className="text-lg font-bold text-stone-600 drop-shadow-sm">{weather.locationLabel}</span>
-                                                </div>
-                                                <h3 className="text-7xl font-display font-bold text-stone-900 tracking-tighter">{Math.round(weather.temperatureC)}°</h3>
-                                                <p className="text-xl font-medium text-stone-500 mt-1">{weather.conditionLabel}</p>
-                                            </div>
-                                            <div className="relative">
-                                                <span className="material-symbols-outlined text-[100px] leading-none text-accent animate-float drop-shadow-lg">sunny</span>
-                                                <span className="material-symbols-outlined text-[100px] leading-none text-accent/30 absolute top-0 left-0 blur-sm animate-pulse">sunny</span>
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-3 gap-2 mt-6 pt-6 border-t border-white/50">
-                                            <div className="flex flex-col items-center gap-2">
-                                                <div className="relative h-14 w-14 rounded-full bg-white/60 border border-white/70 flex items-center justify-center shadow-soft">
-                                                    <span className="material-symbols-outlined text-secondary">water_drop</span>
-                                                </div>
-                                                <div className="text-center leading-none">
-                                                    <span className="block font-bold text-stone-700">{Math.round(weather.humidityPct)}%</span>
-                                                    <span className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">Humidity</span>
-                                                </div>
-                                            </div>
-                                            <div className="flex flex-col items-center gap-2">
-                                                <div className="relative h-14 w-14 rounded-full bg-white/60 border border-white/70 flex items-center justify-center shadow-soft">
-                                                    <span className="material-symbols-outlined text-stone-600">air</span>
-                                                </div>
-                                                <div className="text-center leading-none">
-                                                    <span className="block font-bold text-stone-700">{Math.round(weather.windKmh)}km</span>
-                                                    <span className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">Wind</span>
-                                                </div>
-                                            </div>
-                                            <div className="flex flex-col items-center gap-2">
-                                                <div className="relative h-14 w-14 rounded-full bg-white/60 border border-white/70 flex items-center justify-center shadow-soft">
-                                                    <span className="material-symbols-outlined text-blue-600">rainy</span>
-                                                </div>
-                                                <div className="text-center leading-none">
-                                                    <span className="block font-bold text-stone-700">{Math.round(weather.rainPct)}%</span>
-                                                    <span className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">Rain</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                {/* Weather Widget */}
+                                <WeatherWidget
+                                    weather={dashboardWeather}
+                                    farmerId={currentUserId}
+                                    farmerLocation={farmerLocationForWeather}
+                                    isLoading={false}
+                                />
 
                                 {/* Live Mandi Rates (match screenshot style) */}
                                 <div className="xl:col-span-8 rounded-[2rem] p-5 md:p-6 overflow-hidden relative bg-white/70 backdrop-blur-xl border border-white/70 shadow-card">
@@ -836,28 +785,26 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                             <h2 className="text-2xl font-bold font-display text-[#1c160d]">List New Crop</h2>
                             <button onClick={() => setIsAddModalOpen(false)} className="text-[#4e4639] hover:text-[#1c160d] p-2 rounded-full hover:bg-[#f4efe6]"><XIcon className="h-6 w-6" /></button>
                         </div>
-                        
+
                         <div className="p-6">
                             <div className="flex border-b border-[#e9dece] mb-6">
                                 <button
                                     type="button"
                                     onClick={() => setActiveFormTab(ProductType.Retail)}
-                                    className={`-mb-px border-b-2 px-4 py-3 text-sm font-semibold transition-colors duration-200 ${
-                                        activeFormTab === ProductType.Retail
-                                            ? 'border-[#f9a824] text-[#f9a824]'
-                                            : 'border-transparent text-[#4e4639] hover:border-[#e9dece] hover:text-[#1c160d]'
-                                    }`}
+                                    className={`-mb-px border-b-2 px-4 py-3 text-sm font-semibold transition-colors duration-200 ${activeFormTab === ProductType.Retail
+                                        ? 'border-[#f9a824] text-[#f9a824]'
+                                        : 'border-transparent text-[#4e4639] hover:border-[#e9dece] hover:text-[#1c160d]'
+                                        }`}
                                 >
                                     Retail Product
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setActiveFormTab(ProductType.Bulk)}
-                                    className={`-mb-px border-b-2 px-4 py-3 text-sm font-semibold transition-colors duration-200 ${
-                                        activeFormTab === ProductType.Bulk
-                                            ? 'border-[#f9a824] text-[#f9a824]'
-                                            : 'border-transparent text-[#4e4639] hover:border-[#e9dece] hover:text-[#1c160d]'
-                                    }`}
+                                    className={`-mb-px border-b-2 px-4 py-3 text-sm font-semibold transition-colors duration-200 ${activeFormTab === ProductType.Bulk
+                                        ? 'border-[#f9a824] text-[#f9a824]'
+                                        : 'border-transparent text-[#4e4639] hover:border-[#e9dece] hover:text-[#1c160d]'
+                                        }`}
                                 >
                                     Bulk Product (Negotiable)
                                 </button>
@@ -870,7 +817,7 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                                         <p className="mt-3 text-[#1c160d] font-semibold text-lg">{formIsSubmitting ? 'Listing crop...' : 'Analyzing image...'}</p>
                                     </div>
                                 )}
-                                
+
                                 <div>
                                     <label className="block text-sm font-bold text-[#1c160d] mb-2">Crop Photo</label>
                                     {imagePreviewUrl ? (

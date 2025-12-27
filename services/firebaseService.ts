@@ -140,6 +140,7 @@ const mapFarmerDashboardWeather = (data: any): FarmerDashboardWeather | null => 
     locationLabel: raw.locationLabel ?? data?.location ?? 'India',
     temperatureC: Number(raw.temperatureC ?? raw.tempC ?? 0),
     conditionLabel: raw.conditionLabel ?? raw.condition ?? '—',
+    weatherIcon: raw.weatherIcon ?? '',
     humidityPct: Number(raw.humidityPct ?? raw.humidity ?? 0),
     windKmh: Number(raw.windKmh ?? raw.wind ?? 0),
     rainPct: Number(raw.rainPct ?? raw.rain ?? 0),
@@ -183,7 +184,7 @@ export const firebaseService = {
   subscribeUserProfiles(userIds: string[], onChange: (profiles: Record<string, User>) => void) {
     if (userIds.length === 0) {
       onChange({});
-      return () => {};
+      return () => { };
     }
 
     const ids = Array.from(new Set(userIds)).filter(Boolean);
@@ -255,7 +256,7 @@ export const firebaseService = {
   /**
    * Load more products after the last document for infinite scroll
    */
-  async loadMoreProducts(lastDoc: QueryDocumentSnapshot<DocumentData> | null, pageSize = 50): Promise<{products: Product[], lastDoc: QueryDocumentSnapshot<DocumentData> | null}> {
+  async loadMoreProducts(lastDoc: QueryDocumentSnapshot<DocumentData> | null, pageSize = 50): Promise<{ products: Product[], lastDoc: QueryDocumentSnapshot<DocumentData> | null }> {
     let q;
     if (lastDoc) {
       q = query(
@@ -355,7 +356,7 @@ export const firebaseService = {
   subscribeMessages(negotiationIds: string[], onChange: (messages: ChatMessage[]) => void) {
     if (negotiationIds.length === 0) {
       onChange([]);
-      return () => {};
+      return () => { };
     }
 
     const chunks = chunk(negotiationIds, 10);
