@@ -23,6 +23,8 @@ import { auth } from './firebase';
 import { firebaseService } from './services/firebaseService';
 import { FirestoreErrorBoundary } from './components/ErrorBoundary';
 import { CallPage } from './components/CallPage';
+import { dodoPaymentService } from './services/dodoPaymentService';
+import { cartService } from './services/cartService';
 
 export default function App() {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -41,7 +43,10 @@ export default function App() {
     const [products, setProducts] = useState<Product[]>([]);
     const [farmers, setFarmers] = useState<Farmer[]>([]);
     const [isLoadingProducts, setIsLoadingProducts] = useState(true);
-    const [cart, setCart] = useState<CartItem[]>([]);
+    const [cart, setCart] = useState<CartItem[]>(() => {
+        // Initialize cart from localStorage
+        return cartService.getCart();
+    });
     const [negotiations, setNegotiations] = useState<Negotiation[]>([]);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [wishlist, setWishlist] = useState<string[]>([]);
@@ -220,6 +225,40 @@ export default function App() {
         checkKYC();
     }, [currentUser?.uid, currentUser?.role]);
 
+    // Handle payment return from Dodo checkout
+    useEffect(() => {
+        const handlePaymentReturn = async () => {
+            const { hasPaymentParams, orderId } = dodoPaymentService.checkPaymentReturn();
+            
+            if (!hasPaymentParams || !orderId) return;
+            
+            console.log('[App] Detected payment return for order:', orderId);
+            showToast('Checking payment status...', 'info');
+            
+            // Poll for payment completion
+            const status = await dodoPaymentService.pollPaymentStatus(orderId, {
+                maxAttempts: 10,
+                intervalMs: 2000,
+            });
+            
+            // Clear URL params regardless of result
+            dodoPaymentService.clearPaymentParams();
+            
+            if (status?.status === 'completed') {
+                showToast('Payment successful! Order confirmed.', 'success');
+                // Clear cart after successful payment
+                setCart([]);
+            } else if (status?.status === 'failed') {
+                showToast('Payment failed. Please try again.', 'error');
+            } else {
+                // Payment still pending or unknown - webhook may not have processed yet
+                showToast('Payment is being processed. You will be notified once confirmed.', 'info');
+            }
+        };
+        
+        handlePaymentReturn();
+    }, []); // Run once on mount
+
     const cartTotal = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.cartQuantity, 0), [cart]);
     const MIN_CART_VALUE = 199;
 
@@ -248,6 +287,24 @@ export default function App() {
         
         showToast(`Switched to ${nextRole} view.`, 'info');
     };
+
+    // Logout handler - clears auth and redirects to landing
+    const handleLogout = useCallback(async () => {
+        try {
+            await auth.signOut();
+            setCurrentUser(null);
+            setCart([]);
+            setNegotiations([]);
+            setMessages([]);
+            setWishlist([]);
+            setViewingFarmerId(null);
+            setIsCartViewOpen(false);
+            showToast('Signed out successfully.', 'info');
+        } catch (e) {
+            console.error('Logout failed', e);
+            showToast('Failed to sign out. Please try again.', 'error');
+        }
+    }, [showToast]);
     
     // Voice/Video Call Handlers
     const handleStartCall = useCallback((negotiationId: string) => {
@@ -258,27 +315,29 @@ export default function App() {
         setActiveCallNegotiationId(null);
     }, []);
     
-    const handleAddToCart = (product: Product, quantity: number = 1) => {
-        setCart(prevCart => {
-            const existingItem = prevCart.find(item => item.id === product.id);
-            if (existingItem) {
-                return prevCart.map(item => item.id === product.id ? { ...item, cartQuantity: item.cartQuantity + quantity } : item);
-            }
-            return [...prevCart, { ...product, cartQuantity: quantity }];
-        });
-        showToast(`${product.name} added to cart!`, 'success');
-    };
+    // Cart handlers with localStorage persistence
+    const handleAddToCart = useCallback((product: Product, quantity: number = 100) => {
+        const result = cartService.addToCart(product, quantity);
+        setCart(result.cart);
+        showToast(result.message, 'success');
+    }, [showToast]);
     
-    const handleUpdateCartQuantity = (productId: string, newQuantity: number) => {
-        setCart(prevCart => {
-            if (newQuantity <= 0) {
-                return prevCart.filter(item => item.id !== productId);
-            }
-            return prevCart.map(item =>
-                item.id === productId ? { ...item, cartQuantity: newQuantity } : item
-            );
-        });
-    };
+    const handleUpdateCartQuantity = useCallback((productId: string, newQuantity: number) => {
+        const result = cartService.updateQuantity(productId, newQuantity);
+        setCart(result.cart);
+    }, []);
+    
+    const handleRemoveFromCart = useCallback((productId: string) => {
+        const result = cartService.removeFromCart(productId);
+        setCart(result.cart);
+        showToast('Item removed from cart', 'info');
+    }, [showToast]);
+    
+    const handleClearCart = useCallback(() => {
+        cartService.clearCart();
+        setCart([]);
+        showToast('Cart cleared', 'info');
+    }, [showToast]);
 
     const handleAddNewProduct = async (productData: Omit<Product, 'id' | 'farmerId' | 'imageUrl' | 'isVerified' | 'verificationFeedback'>, imageFile: File) => {
         if (!currentUser) return;
@@ -603,16 +662,16 @@ export default function App() {
                     return null;
                 }
                 return (
-                    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-secondary/5">
-                        <div className="text-center p-8 bg-white/80 backdrop-blur-xl rounded-3xl shadow-card border border-white/60 max-w-md mx-4">
-                            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
-                                <span className="material-symbols-outlined text-4xl text-primary">verified_user</span>
+                    <div className="min-h-screen flex items-center justify-center bg-background">
+                        <div className="card-pro text-center p-8 max-w-md mx-4">
+                            <div className="w-16 h-16 mx-auto mb-5 rounded-lg bg-primary/10 flex items-center justify-center">
+                                <span className="material-symbols-outlined text-3xl text-primary">verified_user</span>
                             </div>
-                            <h2 className="text-2xl font-bold text-stone-900 mb-3">Complete Your Verification</h2>
-                            <p className="text-stone-600 mb-6">Please complete your KYC verification to access your farmer dashboard and start selling.</p>
+                            <h2 className="font-heading text-xl font-semibold text-stone-900 mb-2">Complete Your Verification</h2>
+                            <p className="text-sm text-stone-600 mb-6">Complete KYC verification to access your farmer dashboard and start selling.</p>
                             <button
                                 onClick={() => setIsKYCOpen(true)}
-                                className="px-8 py-3 bg-primary text-white rounded-full font-bold hover:bg-primary-dark transition-colors"
+                                className="btn-pro w-full"
                             >
                                 Start Verification
                             </button>
@@ -630,6 +689,7 @@ export default function App() {
                          onOpenChat: handleOpenChat, 
                          onSendMessage: handleSendMessageToNegotiation,
                          onAcceptCall: handleStartCall,
+                         onLogout: handleLogout,
                          products: products.filter(p => p.farmerId === currentUser.uid), 
                          negotiations: negotiations.filter(n => n.farmerId === currentUser.uid),
                          messages: messages,
@@ -641,7 +701,29 @@ export default function App() {
         }
         return (
             <FirestoreErrorBoundary fallbackMessage="Syncing with marketplace. This usually takes 2-3 minutes during initial setup.">
-                <BuyerView {...{products, negotiations: negotiations.filter(n => n.buyerId === currentUser.uid), messages, currentUserId: currentUser.uid, currentUser: currentUser, onStartNegotiation: handleOpenNegotiation, onRespondToCounter: handleNegotiationResponse, onOpenChat: handleOpenChat, onSendMessage: handleSendMessageToNegotiation, onStartCall: handleStartCall, wishlist, onToggleWishlist: handleToggleWishlist, farmers, onViewFarmerProfile: handleViewFarmerProfile, onSwitchRole: handleSwitchRole, isLoadingProducts}} />
+                <BuyerView 
+                    products={products}
+                    negotiations={negotiations.filter(n => n.buyerId === currentUser.uid)}
+                    messages={messages}
+                    currentUserId={currentUser.uid}
+                    currentUser={currentUser}
+                    onStartNegotiation={handleOpenNegotiation}
+                    onRespondToCounter={handleNegotiationResponse}
+                    onOpenChat={handleOpenChat}
+                    onSendMessage={handleSendMessageToNegotiation}
+                    onStartCall={handleStartCall}
+                    wishlist={wishlist}
+                    onToggleWishlist={handleToggleWishlist}
+                    farmers={farmers}
+                    onViewFarmerProfile={handleViewFarmerProfile}
+                    onLogout={handleLogout}
+                    isLoadingProducts={isLoadingProducts}
+                    cart={cart}
+                    onAddToCart={handleAddToCart}
+                    onUpdateCartQuantity={handleUpdateCartQuantity}
+                    onRemoveFromCart={handleRemoveFromCart}
+                    onClearCart={handleClearCart}
+                />
             </FirestoreErrorBoundary>
         );
     }
@@ -685,37 +767,36 @@ export default function App() {
     }
 
     return (
-        <div className={`min-h-screen font-sans transition-colors duration-300 ${appClasses} text-stone-800`}>
-            <div className="absolute inset-0 h-full w-full bg-background bg-[radial-gradient(#e7e5e4_1px,transparent_1px)] [background-size:16px_16px] opacity-60"></div>
-            <div className="relative z-10">
+        <div className={`min-h-screen font-sans transition-colors duration-200 ${appClasses} text-stone-800`}>
+            <div className="relative">
                 <main className={userRole === UserRole.Farmer ? '' : 'container mx-auto p-4 sm:p-6 lg:p-8'}>{renderMainContent()}</main>
 
                 {activeNegotiation && <NegotiationModal {...{isOpen: !!activeNegotiation, onClose: handleCloseNegotiation, item: activeNegotiation, userRole, onSubmit: handleNegotiationSubmit}} />}
                 {activeChat && currentUser && <ChatModal {...{isOpen: !!activeChat, onClose: handleCloseChat, negotiation: activeChat, messages: messages.filter(m => m.negotiationId === activeChat.id), currentUserId: currentUser.uid, onSendMessage: handleSendMessage, onRetryMessage: handleRetryMessage, userRole}} />}
                 
                 {userRole === UserRole.Buyer && cart.length > 0 && !isCartViewOpen && !viewingFarmerId &&
-                    <div className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm p-4 border-t border-stone-200 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
+                    <div className="fixed bottom-0 left-0 right-0 bg-surface border-t border-stone-200 shadow-pro p-4">
                         <div className="container mx-auto flex justify-between items-center">
                             <div>
-                                <h3 className="font-heading font-bold text-lg">Cart Total: <span className="text-primary">₹{cartTotal.toFixed(2)}</span></h3>
-                                {cartTotal < MIN_CART_VALUE && <p className="text-sm text-red-600">Add ₹{(MIN_CART_VALUE-cartTotal).toFixed(2)} more to checkout.</p>}
+                                <h3 className="font-heading font-semibold text-base">Cart Total: <span className="text-primary tabular-nums">₹{cartTotal.toFixed(2)}</span></h3>
+                                {cartTotal < MIN_CART_VALUE && <p className="text-xs text-red-600">Add ₹{(MIN_CART_VALUE-cartTotal).toFixed(2)} more to checkout.</p>}
                             </div>
-                            <button onClick={() => setIsCartViewOpen(true)} disabled={cartTotal < MIN_CART_VALUE} className="bg-accent text-stone-900 px-8 py-3 rounded-full font-bold transition-all duration-300 disabled:bg-stone-400 disabled:cursor-not-allowed disabled:text-white hover:bg-yellow-400 hover:shadow-lg transform hover:-translate-y-0.5">Checkout</button>
+                            <button onClick={() => setIsCartViewOpen(true)} disabled={cartTotal < MIN_CART_VALUE} className="btn-pro disabled:bg-stone-300 disabled:cursor-not-allowed disabled:text-stone-500">Checkout</button>
                         </div>
                     </div>
                 }
 
                 {!isChatBotOpen && userRole === UserRole.Buyer && (
-                    <button onClick={() => setIsChatBotOpen(true)} className="fixed bottom-6 right-6 lg:bottom-8 lg:right-8 z-30 bg-primary text-white p-4 rounded-full shadow-lg hover:bg-primary-dark transition-all duration-300 transform hover:scale-110 hover:shadow-xl animate-fade-in" aria-label="Open chatbot">
-                        <ChatBotIcon className="h-7 w-7" />
+                    <button onClick={() => setIsChatBotOpen(true)} className="fixed bottom-6 right-6 lg:bottom-8 lg:right-8 z-30 bg-primary text-white p-3.5 rounded-lg shadow-pro hover:bg-primary-dark transition-colors" aria-label="Open chatbot">
+                        <ChatBotIcon className="h-6 w-6" />
                     </button>
                 )}
 
                 <ChatBot {...{isOpen: isChatBotOpen, onClose: () => setIsChatBotOpen(false), messages: botMessages, onSendMessage: handleSendMessageToBot, isLoading: botIsLoading}} />
 
                 {!isLiveAssistantOpen && userRole === UserRole.Farmer && (
-                    <button onClick={() => setIsLiveAssistantOpen(true)} className="fixed bottom-6 right-6 lg:bottom-8 lg:right-8 z-30 bg-farmer-primary text-white p-4 rounded-full shadow-lg hover:bg-farmer-primary-dark transition-all duration-300 transform hover:scale-110 hover:shadow-xl animate-fade-in" aria-label="Open live assistant">
-                        <MicrophoneIcon className="h-7 w-7" />
+                    <button onClick={() => setIsLiveAssistantOpen(true)} className="fixed bottom-6 right-6 lg:bottom-8 lg:right-8 z-30 bg-farmer-primary text-white p-3.5 rounded-lg shadow-pro hover:bg-farmer-primary-dark transition-colors" aria-label="Open live assistant">
+                        <MicrophoneIcon className="h-6 w-6" />
                     </button>
                 )}
                 

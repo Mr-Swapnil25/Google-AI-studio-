@@ -280,3 +280,57 @@ export function mandiDocToRateDisplay(doc: MandiPriceDoc): MandiRateDisplay {
     isVerified: doc.isVerified,
   };
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DODO PAYMENTS INTEGRATION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Dodo payment status enum
+ */
+export enum DodoPaymentStatus {
+  Pending = 'pending',
+  Processing = 'processing',
+  Completed = 'completed',
+  Failed = 'failed',
+  Cancelled = 'cancelled',
+}
+
+/**
+ * Dodo payment record stored in Firestore (dodo_payments collection)
+ */
+export interface DodoPaymentRecord {
+  /** Dodo payment ID */
+  paymentId: string;
+  /** Our internal order ID */
+  orderId: string;
+  /** Buyer user ID */
+  buyerId: string;
+  /** Amount in paise (smallest currency unit) */
+  amount: number;
+  /** Currency code */
+  currency: string;
+  /** Product/order description */
+  productName: string;
+  /** Dodo checkout URL */
+  checkoutUrl: string;
+  /** Payment status */
+  status: DodoPaymentStatus;
+  /** Order items */
+  items: Array<{
+    productId: string;
+    farmerId: string;
+    quantity: number;
+    price: number; // in paise
+  }>;
+  /** Raw Dodo API response */
+  dodoResponse?: Record<string, unknown>;
+  /** Whether webhook has been received */
+  webhookReceived?: boolean;
+  /** Raw webhook data */
+  webhookData?: Record<string, unknown>;
+  /** Creation timestamp */
+  createdAt: Date;
+  /** Last update timestamp */
+  updatedAt?: Date;
+}

@@ -105,5 +105,29 @@ service cloud.firestore {
       allow read: if true;
       allow write: if false; // Admin only via Firebase Admin SDK
     }
+    
+    // ═══════════════════════════════════════════════════════════════════════
+    // DODO PAYMENTS COLLECTIONS - Managed by Cloud Functions
+    // ═══════════════════════════════════════════════════════════════════════
+    
+    // Dodo payments: Read-only for the buyer, writes via Cloud Functions only
+    match /dodo_payments/{paymentId} {
+      allow read: if isAuthenticated() 
+                  && resource.data.buyerId == request.auth.uid;
+      allow write: if false; // Cloud Functions only
+    }
+    
+    // Orders: Read-only for participants
+    match /orders/{orderId} {
+      allow read: if isAuthenticated() 
+                  && resource.data.buyerId == request.auth.uid;
+      allow write: if false; // Cloud Functions only
+    }
+    
+    // Payment attempts: Read for debugging, write via Cloud Functions only
+    match /payment_attempts/{attemptId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Cloud Functions only
+    }
   }
 }

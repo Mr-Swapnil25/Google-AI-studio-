@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { XIcon, CheckCircleIcon, ShieldCheckIcon } from './icons';
 import { firebaseService } from '../services/firebaseService';
+import { dodoPaymentService } from '../services/dodoPaymentService';
 import { CartItem } from '../types';
 
 // ============================================================================
@@ -879,66 +880,68 @@ export const PaymentGateway: React.FC<PaymentGatewayProps> = ({
     }
   }, [isOpen, initialOrderId]);
 
-  // Simulate payment processing with Firebase integration
+  // Real Dodo Payments integration
   const startPayment = useCallback(async () => {
     setPaymentStatus('processing');
     setProgress(0);
-    const newTransactionId = `TXN_${Date.now()}`;
-    setTransactionId(newTransactionId);
-
-    // Simulate progress
+    
+    // Show initial progress
     const progressInterval = setInterval(() => {
       setProgress((prev) => {
-        if (prev >= 100) {
+        if (prev >= 90) {
           clearInterval(progressInterval);
-          return 100;
+          return 90;
         }
-        return prev + Math.random() * 15;
+        return prev + 5;
       });
-    }, 300);
+    }, 200);
 
-    // Determine outcome after 2.5 seconds
-    setTimeout(async () => {
+    try {
+      // Prepare items for the payment
+      const items = cartItems?.map(item => ({
+        productId: item.id,
+        farmerId: item.farmerId,
+        quantity: item.cartQuantity,
+        price: item.price,
+      }));
+
+      // Create payment order with Dodo
+      const response = await dodoPaymentService.createPaymentOrder({
+        orderId,
+        amount: totalAmount,
+        productName: productName || 'Anna Bazaar Order',
+        buyerId: buyerId || 'anonymous',
+        items,
+      });
+
       clearInterval(progressInterval);
+
+      if (!response.success || !response.checkoutUrl) {
+        // Payment creation failed
+        console.error('Failed to create payment:', response.error);
+        setPaymentStatus('failure');
+        setTransactionId('');
+        onPaymentComplete(false);
+        return;
+      }
+
+      // Store payment ID for later reference
+      setTransactionId(response.paymentId || '');
       setProgress(100);
-      
-      // 80% success rate for demo
-      const isSuccess = Math.random() < 0.8;
-      
-      setTimeout(async () => {
-        if (isSuccess) {
-          // Record payment in Firebase
-          try {
-            const items = cartItems?.map(item => ({
-              productId: item.id,
-              farmerId: item.farmerId,
-              quantity: item.cartQuantity,
-              price: item.price,
-            }));
 
-            await firebaseService.recordOrderPayment({
-              orderId,
-              buyerId: buyerId || 'anonymous',
-              totalAmount,
-              transactionId: newTransactionId,
-              paymentMethod: selectedMethod,
-              productName,
-              items,
-            });
-          } catch (error) {
-            console.error('Failed to record payment in Firebase:', error);
-            // Continue anyway - payment was successful, just logging failed
-          }
-
-          setPaymentStatus('success');
-          onPaymentComplete(true, newTransactionId);
-        } else {
-          setPaymentStatus('failure');
-          onPaymentComplete(false);
-        }
+      // Small delay to show 100% progress, then redirect to Dodo checkout
+      setTimeout(() => {
+        dodoPaymentService.redirectToCheckout(response.checkoutUrl!);
       }, 500);
-    }, 2500);
-  }, [onPaymentComplete, orderId, totalAmount, selectedMethod, productName, buyerId, cartItems]);
+
+    } catch (error) {
+      console.error('Payment error:', error);
+      clearInterval(progressInterval);
+      setPaymentStatus('failure');
+      setTransactionId('');
+      onPaymentComplete(false);
+    }
+  }, [onPaymentComplete, orderId, totalAmount, productName, buyerId, cartItems]);
 
   const handleDownloadReceipt = () => {
     // Generate detailed receipt

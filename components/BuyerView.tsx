@@ -1,12 +1,13 @@
 import React, { useState, useMemo } from 'react';
-import { Product, Negotiation, ProductType, NegotiationStatus, ProductCategory, Farmer, ChatMessage, User } from '../types';
-import { XIcon } from './icons';
+import { Product, Negotiation, ProductType, NegotiationStatus, ProductCategory, Farmer, ChatMessage, User, CartItem } from '../types';
+import { XIcon, ShoppingCartIcon } from './icons';
 import { ProductDetailPage } from './ProductDetailPage';
 import { BuyerNegotiationConsole } from './BuyerNegotiationConsole';
 import { ProductCardSkeleton } from './ProductCardSkeleton';
 import { firebaseService } from '../services/firebaseService';
+import { CartDrawer } from './CartDrawer';
 
-// B2B Platform - Cart functionality removed, all purchases via negotiation
+// B2B Platform - Cart functionality for bulk orders
 interface BuyerViewProps {
     products: Product[];
     negotiations: Negotiation[];
@@ -22,8 +23,14 @@ interface BuyerViewProps {
     onToggleWishlist: (productId: string) => void;
     farmers: Farmer[];
     onViewFarmerProfile: (farmerId: string) => void;
-    onSwitchRole: () => void;
+    onLogout: () => void;
     isLoadingProducts?: boolean;
+    // Cart props
+    cart: CartItem[];
+    onAddToCart: (product: Product, quantity: number) => void;
+    onUpdateCartQuantity: (productId: string, quantity: number) => void;
+    onRemoveFromCart: (productId: string) => void;
+    onClearCart: () => void;
 }
 
 export const BuyerView = ({ 
@@ -41,8 +48,14 @@ export const BuyerView = ({
     onToggleWishlist, 
     farmers, 
     onViewFarmerProfile,
-    onSwitchRole,
-    isLoadingProducts = false
+    onLogout,
+    isLoadingProducts = false,
+    // Cart props
+    cart,
+    onAddToCart,
+    onUpdateCartQuantity,
+    onRemoveFromCart,
+    onClearCart,
 }: BuyerViewProps) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterCategory, setFilterCategory] = useState<ProductCategory | 'All'>('All');
@@ -54,8 +67,14 @@ export const BuyerView = ({
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [showNegotiationsPanel, setShowNegotiationsPanel] = useState(false);
     const [activeNegotiationId, setActiveNegotiationId] = useState<string | null>(null);
+    const [isCartOpen, setIsCartOpen] = useState(false);
 
     const farmerMap = useMemo(() => new Map(farmers.map(f => [f.id, f])), [farmers]);
+    
+    // Create cart lookup for quick access
+    const cartMap = useMemo(() => new Map(cart.map(item => [item.id, item])), [cart]);
+    const cartCount = cart.length;
+    const cartTotal = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.cartQuantity, 0), [cart]);
 
     const displayedProducts = useMemo(() => {
         let filtered = [...products];
@@ -193,24 +212,31 @@ export const BuyerView = ({
                             </button>
                         </nav>
                         <div className="flex items-center gap-3">
+                            {/* Cart Button */}
+                            <button 
+                                onClick={() => setIsCartOpen(true)}
+                                className="relative flex items-center justify-center size-10 rounded-full bg-gray-100 hover:bg-[#2f7f33]/10 text-gray-700 transition-colors"
+                            >
+                                <ShoppingCartIcon className="w-5 h-5" />
+                                {cartCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                                        {cartCount > 9 ? '9+' : cartCount}
+                                    </span>
+                                )}
+                            </button>
                             <button className="flex items-center justify-center size-10 rounded-full bg-gray-100 hover:bg-[#2f7f33]/10 text-gray-700 transition-colors">
                                 <span className="material-symbols-outlined">help</span>
                             </button>
                             <button className="flex items-center justify-center size-10 rounded-full bg-gray-100 hover:bg-[#2f7f33]/10 text-gray-700 transition-colors">
                                 <span className="material-symbols-outlined">notifications</span>
                             </button>
-                            {/* Role Toggle Switch */}
+                            {/* Logout Button */}
                             <button 
-                                onClick={onSwitchRole}
-                                className="flex items-center gap-2 px-3 py-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors border border-gray-200"
+                                onClick={onLogout}
+                                className="flex items-center gap-2 px-3 h-10 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
                             >
-                                <span className="text-sm font-medium text-gray-500">Farmer</span>
-                                <div className="relative w-12 h-6 bg-[#2f7f33] rounded-full transition-colors">
-                                    <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-transform flex items-center justify-center">
-                                        <span className="material-symbols-outlined text-[#2f7f33] text-xs">shopping_bag</span>
-                                    </div>
-                                </div>
-                                <span className="text-sm font-bold text-[#2f7f33]">Buyer</span>
+                                <span className="material-symbols-outlined text-xl">logout</span>
+                                <span className="text-sm font-medium">Logout</span>
                             </button>
                         </div>
                     </div>
@@ -219,110 +245,113 @@ export const BuyerView = ({
 
             <div className="flex flex-1 w-full max-w-7xl mx-auto px-0 sm:px-2 lg:px-4">
                 {/* Left Sidebar (Filters) - Hidden on mobile */}
-                <aside className="hidden lg:flex flex-col w-64 xl:w-72 shrink-0 border-r border-gray-200 bg-white p-4 xl:p-6 h-[calc(100vh-70px)] sticky top-[70px] overflow-y-auto">
-                    <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-lg font-bold flex items-center gap-2 text-gray-900">
-                            <span className="material-symbols-outlined text-[#2f7f33]">filter_alt</span>
-                            Filters
-                        </h2>
-                        <button 
-                            onClick={() => {
-                                setFilterCategory('All');
-                                setSelectedGrades(['A', 'B']);
-                                setPriceRange({ min: 0, max: 500 });
-                            }}
-                            className="text-sm text-[#2f7f33] font-medium hover:underline"
-                        >
-                            Reset All
-                        </button>
-                    </div>
-
-                    {/* B2B Platform Notice */}
-                    <div className="mb-6 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                        <div className="flex items-center gap-2 text-blue-700 text-sm font-medium">
-                            <span className="material-symbols-outlined text-[18px]">business</span>
-                            B2B Bulk Platform
+                <aside className="hidden lg:flex flex-col w-60 shrink-0 border-r border-gray-200 bg-white h-[calc(100vh-56px)] sticky top-[56px] overflow-y-auto">
+                    {/* Filters Section */}
+                    <div className="p-4 flex-1">
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider">
+                                Filters
+                            </h2>
+                            <button 
+                                onClick={() => {
+                                    setFilterCategory('All');
+                                    setSelectedGrades(['A', 'B']);
+                                    setPriceRange({ min: 0, max: 500 });
+                                }}
+                                className="text-xs text-primary font-medium hover:underline"
+                            >
+                                Reset
+                            </button>
                         </div>
-                        <p className="text-xs text-blue-600 mt-1">All listings are bulk wholesale with minimum 100kg orders.</p>
-                    </div>
 
-                    {/* Crop Category */}
-                    <div className="mb-8">
-                        <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Crop Category</h3>
-                        <div className="space-y-2">
-                            {Object.values(ProductCategory).map(cat => (
-                                <label key={cat} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 cursor-pointer group">
+                        {/* B2B Platform Notice */}
+                        <div className="mb-4 p-2.5 bg-blue-50 rounded-lg border border-blue-200">
+                            <div className="flex items-center gap-2 text-blue-700 text-xs font-medium">
+                                <span className="material-symbols-outlined text-sm">business</span>
+                                B2B Bulk Platform
+                            </div>
+                            <p className="text-xs text-blue-600 mt-1">Min 100kg orders.</p>
+                        </div>
+
+                        {/* Crop Category */}
+                        <div className="mb-6">
+                            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Category</h3>
+                            <div className="space-y-1">
+                                {Object.values(ProductCategory).map(cat => (
+                                    <label key={cat} className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 cursor-pointer text-sm">
+                                        <input 
+                                            type="checkbox" 
+                                            checked={filterCategory === cat}
+                                            onChange={() => setFilterCategory(filterCategory === cat ? 'All' : cat)}
+                                            className="rounded border-gray-300 text-primary focus:ring-primary w-4 h-4"
+                                        />
+                                        <span className="flex-1 text-gray-700">{cat}</span>
+                                        <span className="text-xs text-gray-400">
+                                            {products.filter(p => p.category === cat).length}
+                                        </span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Price Range */}
+                        <div className="mb-6">
+                            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Price (₹/kg)</h3>
+                            <div className="flex gap-2">
+                                <input 
+                                    type="number" 
+                                    value={priceRange.min}
+                                    onChange={(e) => setPriceRange(prev => ({ ...prev, min: Number(e.target.value) }))}
+                                    placeholder="Min"
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-lg text-gray-900 text-sm py-2 px-2"
+                                />
+                                <input 
+                                    type="number" 
+                                    value={priceRange.max}
+                                    onChange={(e) => setPriceRange(prev => ({ ...prev, max: Number(e.target.value) }))}
+                                    placeholder="Max"
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-lg text-gray-900 text-sm py-2 px-2"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Quality Grade */}
+                        <div className="mb-6">
+                            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">AI Grade</h3>
+                            <div className="flex gap-2">
+                                <label className={`flex-1 flex items-center justify-center gap-1 p-2 rounded-lg cursor-pointer border text-sm transition-all ${selectedGrades.includes('A') ? 'bg-green-50 border-green-300 text-green-700' : 'bg-gray-50 border-gray-200 text-gray-500'}`}>
                                     <input 
                                         type="checkbox" 
-                                        checked={filterCategory === cat}
-                                        onChange={() => setFilterCategory(filterCategory === cat ? 'All' : cat)}
-                                        className="rounded border-gray-300 text-[#2f7f33] focus:ring-[#2f7f33] w-5 h-5"
+                                        checked={selectedGrades.includes('A')}
+                                        onChange={() => toggleGrade('A')}
+                                        className="sr-only"
                                     />
-                                    <span className="flex-1 font-medium text-gray-700 group-hover:text-[#2f7f33] transition-colors">{cat}</span>
-                                    <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full text-gray-600">
-                                        {products.filter(p => p.category === cat).length}
-                                    </span>
+                                    <span className="material-symbols-outlined text-sm">verified</span>
+                                    <span className="font-medium">A</span>
                                 </label>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Price Range */}
-                    <div className="mb-8">
-                        <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Price Range (₹/kg)</h3>
-                        <div className="px-2">
-                            <div className="flex gap-4 mb-4">
-                                <div className="flex-1">
-                                    <label className="text-xs text-gray-500">Min</label>
+                                <label className={`flex-1 flex items-center justify-center gap-1 p-2 rounded-lg cursor-pointer border text-sm transition-all ${selectedGrades.includes('B') ? 'bg-yellow-50 border-yellow-300 text-yellow-700' : 'bg-gray-50 border-gray-200 text-gray-500'}`}>
                                     <input 
-                                        type="number" 
-                                        value={priceRange.min}
-                                        onChange={(e) => setPriceRange(prev => ({ ...prev, min: Number(e.target.value) }))}
-                                        className="w-full bg-gray-100 border border-gray-200 rounded-lg text-gray-900 text-sm py-2 px-3"
+                                        type="checkbox" 
+                                        checked={selectedGrades.includes('B')}
+                                        onChange={() => toggleGrade('B')}
+                                        className="sr-only"
                                     />
-                                </div>
-                                <div className="flex-1">
-                                    <label className="text-xs text-gray-500">Max</label>
-                                    <input 
-                                        type="number" 
-                                        value={priceRange.max}
-                                        onChange={(e) => setPriceRange(prev => ({ ...prev, max: Number(e.target.value) }))}
-                                        className="w-full bg-gray-100 border border-gray-200 rounded-lg text-gray-900 text-sm py-2 px-3"
-                                    />
-                                </div>
+                                    <span className="material-symbols-outlined text-sm">stars</span>
+                                    <span className="font-medium">B</span>
+                                </label>
                             </div>
                         </div>
                     </div>
 
-                    {/* Quality Grade */}
-                    <div className="mb-8">
-                        <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">AI Quality Grade</h3>
-                        <div className="space-y-3">
-                            <label className="flex items-center gap-3 cursor-pointer">
-                                <input 
-                                    type="checkbox" 
-                                    checked={selectedGrades.includes('A')}
-                                    onChange={() => toggleGrade('A')}
-                                    className="rounded border-gray-300 text-[#2f7f33] focus:ring-[#2f7f33] w-5 h-5"
-                                />
-                                <div className="flex items-center gap-2 px-3 py-1 rounded bg-green-100 border border-green-300">
-                                    <span className="material-symbols-outlined text-[#2f7f33] text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
-                                    <span className="text-sm font-bold text-green-700">Grade A</span>
-                                </div>
-                            </label>
-                            <label className="flex items-center gap-3 cursor-pointer">
-                                <input 
-                                    type="checkbox" 
-                                    checked={selectedGrades.includes('B')}
-                                    onChange={() => toggleGrade('B')}
-                                    className="rounded border-gray-300 text-[#2f7f33] focus:ring-[#2f7f33] w-5 h-5"
-                                />
-                                <div className="flex items-center gap-2 px-3 py-1 rounded bg-yellow-100 border border-yellow-300">
-                                    <span className="material-symbols-outlined text-yellow-600 text-sm">stars</span>
-                                    <span className="text-sm font-bold text-yellow-700">Grade B</span>
-                                </div>
-                            </label>
-                        </div>
+                    {/* Logout Button - Bottom aligned */}
+                    <div className="mt-auto p-3 border-t border-gray-100">
+                        <button 
+                            onClick={onLogout}
+                            className="w-full h-11 flex items-center justify-center gap-2 px-4 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg font-medium text-sm transition-colors"
+                        >
+                            <span className="material-symbols-outlined text-xl">logout</span>
+                            <span>Sign Out</span>
+                        </button>
                     </div>
                 </aside>
 
@@ -445,13 +474,34 @@ export const BuyerView = ({
                                                 Bulk: Min {product.quantity >= 100 ? product.quantity : 100}kg
                                             </div>
                                         </div>
-                                        <div className="mt-auto pt-3 border-t border-gray-200">
-                                            {/* B2B Platform - All products are negotiable */}
+                                        <div className="mt-auto pt-3 border-t border-gray-200 space-y-2">
+                                            {/* Add to Cart Button */}
+                                            {(() => {
+                                                const cartItem = cartMap.get(product.id);
+                                                const isInCart = !!cartItem;
+                                                return (
+                                                    <button 
+                                                        onClick={(e) => { 
+                                                            e.stopPropagation(); 
+                                                            onAddToCart(product, 100); // Add 1 quintal (100kg) 
+                                                        }}
+                                                        className={`w-full h-10 rounded-lg font-bold transition-all flex items-center justify-center gap-2 ${
+                                                            isInCart 
+                                                                ? 'bg-green-100 text-green-700 hover:bg-green-200 border-2 border-green-300' 
+                                                                : 'bg-[#2f7f33] text-white hover:bg-[#256629]'
+                                                        }`}
+                                                    >
+                                                        <ShoppingCartIcon className="w-5 h-5" />
+                                                        {isInCart ? `In Cart (${cartItem.cartQuantity}kg)` : 'Add to Cart (100kg)'}
+                                                    </button>
+                                                );
+                                            })()}
+                                            {/* B2B Platform - Negotiation option */}
                                             <button 
                                                 onClick={(e) => { e.stopPropagation(); onStartNegotiation(product); }}
                                                 className="w-full h-10 rounded-lg border-2 border-[#2f7f33] text-[#2f7f33] font-bold hover:bg-[#2f7f33] hover:text-white transition-all flex items-center justify-center gap-2 group/btn"
                                             >
-                                                Start Bulk Negotiation
+                                                Negotiate Price
                                                 <span className="material-symbols-outlined text-lg group-hover/btn:translate-x-1 transition-transform">arrow_forward</span>
                                             </button>
                                         </div>
@@ -621,6 +671,20 @@ export const BuyerView = ({
                     }}
                 />
             )}
+
+            {/* Cart Drawer */}
+            <CartDrawer
+                isOpen={isCartOpen}
+                onClose={() => setIsCartOpen(false)}
+                cart={cart}
+                onUpdateQuantity={onUpdateCartQuantity}
+                onRemoveItem={onRemoveFromCart}
+                onClearCart={onClearCart}
+                currentUserId={currentUserId}
+                onPaymentSuccess={() => {
+                    setIsCartOpen(false);
+                }}
+            />
         </div>
     );
 };

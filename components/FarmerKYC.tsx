@@ -252,487 +252,387 @@ export const FarmerKYC = ({ isOpen, currentUser, onClose, onComplete, required =
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] bg-gradient-to-br from-stone-50 via-green-50/30 to-stone-50 overflow-y-auto">
-            {/* Background decorations */}
-            <div className="fixed top-20 left-10 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none animate-pulse"></div>
-            <div className="fixed bottom-20 right-10 w-80 h-80 bg-blue-400/10 rounded-full blur-3xl pointer-events-none"></div>
-
-            <div className="relative min-h-full w-full flex flex-col">
-                {/* Header */}
-                <header className="sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-white/40 px-3 sm:px-4 md:px-10 py-3 sm:py-4 shadow-sm">
-                    <div className="max-w-7xl mx-auto flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            {(step > 1 || !required) && (
-                                <button
-                                    onClick={step === 1 ? onClose : handleBack}
-                                    className="flex items-center justify-center p-2 rounded-full hover:bg-white/50 transition-colors text-stone-600"
-                                >
-                                    <span className="material-symbols-outlined text-3xl">arrow_back</span>
-                                </button>
-                            )}
-                            <div className="flex items-center gap-2 sm:gap-3">
-                                <div className="relative h-8 w-8 sm:h-10 sm:w-10 flex items-center justify-center bg-gradient-to-br from-primary to-green-600 text-white rounded-lg sm:rounded-xl shadow-lg">
-                                    <span className="material-symbols-outlined text-xl sm:text-2xl">agriculture</span>
-                                </div>
-                                <h2 className="text-stone-900 text-lg sm:text-xl lg:text-2xl font-black tracking-tight hidden sm:block">Anna Bazaar</h2>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/70 backdrop-blur-sm hover:bg-white transition-all shadow-sm group border border-white/50">
-                                <span className="material-symbols-outlined text-primary group-hover:scale-110 transition-transform text-xl">help</span>
-                                <span className="hidden sm:inline font-bold text-stone-700">Help</span>
+        <div className="fixed inset-0 z-[100] bg-gray-50 overflow-y-auto">
+            {/* Clean Header */}
+            <header className="sticky top-0 z-50 bg-white border-b border-gray-200 px-4 py-3">
+                <div className="max-w-xl mx-auto flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        {(step > 1 || !required) && (
+                            <button
+                                onClick={step === 1 ? onClose : handleBack}
+                                className="p-2 -ml-2 rounded-md hover:bg-gray-100 transition-colors text-gray-600"
+                            >
+                                <span className="material-symbols-outlined text-xl">arrow_back</span>
                             </button>
-                            {!required && (
-                                <button onClick={onClose} className="p-2 rounded-full hover:bg-white/50 transition-colors">
-                                    <XIcon className="h-6 w-6 text-stone-600" />
+                        )}
+                        <div className="flex items-center gap-2">
+                            <div className="size-8 flex items-center justify-center bg-primary text-white rounded-md">
+                                <span className="material-symbols-outlined text-lg">agriculture</span>
+                            </div>
+                            <span className="font-heading font-bold text-gray-900">Anna Bazaar</span>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500 font-medium">Step {step} of 3</span>
+                        {!required && (
+                            <button onClick={onClose} className="p-2 rounded-md hover:bg-gray-100">
+                                <XIcon className="h-5 w-5 text-gray-500" />
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </header>
+
+            {/* Progress Bar - Horizontal Pulse */}
+            <div className="bg-white border-b border-gray-200 px-4 py-3">
+                <div className="max-w-xl mx-auto">
+                    <div className="flex items-center gap-2">
+                        {[1, 2, 3].map((s) => (
+                            <div key={s} className="flex-1 flex items-center gap-2">
+                                <div className={`flex-1 h-1 rounded-full transition-colors ${s <= step ? 'bg-primary' : 'bg-gray-200'}`} />
+                            </div>
+                        ))}
+                    </div>
+                    <div className="flex justify-between mt-2 text-xs font-medium text-gray-500">
+                        <span className={step >= 1 ? 'text-primary' : ''}>Personal Info</span>
+                        <span className={step >= 2 ? 'text-primary' : ''}>Documents</span>
+                        <span className={step >= 3 ? 'text-primary' : ''}>Bank Details</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Main Content - Constrained Width */}
+            <main className="max-w-xl mx-auto px-4 py-6 pb-28">
+                <div
+                    className={`transform transition-all duration-200 ease-out ${
+                        slideDirection === 'right' ? 'animate-slide-in-right' : 'animate-slide-in-left'
+                    }`}
+                    key={step}
+                >
+                    {step === 1 && (
+                        <div className="space-y-6">
+                            {/* Header */}
+                            <div className="text-center mb-8">
+                                <h1 className="font-heading text-2xl font-bold text-gray-900 mb-2">Tell Us About Yourself</h1>
+                                <p className="text-sm text-gray-600">Your details help us serve you better</p>
+                            </div>
+
+                            {/* Profile Photo - Compact */}
+                            <div className="flex flex-col items-center mb-6">
+                                <input
+                                    ref={photoInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handlePhotoUpload}
+                                    className="hidden"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => photoInputRef.current?.click()}
+                                    className="group relative"
+                                >
+                                    <div className="size-20 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden transition-colors hover:border-primary">
+                                        {personalInfo.photoPreview ? (
+                                            <img src={personalInfo.photoPreview} alt="Profile" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <span className="material-symbols-outlined text-2xl text-gray-400">add_a_photo</span>
+                                        )}
+                                    </div>
+                                    {personalInfo.photoPreview && (
+                                        <div className="absolute -bottom-1 -right-1 size-6 bg-primary text-white rounded-full flex items-center justify-center">
+                                            <span className="material-symbols-outlined text-sm">edit</span>
+                                        </div>
+                                    )}
                                 </button>
-                            )}
-                        </div>
-                    </div>
-                </header>
+                                <span className="text-xs text-gray-500 mt-2">Add Photo (Optional)</span>
+                            </div>
 
-                {/* Main Content */}
-                <main className="flex-1 w-full max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-6 md:py-12 flex flex-col items-center gap-6 sm:gap-8 lg:gap-10 pb-24 sm:pb-32">
-                    {/* Neon Progress Stepper */}
-                    <NeonProgressBar steps={KYC_STEPS} currentStep={step} className="mt-6" />
-
-                    {/* Step Content with slide animation */}
-                    <div className="w-full max-w-3xl overflow-hidden mt-8">
-                        <div
-                            className={`transform transition-all duration-500 ease-out ${
-                                slideDirection === 'right' ? 'animate-slide-in-right' : 'animate-slide-in-left'
-                            }`}
-                            key={step}
-                        >
-                            {step === 1 && (
-                                <div className="relative group perspective-1000">
-                                    {/* Background decorative blobs */}
-                                    <div className="absolute -top-20 -left-20 w-56 h-56 bg-yellow-300/20 rounded-full blur-3xl animate-float pointer-events-none" style={{ animationDelay: '0s' }} />
-                                    <div className="absolute top-1/2 -right-20 w-64 h-64 bg-primary/15 rounded-full blur-3xl animate-float pointer-events-none" style={{ animationDelay: '2s' }} />
-                                    
-                                    {/* Glass card */}
-                                    <div className="relative bg-white/65 backdrop-blur-xl sm:backdrop-blur-2xl rounded-2xl sm:rounded-[2.5rem] p-0.5 sm:p-1 border border-white/80 overflow-hidden shadow-[0_10px_30px_-12px_rgba(0,0,0,0.1)] sm:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)]">
-                                        {/* Inner highlight gradient */}
-                                        <div className="absolute inset-0 bg-gradient-to-b from-white/60 via-white/20 to-transparent pointer-events-none" />
-                                        
-                                        <div className="relative bg-white/40 rounded-xl sm:rounded-[2.3rem] p-4 sm:p-6 md:p-10 lg:p-12 backdrop-blur-xl z-10">
-                                            {/* Header */}
-                                            <div className="text-center mb-6 sm:mb-8 lg:mb-10">
-                                                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-2 sm:mb-3 lg:mb-4 tracking-tight leading-tight">
-                                                    <span className="bg-gradient-to-r from-stone-900 via-primary to-sky-500 bg-clip-text text-transparent bg-[length:200%_200%] animate-shimmer">
-                                                        Tell Us About Yourself
-                                                    </span>
-                                                </h1>
-                                                <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-stone-700 font-bold max-w-md mx-auto leading-relaxed drop-shadow-sm">
-                                                    Your details help us serve you better.
-                                                </p>
-                                            </div>
-
-                                            {/* Profile Photo Upload */}
-                                            <div className="mb-8 sm:mb-10 lg:mb-12 flex flex-col items-center">
-                                                <input
-                                                    ref={photoInputRef}
-                                                    type="file"
-                                                    accept="image/*"
-                                                    onChange={handlePhotoUpload}
-                                                    className="hidden"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => photoInputRef.current?.click()}
-                                                    className="group relative cursor-pointer"
-                                                >
-                                                    <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-40 lg:w-44 md:h-40 lg:h-44 rounded-full bg-white/60 backdrop-blur-md flex flex-col items-center justify-center border-2 border-dashed border-primary/60 hover:border-primary transition-all duration-300 shadow-inner hover:shadow-[0_0_25px_rgba(19,236,30,0.3)] overflow-hidden relative z-10">
-                                                        {personalInfo.photoPreview ? (
-                                                            <img 
-                                                                src={personalInfo.photoPreview} 
-                                                                alt="Profile preview" 
-                                                                className="w-full h-full object-cover"
-                                                            />
-                                                        ) : (
-                                                            <div className="flex flex-col items-center gap-2 transition-opacity duration-300 group-hover:opacity-100 z-20">
-                                                                <div className="size-14 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-1 animate-pulse border border-primary/20">
-                                                                    <span className="material-symbols-outlined text-4xl">add_a_photo</span>
-                                                                </div>
-                                                                <span className="text-xs font-black text-stone-600 uppercase tracking-widest bg-white/60 px-2 py-1 rounded-full">Add Photo</span>
-                                                            </div>
-                                                        )}
-                                                        <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                                                    </div>
-                                                    {personalInfo.photoPreview && (
-                                                        <div className="absolute bottom-2 right-2 size-10 rounded-full bg-primary text-white flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <span className="material-symbols-outlined text-xl">edit</span>
-                                                        </div>
-                                                    )}
-                                                </button>
-                                            </div>
-
-                                            <form className="space-y-4 sm:space-y-6 lg:space-y-8" onSubmit={(e) => e.preventDefault()}>
-                                                {/* Full Name Input */}
-                                                <div className="group/input relative">
-                                                    <label className="block text-stone-500 font-extrabold text-[10px] sm:text-xs uppercase tracking-widest mb-2 sm:mb-3 ml-2 sm:ml-4">Full Name</label>
-                                                    <div className="relative transition-transform duration-300 group-hover/input:-translate-y-1">
-                                                        <div className="absolute inset-y-0 left-0 pl-3 sm:pl-5 flex items-center pointer-events-none z-10">
-                                                            <div className="size-9 sm:size-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-white to-stone-50 border border-white shadow-sm flex items-center justify-center text-stone-400 group-focus-within/input:text-primary group-focus-within/input:shadow-[0_0_10px_rgba(19,236,30,0.3)] transition-all duration-300">
-                                                                <span className="material-symbols-outlined text-xl sm:text-3xl">person</span>
-                                                            </div>
-                                                        </div>
-                                                        <input
-                                                            type="text"
-                                                            name="fullName"
-                                                            value={personalInfo.fullName}
-                                                            onChange={handlePersonalInfoChange}
-                                                            className="w-full h-14 sm:h-16 lg:h-20 pl-14 sm:pl-20 pr-4 sm:pr-6 rounded-xl sm:rounded-2xl bg-white/60 backdrop-blur-xl border border-white/80 text-stone-800 font-black text-base sm:text-lg md:text-xl lg:text-2xl placeholder:text-stone-400 placeholder:font-bold focus:ring-0 focus:bg-white/95 focus:border-primary/50 focus:shadow-[0_0_0_4px_rgba(19,236,30,0.15),0_10px_20px_-5px_rgba(0,0,0,0.05)] focus:-translate-y-0.5 transition-all shadow-[0_4px_6px_-1px_rgba(0,0,0,0.02),inset_0_2px_4px_0_rgba(255,255,255,0.5)]"
-                                                            placeholder="Enter your full name"
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                {/* Mobile Number Input */}
-                                                <div className="group/input relative">
-                                                    <label className="block text-stone-500 font-extrabold text-[10px] sm:text-xs uppercase tracking-widest mb-2 sm:mb-3 ml-2 sm:ml-4">Mobile Number</label>
-                                                    <div className="relative transition-transform duration-300 group-hover/input:-translate-y-1">
-                                                        <div className="absolute inset-y-0 left-0 pl-3 sm:pl-5 flex items-center pointer-events-none z-10">
-                                                            <div className="size-9 sm:size-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-white to-stone-50 border border-white shadow-sm flex items-center justify-center text-stone-400 group-focus-within/input:text-primary group-focus-within/input:shadow-[0_0_10px_rgba(19,236,30,0.3)] transition-all duration-300">
-                                                                <span className="material-symbols-outlined text-xl sm:text-3xl">smartphone</span>
-                                                            </div>
-                                                        </div>
-                                                        <input
-                                                            type="tel"
-                                                            name="mobile"
-                                                            value={personalInfo.mobile}
-                                                            onChange={handlePersonalInfoChange}
-                                                            className="w-full h-14 sm:h-16 lg:h-20 pl-14 sm:pl-20 pr-4 sm:pr-6 rounded-xl sm:rounded-2xl bg-white/60 backdrop-blur-xl border border-white/80 text-stone-800 font-black text-base sm:text-lg md:text-xl lg:text-2xl placeholder:text-stone-400 placeholder:font-bold focus:ring-0 focus:bg-white/95 focus:border-primary/50 focus:shadow-[0_0_0_4px_rgba(19,236,30,0.15),0_10px_20px_-5px_rgba(0,0,0,0.05)] focus:-translate-y-0.5 transition-all shadow-[0_4px_6px_-1px_rgba(0,0,0,0.02),inset_0_2px_4px_0_rgba(255,255,255,0.5)]"
-                                                            placeholder="+91 Mobile number"
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                {/* Date of Birth & Village Grid */}
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
-                                                    <div className="group/input relative">
-                                                        <label className="block text-stone-500 font-extrabold text-[10px] sm:text-xs uppercase tracking-widest mb-2 sm:mb-3 ml-2 sm:ml-4">Date of Birth</label>
-                                                        <div className="relative transition-transform duration-300 group-hover/input:-translate-y-1">
-                                                            <div className="absolute inset-y-0 left-0 pl-3 sm:pl-5 flex items-center pointer-events-none z-10">
-                                                                <div className="size-9 sm:size-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-white to-stone-50 border border-white shadow-sm flex items-center justify-center text-stone-400 group-focus-within/input:text-primary group-focus-within/input:shadow-[0_0_10px_rgba(19,236,30,0.3)] transition-all duration-300">
-                                                                    <span className="material-symbols-outlined text-xl sm:text-3xl">calendar_month</span>
-                                                                </div>
-                                                            </div>
-                                                            <input
-                                                                type="date"
-                                                                name="dateOfBirth"
-                                                                value={personalInfo.dateOfBirth}
-                                                                onChange={handlePersonalInfoChange}
-                                                                className="w-full h-14 sm:h-16 lg:h-20 pl-14 sm:pl-20 pr-4 sm:pr-6 rounded-xl sm:rounded-2xl bg-white/60 backdrop-blur-xl border border-white/80 text-stone-800 font-black text-base sm:text-lg md:text-xl lg:text-2xl focus:ring-0 focus:bg-white/95 focus:border-primary/50 focus:shadow-[0_0_0_4px_rgba(19,236,30,0.15),0_10px_20px_-5px_rgba(0,0,0,0.05)] focus:-translate-y-0.5 transition-all shadow-[0_4px_6px_-1px_rgba(0,0,0,0.02),inset_0_2px_4px_0_rgba(255,255,255,0.5)] cursor-pointer"
-                                                            />
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="group/input relative">
-                                                        <label className="block text-stone-500 font-extrabold text-[10px] sm:text-xs uppercase tracking-widest mb-2 sm:mb-3 ml-2 sm:ml-4">Village / Locality</label>
-                                                        <div className="relative transition-transform duration-300 group-hover/input:-translate-y-1">
-                                                            <div className="absolute inset-y-0 left-0 pl-3 sm:pl-5 flex items-center pointer-events-none z-10">
-                                                                <div className="size-9 sm:size-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-white to-stone-50 border border-white shadow-sm flex items-center justify-center text-stone-400 group-focus-within/input:text-primary group-focus-within/input:shadow-[0_0_10px_rgba(19,236,30,0.3)] transition-all duration-300">
-                                                                    <span className="material-symbols-outlined text-xl sm:text-3xl">home_pin</span>
-                                                                </div>
-                                                            </div>
-                                                            <input
-                                                                type="text"
-                                                                name="village"
-                                                                value={personalInfo.village}
-                                                                onChange={handlePersonalInfoChange}
-                                                                className="w-full h-14 sm:h-16 lg:h-20 pl-14 sm:pl-20 pr-4 sm:pr-6 rounded-xl sm:rounded-2xl bg-white/60 backdrop-blur-xl border border-white/80 text-stone-800 font-black text-base sm:text-lg md:text-xl lg:text-2xl placeholder:text-stone-400 placeholder:font-bold focus:ring-0 focus:bg-white/95 focus:border-primary/50 focus:shadow-[0_0_0_4px_rgba(19,236,30,0.15),0_10px_20px_-5px_rgba(0,0,0,0.05)] focus:-translate-y-0.5 transition-all shadow-[0_4px_6px_-1px_rgba(0,0,0,0.02),inset_0_2px_4px_0_rgba(255,255,255,0.5)]"
-                                                                placeholder="Enter village"
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </form>
-                                        </div>
+                            {/* Form Fields - Classic Style */}
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1.5">Full Name *</label>
+                                    <div className="relative">
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 text-lg">person</span>
+                                        <input
+                                            type="text"
+                                            name="fullName"
+                                            value={personalInfo.fullName}
+                                            onChange={handlePersonalInfoChange}
+                                            className="input-classic pl-10"
+                                            placeholder="Enter your full name"
+                                        />
                                     </div>
                                 </div>
-                            )}
 
-                            {step === 2 && (
-                                <div className="bg-white/70 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-xl border border-white/60 overflow-hidden">
-                                    <div className="p-4 sm:p-6 md:p-10 flex flex-col items-center gap-4 sm:gap-6 md:gap-8">
-                                        <div className="text-center">
-                                            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-stone-900 mb-2 sm:mb-3 tracking-tight">Verify Your Identity</h1>
-                                            <p className="text-sm sm:text-base lg:text-lg text-stone-600 font-medium max-w-md mx-auto">
-                                                Upload photos of your Aadhaar card and Kisan card to unlock selling features.
-                                            </p>
-                                        </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1.5">Mobile Number *</label>
+                                    <div className="relative">
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 text-lg">smartphone</span>
+                                        <input
+                                            type="tel"
+                                            name="mobile"
+                                            value={personalInfo.mobile}
+                                            onChange={handlePersonalInfoChange}
+                                            className="input-classic pl-10"
+                                            placeholder="+91 Mobile number"
+                                        />
+                                    </div>
+                                </div>
 
-                                        {/* Visual Instructions */}
-                                        <div className="flex gap-4 sm:gap-6 md:gap-8 justify-center w-full max-w-md">
-                                            <div className="flex flex-col items-center gap-1 sm:gap-2 text-center">
-                                                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-green-100 flex items-center justify-center text-primary mb-1">
-                                                    <span className="material-symbols-outlined text-lg sm:text-2xl">wb_sunny</span>
-                                                </div>
-                                                <span className="text-[10px] sm:text-xs font-bold text-stone-800">Good Light</span>
-                                            </div>
-                                            <div className="flex flex-col items-center gap-1 sm:gap-2 text-center opacity-60">
-                                                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-red-100 flex items-center justify-center text-red-500 mb-1">
-                                                    <span className="material-symbols-outlined text-lg sm:text-2xl">blur_off</span>
-                                                </div>
-                                                <span className="text-[10px] sm:text-xs font-bold text-stone-800">No Blur</span>
-                                            </div>
-                                            <div className="flex flex-col items-center gap-1 sm:gap-2 text-center opacity-60">
-                                                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-red-100 flex items-center justify-center text-red-500 mb-1">
-                                                    <span className="material-symbols-outlined text-lg sm:text-2xl">crop_free</span>
-                                                </div>
-                                                <span className="text-[10px] sm:text-xs font-bold text-stone-800">All Corners</span>
-                                            </div>
-                                        </div>
-
-                                        {/* Aadhaar Upload */}
-                                        <div className="w-full max-w-[480px]">
-                                            <label className="block text-stone-700 font-bold text-xs sm:text-sm mb-2 sm:mb-3 ml-1">AADHAAR CARD (Front) *</label>
-                                            {documents.aadhaarPreview ? (
-                                                <div className="relative rounded-xl overflow-hidden border-2 border-primary bg-white shadow-lg">
-                                                    <img src={documents.aadhaarPreview} alt="Aadhaar Preview" className="w-full h-48 object-cover" />
-                                                    <button
-                                                        onClick={removeAadhaar}
-                                                        className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors shadow-lg"
-                                                    >
-                                                        <XIcon className="h-5 w-5" />
-                                                    </button>
-                                                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-primary/90 to-transparent p-3">
-                                                        <div className="flex items-center gap-2 text-white">
-                                                            <span className="material-symbols-outlined">check_circle</span>
-                                                            <span className="font-bold">Aadhaar Uploaded</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div
-                                                    onClick={() => aadhaarInputRef.current?.click()}
-                                                    className="relative group w-full aspect-[1.586] bg-stone-50 rounded-xl border-2 border-dashed border-stone-300 flex flex-col items-center justify-center p-6 cursor-pointer hover:border-primary hover:bg-green-50/30 transition-all duration-300"
-                                                >
-                                                    {/* Scanner corners */}
-                                                    <div className="absolute top-0 left-0 w-10 h-10 border-l-4 border-t-4 border-primary rounded-tl-xl"></div>
-                                                    <div className="absolute top-0 right-0 w-10 h-10 border-r-4 border-t-4 border-primary rounded-tr-xl"></div>
-                                                    <div className="absolute bottom-0 left-0 w-10 h-10 border-l-4 border-b-4 border-primary rounded-bl-xl"></div>
-                                                    <div className="absolute bottom-0 right-0 w-10 h-10 border-r-4 border-b-4 border-primary rounded-br-xl"></div>
-
-                                                    <div className="relative z-10 flex flex-col items-center gap-3">
-                                                        <div className="h-16 w-16 rounded-full bg-white shadow-lg flex items-center justify-center text-primary mb-2 transform group-hover:scale-110 transition-transform">
-                                                            <span className="material-symbols-outlined text-3xl">add_a_photo</span>
-                                                        </div>
-                                                        <h3 className="text-lg font-bold text-stone-800">Tap to Capture Aadhaar</h3>
-                                                        <p className="text-sm text-stone-500 text-center max-w-[200px]">
-                                                            Place front of Aadhaar card here
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            )}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1.5">Date of Birth</label>
+                                        <div className="relative">
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 text-lg">calendar_month</span>
                                             <input
-                                                ref={aadhaarInputRef}
-                                                type="file"
-                                                accept="image/*"
-                                                onChange={handleAadhaarUpload}
-                                                className="hidden"
-                                            />
-                                        </div>
-
-                                        {/* Kisan Card Upload */}
-                                        <div className="w-full max-w-[480px]">
-                                            <label className="block text-stone-700 font-bold text-sm mb-3 ml-1">KISAN CARD *</label>
-                                            {documents.kisanPreview ? (
-                                                <div className="relative rounded-xl overflow-hidden border-2 border-primary bg-white shadow-lg">
-                                                    <img src={documents.kisanPreview} alt="Kisan Card Preview" className="w-full h-48 object-cover" />
-                                                    <button
-                                                        onClick={removeKisan}
-                                                        className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors shadow-lg"
-                                                    >
-                                                        <XIcon className="h-5 w-5" />
-                                                    </button>
-                                                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-primary/90 to-transparent p-3">
-                                                        <div className="flex items-center gap-2 text-white">
-                                                            <span className="material-symbols-outlined">check_circle</span>
-                                                            <span className="font-bold">Kisan Card Uploaded</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div
-                                                    onClick={() => kisanInputRef.current?.click()}
-                                                    className="relative group w-full aspect-[1.586] bg-stone-50 rounded-xl border-2 border-dashed border-stone-300 flex flex-col items-center justify-center p-6 cursor-pointer hover:border-primary hover:bg-green-50/30 transition-all duration-300"
-                                                >
-                                                    {/* Scanner corners */}
-                                                    <div className="absolute top-0 left-0 w-10 h-10 border-l-4 border-t-4 border-primary rounded-tl-xl"></div>
-                                                    <div className="absolute top-0 right-0 w-10 h-10 border-r-4 border-t-4 border-primary rounded-tr-xl"></div>
-                                                    <div className="absolute bottom-0 left-0 w-10 h-10 border-l-4 border-b-4 border-primary rounded-bl-xl"></div>
-                                                    <div className="absolute bottom-0 right-0 w-10 h-10 border-r-4 border-b-4 border-primary rounded-br-xl"></div>
-
-                                                    <div className="relative z-10 flex flex-col items-center gap-3">
-                                                        <div className="h-16 w-16 rounded-full bg-white shadow-lg flex items-center justify-center text-green-600 mb-2 transform group-hover:scale-110 transition-transform">
-                                                            <span className="material-symbols-outlined text-3xl">credit_card</span>
-                                                        </div>
-                                                        <h3 className="text-lg font-bold text-stone-800">Tap to Capture Kisan Card</h3>
-                                                        <p className="text-sm text-stone-500 text-center max-w-[200px]">
-                                                            Place your Kisan card here
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            )}
-                                            <input
-                                                ref={kisanInputRef}
-                                                type="file"
-                                                accept="image/*"
-                                                onChange={handleKisanUpload}
-                                                className="hidden"
+                                                type="date"
+                                                name="dateOfBirth"
+                                                value={personalInfo.dateOfBirth}
+                                                onChange={handlePersonalInfoChange}
+                                                className="input-classic pl-10"
                                             />
                                         </div>
                                     </div>
-
-                                    {/* Security Footer */}
-                                    <div className="bg-stone-50 border-t border-stone-100 p-4 flex items-center justify-center gap-6">
-                                        <div className="flex items-center gap-2 text-xs text-stone-500">
-                                            <span className="material-symbols-outlined text-green-600 text-base">lock</span>
-                                            <span>256-bit Encryption</span>
-                                        </div>
-                                        <div className="w-px h-4 bg-stone-300"></div>
-                                        <div className="flex items-center gap-2 text-xs text-stone-500">
-                                            <span className="material-symbols-outlined text-green-600 text-base">verified</span>
-                                            <span>Govt. Approved Secure</span>
+                                    <div>
+                                        <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1.5">Village *</label>
+                                        <div className="relative">
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 text-lg">home_pin</span>
+                                            <input
+                                                type="text"
+                                                name="village"
+                                                value={personalInfo.village}
+                                                onChange={handlePersonalInfoChange}
+                                                className="input-classic pl-10"
+                                                placeholder="Village name"
+                                            />
                                         </div>
                                     </div>
                                 </div>
-                            )}
+                            </div>
+                        </div>
+                    )}
 
-                            {step === 3 && (
-                                <div className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-xl p-1 md:p-2 border border-white/60 relative overflow-hidden">
-                                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary via-green-400 to-primary"></div>
-                                    <div className="bg-white/40 rounded-2xl p-6 md:p-10 backdrop-blur-sm">
-                                        <div className="text-center mb-10">
-                                            <div className="inline-flex justify-center items-center p-4 bg-gradient-to-br from-green-50 to-white rounded-full shadow-inner mb-4">
-                                                <span className="material-symbols-outlined text-primary text-5xl md:text-6xl">account_balance</span>
-                                            </div>
-                                            <h1 className="text-3xl md:text-4xl font-black text-stone-900 mb-3 tracking-tight">Bank Account Details</h1>
-                                            <p className="text-lg md:text-xl text-stone-600 font-medium max-w-md mx-auto">Add your bank details to receive direct payments.</p>
+                    {step === 2 && (
+                        <div className="space-y-6">
+                            <div className="text-center mb-6">
+                                <h1 className="font-heading text-2xl font-bold text-gray-900 mb-2">Verify Your Identity</h1>
+                                <p className="text-sm text-gray-600">Upload your Aadhaar and Kisan card</p>
+                            </div>
+
+                            {/* Photo Tips - Compact */}
+                            <div className="flex justify-center gap-6 mb-6">
+                                <div className="flex flex-col items-center gap-1">
+                                    <div className="size-8 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                                        <span className="material-symbols-outlined text-sm">wb_sunny</span>
+                                    </div>
+                                    <span className="text-xs text-gray-600">Good Light</span>
+                                </div>
+                                <div className="flex flex-col items-center gap-1">
+                                    <div className="size-8 rounded-full bg-red-100 flex items-center justify-center text-red-500">
+                                        <span className="material-symbols-outlined text-sm">blur_off</span>
+                                    </div>
+                                    <span className="text-xs text-gray-600">No Blur</span>
+                                </div>
+                                <div className="flex flex-col items-center gap-1">
+                                    <div className="size-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-500">
+                                        <span className="material-symbols-outlined text-sm">crop_free</span>
+                                    </div>
+                                    <span className="text-xs text-gray-600">Full Card</span>
+                                </div>
+                            </div>
+
+                            {/* Aadhaar Upload */}
+                            <div>
+                                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">Aadhaar Card (Front) *</label>
+                                {documents.aadhaarPreview ? (
+                                    <div className="relative rounded-lg overflow-hidden border border-gray-200 bg-white">
+                                        <img src={documents.aadhaarPreview} alt="Aadhaar" className="w-full h-40 object-cover" />
+                                        <button
+                                            onClick={removeAadhaar}
+                                            className="absolute top-2 right-2 bg-white/90 text-red-500 p-1.5 rounded-md hover:bg-white transition-colors shadow-sm"
+                                        >
+                                            <XIcon className="h-4 w-4" />
+                                        </button>
+                                        <div className="absolute bottom-0 left-0 right-0 bg-primary/90 px-3 py-2 flex items-center gap-2 text-white text-sm">
+                                            <span className="material-symbols-outlined text-sm">check_circle</span>
+                                            <span className="font-medium">Aadhaar Uploaded</span>
                                         </div>
+                                    </div>
+                                ) : (
+                                    <div
+                                        onClick={() => aadhaarInputRef.current?.click()}
+                                        className="relative aspect-[16/9] bg-white rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-gray-50 transition-colors"
+                                    >
+                                        <div className="size-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 mb-2">
+                                            <span className="material-symbols-outlined text-2xl">add_a_photo</span>
+                                        </div>
+                                        <span className="text-sm font-medium text-gray-700">Tap to Capture Aadhaar</span>
+                                        <span className="text-xs text-gray-500">Front side only</span>
+                                    </div>
+                                )}
+                                <input ref={aadhaarInputRef} type="file" accept="image/*" onChange={handleAadhaarUpload} className="hidden" />
+                            </div>
 
-                                        <form className="space-y-6 md:space-y-8" onSubmit={(e) => e.preventDefault()}>
-                                            <div className="group/input">
-                                                <label className="block text-stone-700 font-bold text-sm mb-2 ml-1">ACCOUNT HOLDER NAME</label>
-                                                <div className="relative transition-all duration-300 transform group-hover/input:-translate-y-1">
-                                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                                        <span className="material-symbols-outlined text-primary text-2xl">person</span>
-                                                    </div>
-                                                    <input
-                                                        type="text"
-                                                        name="accountHolder"
-                                                        value={bankInfo.accountHolder}
-                                                        onChange={handleBankInfoChange}
-                                                        className="w-full h-16 pl-14 pr-4 rounded-2xl bg-white/50 backdrop-blur-sm border border-stone-200/50 text-stone-900 font-bold text-lg placeholder:text-stone-400 focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all shadow-sm"
-                                                        placeholder="As per bank records"
-                                                    />
-                                                </div>
-                                            </div>
+                            {/* Kisan Card Upload */}
+                            <div>
+                                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">Kisan Card *</label>
+                                {documents.kisanPreview ? (
+                                    <div className="relative rounded-lg overflow-hidden border border-gray-200 bg-white">
+                                        <img src={documents.kisanPreview} alt="Kisan Card" className="w-full h-40 object-cover" />
+                                        <button
+                                            onClick={removeKisan}
+                                            className="absolute top-2 right-2 bg-white/90 text-red-500 p-1.5 rounded-md hover:bg-white transition-colors shadow-sm"
+                                        >
+                                            <XIcon className="h-4 w-4" />
+                                        </button>
+                                        <div className="absolute bottom-0 left-0 right-0 bg-primary/90 px-3 py-2 flex items-center gap-2 text-white text-sm">
+                                            <span className="material-symbols-outlined text-sm">check_circle</span>
+                                            <span className="font-medium">Kisan Card Uploaded</span>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div
+                                        onClick={() => kisanInputRef.current?.click()}
+                                        className="relative aspect-[16/9] bg-white rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-gray-50 transition-colors"
+                                    >
+                                        <div className="size-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 mb-2">
+                                            <span className="material-symbols-outlined text-2xl">credit_card</span>
+                                        </div>
+                                        <span className="text-sm font-medium text-gray-700">Tap to Capture Kisan Card</span>
+                                        <span className="text-xs text-gray-500">Your farmer ID card</span>
+                                    </div>
+                                )}
+                                <input ref={kisanInputRef} type="file" accept="image/*" onChange={handleKisanUpload} className="hidden" />
+                            </div>
 
-                                            <div className="group/input">
-                                                <label className="block text-stone-700 font-bold text-sm mb-2 ml-1">ACCOUNT NUMBER</label>
-                                                <div className="relative transition-all duration-300 transform group-hover/input:-translate-y-1">
-                                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                                        <span className="material-symbols-outlined text-primary text-2xl">pin</span>
-                                                    </div>
-                                                    <input
-                                                        type="text"
-                                                        name="accountNumber"
-                                                        value={bankInfo.accountNumber}
-                                                        onChange={handleBankInfoChange}
-                                                        className="w-full h-16 pl-14 pr-4 rounded-2xl bg-white/50 backdrop-blur-sm border border-stone-200/50 text-stone-900 font-bold text-lg placeholder:text-stone-400 focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all shadow-sm"
-                                                        placeholder="Enter your account number"
-                                                    />
-                                                </div>
-                                            </div>
+                            {/* Security Footer */}
+                            <div className="flex items-center justify-center gap-4 pt-4 text-xs text-gray-500">
+                                <div className="flex items-center gap-1">
+                                    <span className="material-symbols-outlined text-green-600 text-sm">lock</span>
+                                    <span>256-bit Encrypted</span>
+                                </div>
+                                <div className="w-px h-3 bg-gray-300" />
+                                <div className="flex items-center gap-1">
+                                    <span className="material-symbols-outlined text-green-600 text-sm">verified</span>
+                                    <span>Govt. Approved</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-                                                <div className="group/input">
-                                                    <label className="block text-stone-700 font-bold text-sm mb-2 ml-1">IFSC CODE</label>
-                                                    <div className="relative transition-all duration-300 transform group-hover/input:-translate-y-1">
-                                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                                            <span className="material-symbols-outlined text-primary text-2xl">tag</span>
-                                                        </div>
-                                                        <input
-                                                            type="text"
-                                                            name="ifscCode"
-                                                            value={bankInfo.ifscCode}
-                                                            onChange={handleBankInfoChange}
-                                                            className="w-full h-16 pl-14 pr-4 rounded-2xl bg-white/50 backdrop-blur-sm border border-stone-200/50 text-stone-900 font-bold text-lg placeholder:text-stone-400 focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all shadow-sm uppercase"
-                                                            placeholder="SBIN0001234"
-                                                            maxLength={11}
-                                                        />
-                                                    </div>
-                                                </div>
+                    {step === 3 && (
+                        <div className="space-y-6">
+                            <div className="text-center mb-6">
+                                <div className="size-14 mx-auto rounded-full bg-primary/10 flex items-center justify-center text-primary mb-3">
+                                    <span className="material-symbols-outlined text-2xl">account_balance</span>
+                                </div>
+                                <h1 className="font-heading text-2xl font-bold text-gray-900 mb-2">Bank Account Details</h1>
+                                <p className="text-sm text-gray-600">Add your bank details to receive payments</p>
+                            </div>
 
-                                                <div className="group/input">
-                                                    <label className="block text-stone-700 font-bold text-sm mb-2 ml-1">BANK NAME</label>
-                                                    <div className="relative transition-all duration-300 transform group-hover/input:-translate-y-1">
-                                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                                            <span className="material-symbols-outlined text-primary text-2xl">account_balance</span>
-                                                        </div>
-                                                        <input
-                                                            type="text"
-                                                            name="bankName"
-                                                            value={bankInfo.bankName}
-                                                            onChange={handleBankInfoChange}
-                                                            className="w-full h-16 pl-14 pr-4 rounded-2xl bg-white/50 backdrop-blur-sm border border-stone-200/50 text-stone-900 font-bold text-lg placeholder:text-stone-400 focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all shadow-sm"
-                                                            placeholder="State Bank of India"
-                                                        />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </form>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1.5">Account Holder Name *</label>
+                                    <div className="relative">
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 text-lg">person</span>
+                                        <input
+                                            type="text"
+                                            name="accountHolder"
+                                            value={bankInfo.accountHolder}
+                                            onChange={handleBankInfoChange}
+                                            className="input-classic pl-10"
+                                            placeholder="As per bank records"
+                                        />
                                     </div>
                                 </div>
-                            )}
+
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1.5">Account Number *</label>
+                                    <div className="relative">
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 text-lg">pin</span>
+                                        <input
+                                            type="text"
+                                            name="accountNumber"
+                                            value={bankInfo.accountNumber}
+                                            onChange={handleBankInfoChange}
+                                            className="input-classic pl-10"
+                                            placeholder="Enter account number"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1.5">IFSC Code *</label>
+                                        <div className="relative">
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 text-lg">tag</span>
+                                            <input
+                                                type="text"
+                                                name="ifscCode"
+                                                value={bankInfo.ifscCode}
+                                                onChange={handleBankInfoChange}
+                                                className="input-classic pl-10 uppercase"
+                                                placeholder="SBIN0001234"
+                                                maxLength={11}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1.5">Bank Name *</label>
+                                        <div className="relative">
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 text-lg">account_balance</span>
+                                            <input
+                                                type="text"
+                                                name="bankName"
+                                                value={bankInfo.bankName}
+                                                onChange={handleBankInfoChange}
+                                                className="input-classic pl-10"
+                                                placeholder="Bank name"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Benefits Strip */}
+                <div className="mt-8 pt-6 border-t border-gray-200">
+                    <div className="grid grid-cols-3 gap-3">
+                        <div className="text-center">
+                            <div className="size-10 mx-auto rounded-lg bg-green-50 flex items-center justify-center text-primary mb-1.5">
+                                <span className="material-symbols-outlined text-lg">payments</span>
+                            </div>
+                            <span className="text-xs font-medium text-gray-700">Direct Pay</span>
+                        </div>
+                        <div className="text-center">
+                            <div className="size-10 mx-auto rounded-lg bg-green-50 flex items-center justify-center text-primary mb-1.5">
+                                <span className="material-symbols-outlined text-lg">bolt</span>
+                            </div>
+                            <span className="text-xs font-medium text-gray-700">Fast Approval</span>
+                        </div>
+                        <div className="text-center">
+                            <div className="size-10 mx-auto rounded-lg bg-green-50 flex items-center justify-center text-primary mb-1.5">
+                                <span className="material-symbols-outlined text-lg">verified_user</span>
+                            </div>
+                            <span className="text-xs font-medium text-gray-700">100% Secure</span>
                         </div>
                     </div>
+                </div>
+            </main>
 
-                    {/* Benefits Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-4xl px-2">
-                        <div className="bg-white/70 backdrop-blur-sm p-4 rounded-2xl flex items-center gap-4 transition-transform hover:-translate-y-1 hover:shadow-lg group cursor-default border border-white/60">
-                            <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                                <span className="material-symbols-outlined text-3xl">payments</span>
-                            </div>
-                            <div>
-                                <h4 className="font-bold text-stone-800 text-base">Direct Payments</h4>
-                                <p className="text-xs text-stone-500 font-medium">To your bank account</p>
-                            </div>
-                        </div>
-                        <div className="bg-white/70 backdrop-blur-sm p-4 rounded-2xl flex items-center gap-4 transition-transform hover:-translate-y-1 hover:shadow-lg group cursor-default border border-white/60">
-                            <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                                <span className="material-symbols-outlined text-3xl">bolt</span>
-                            </div>
-                            <div>
-                                <h4 className="font-bold text-stone-800 text-base">Instant Approval</h4>
-                                <p className="text-xs text-stone-500 font-medium">Start selling fast</p>
-                            </div>
-                        </div>
-                        <div className="bg-white/70 backdrop-blur-sm p-4 rounded-2xl flex items-center gap-4 transition-transform hover:-translate-y-1 hover:shadow-lg group cursor-default border border-white/60">
-                            <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                                <span className="material-symbols-outlined text-3xl">verified_user</span>
-                            </div>
-                            <div>
-                                <h4 className="font-bold text-stone-800 text-base">Data Privacy</h4>
-                                <p className="text-xs text-stone-500 font-medium">100% Secure & Private</p>
-                            </div>
-                        </div>
-                    </div>
-                </main>
-
-                {/* Sticky Bottom CTA */}
-                <div className="sticky bottom-0 left-0 w-full bg-white/90 backdrop-blur-xl border-t border-stone-200/50 p-4 z-50 flex justify-center shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
+            {/* Sticky Bottom CTA - Professional 44px height */}
+            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-50">
+                <div className="max-w-xl mx-auto">
                     <button
                         onClick={step === 3 ? handleSubmit : handleNext}
                         disabled={isSubmitting}
-                        className="w-full md:w-auto md:min-w-[400px] h-16 bg-gradient-to-r from-primary to-green-600 hover:to-green-500 active:scale-[0.98] rounded-full flex items-center justify-center gap-3 text-white font-black text-xl shadow-lg transition-all duration-300 transform group disabled:opacity-70 disabled:cursor-not-allowed"
+                        className="w-full h-11 bg-primary hover:bg-primary-dark text-white rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                         {isSubmitting ? (
                             <>
-                                <LoaderIcon className="h-6 w-6 animate-spin" />
+                                <LoaderIcon className="h-4 w-4 animate-spin" />
                                 <span>Submitting...</span>
                             </>
                         ) : (
@@ -742,7 +642,7 @@ export const FarmerKYC = ({ isOpen, currentUser, onClose, onComplete, required =
                                     {step === 2 && 'Continue to Bank Details'}
                                     {step === 3 && 'Submit & Verify'}
                                 </span>
-                                <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform text-3xl">arrow_forward</span>
+                                <span className="material-symbols-outlined text-lg">arrow_forward</span>
                             </>
                         )}
                     </button>
@@ -751,31 +651,15 @@ export const FarmerKYC = ({ isOpen, currentUser, onClose, onComplete, required =
 
             <style>{`
                 @keyframes slide-in-right {
-                    from {
-                        opacity: 0;
-                        transform: translateX(30px);
-                    }
-                    to {
-                        opacity: 1;
-                        transform: translateX(0);
-                    }
+                    from { opacity: 0; transform: translateX(12px); }
+                    to { opacity: 1; transform: translateX(0); }
                 }
                 @keyframes slide-in-left {
-                    from {
-                        opacity: 0;
-                        transform: translateX(-30px);
-                    }
-                    to {
-                        opacity: 1;
-                        transform: translateX(0);
-                    }
+                    from { opacity: 0; transform: translateX(-12px); }
+                    to { opacity: 1; transform: translateX(0); }
                 }
-                .animate-slide-in-right {
-                    animation: slide-in-right 0.4s ease-out forwards;
-                }
-                .animate-slide-in-left {
-                    animation: slide-in-left 0.4s ease-out forwards;
-                }
+                .animate-slide-in-right { animation: slide-in-right 0.2s ease-out forwards; }
+                .animate-slide-in-left { animation: slide-in-left 0.2s ease-out forwards; }
             `}</style>
         </div>
     );

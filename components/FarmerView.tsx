@@ -23,6 +23,7 @@ interface FarmerViewProps {
     onOpenChat: (negotiation: Negotiation) => void;
     onSendMessage: (negotiationId: string, text: string) => void;
     onAcceptCall?: (negotiationId: string) => void;
+    onLogout?: () => void;
 }
 
 type FormErrors = { [key in keyof Omit<Product, 'id' | 'farmerId' | 'imageUrl' | 'isVerified' | 'verificationFeedback'>]?: string } & { image?: string };
@@ -43,7 +44,7 @@ const fileToDataUrl = (file: File): Promise<string> =>
         reader.onerror = error => reject(error);
     });
 
-export const FarmerView = ({ products, negotiations, messages, currentUserId, currentUser, onAddNewProduct, onUpdateProduct, onRespond, onCounter, onOpenChat, onSendMessage, onAcceptCall }: FarmerViewProps) => {
+export const FarmerView = ({ products, negotiations, messages, currentUserId, currentUser, onAddNewProduct, onUpdateProduct, onRespond, onCounter, onOpenChat, onSendMessage, onAcceptCall, onLogout }: FarmerViewProps) => {
     const [aiIsLoading, setAiIsLoading] = useState(false);
     const [formIsSubmitting, setFormIsSubmitting] = useState(false);
     const [imageFile, setImageFile] = useState<File | null>(null);
@@ -489,11 +490,20 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                             })}
                         </nav>
 
-                        <div className="mt-auto">
-                            <button className="w-full py-4 px-6 rounded-2xl bg-stone-900 text-white font-bold flex items-center justify-center gap-3 shadow-card hover:shadow-xl hover:-translate-y-0.5 transition-all">
-                                <span className="material-symbols-outlined">headset_mic</span>
-                                <span>Help Support</span>
+                        <div className="mt-auto flex flex-col gap-3">
+                            <button className="w-full py-3 px-4 rounded-xl bg-gray-100 text-gray-700 font-medium flex items-center justify-center gap-2 hover:bg-gray-200 transition-all text-sm">
+                                <span className="material-symbols-outlined text-xl">headset_mic</span>
+                                <span>Help & Support</span>
                             </button>
+                            {onLogout && (
+                                <button 
+                                    onClick={onLogout}
+                                    className="w-full h-11 px-4 rounded-xl text-red-600 bg-red-50 hover:bg-red-100 font-medium flex items-center justify-center gap-2 transition-all text-sm"
+                                >
+                                    <span className="material-symbols-outlined text-xl">logout</span>
+                                    <span>Sign Out</span>
+                                </button>
+                            )}
                         </div>
                     </div>
                 </aside>

@@ -1,6 +1,156 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ANNA BAZAAR - PROFESSIONAL B2B DESIGN SYSTEM
+   Typography: Syne (Headings) + Outfit (Body) + Work Sans (Prices/Data)
+   Natural Premium Palette | Clean Interface | Production-Ready
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@layer base {
+  html {
+    font-feature-settings: 'tnum' on, 'lnum' on;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-background-light text-text-main font-sans leading-normal;
+    font-family: 'Outfit', system-ui, sans-serif;
+  }
+
+  /* Typography System - B2B Professional */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading font-bold tracking-tight leading-tight;
+    font-family: 'Syne', Georgia, serif;
+  }
+
+  /* Desktop: 32px / Mobile: 24px */
+  h1 { @apply text-2xl md:text-[32px]; }
+  /* Desktop: 24px / Mobile: 18px */
+  h2 { @apply text-lg md:text-2xl; }
+  /* Subsections: 18px */
+  h3 { @apply text-base md:text-lg font-semibold; }
+  h4 { @apply text-sm md:text-base font-semibold; }
+
+  /* Body text: 14px desktop, 13px mobile */
+  p, span, div {
+    font-family: 'Outfit', system-ui, sans-serif;
+  }
+
+  /* Prices and Numbers - Work Sans for tabular figures */
+  .price, .currency, [data-price], .font-data {
+    font-family: 'Work Sans', monospace;
+    font-feature-settings: 'tnum' on;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Small text/labels: 12px */
+  .text-label {
+    @apply text-xs font-medium;
+    font-family: 'Work Sans', monospace;
+  }
+}
+
+@layer components {
+  /* Professional Card - Clean, no glassmorphism */
+  .card-pro {
+    @apply bg-white border border-gray-200 rounded-lg shadow-pro;
+  }
+
+  /* Information Strip - Dense data display */
+  .info-strip {
+    @apply flex items-center justify-between px-3 py-2 border-b border-gray-100 last:border-b-0;
+  }
+
+  /* Professional Input - Bottom border or thin outline style */
+  .input-classic {
+    @apply w-full h-11 px-3 bg-white border border-gray-200 rounded-md text-sm font-medium
+           placeholder:text-gray-400 
+           focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20
+           transition-colors;
+  }
+
+  /* Professional Button - 44px touch target, not bulky */
+  .btn-pro {
+    @apply h-11 px-4 inline-flex items-center justify-center gap-2
+           text-sm font-semibold rounded-md
+           transition-colors duration-150
+           focus:outline-none focus:ring-2 focus:ring-offset-1;
+  }
+
+  .btn-primary {
+    @apply btn-pro bg-primary text-white hover:bg-primary-dark focus:ring-primary/50;
+  }
+
+  .btn-secondary {
+    @apply btn-pro bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 focus:ring-gray-200;
+  }
+
+  .btn-accent {
+    @apply btn-pro bg-accent text-gray-900 hover:bg-accent-dark focus:ring-accent/50;
+  }
+
+  /* Status Badges - Clean, professional */
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 text-xs font-medium rounded;
+  }
+
+  .badge-success { @apply bg-green-50 text-green-700 border border-green-200; }
+  .badge-warning { @apply bg-amber-50 text-amber-700 border border-amber-200; }
+  .badge-error { @apply bg-red-50 text-red-700 border border-red-200; }
+  .badge-info { @apply bg-blue-50 text-blue-700 border border-blue-200; }
+
+  /* Trading Desk Table Row */
+  .trade-row {
+    @apply flex items-center gap-3 px-3 py-2.5 border-b border-gray-100 hover:bg-gray-50 transition-colors;
+  }
+
+  /* Section Container */
+  .section-container {
+    @apply bg-white border border-gray-200 rounded-lg overflow-hidden;
+  }
+
+  .section-header {
+    @apply px-4 py-3 border-b border-gray-200 bg-gray-50;
+  }
+
+  /* Mobile-first responsive padding */
+  .container-mobile {
+    @apply px-4 sm:px-6 lg:px-8;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     SIDEBAR COMPONENTS - Fixed 240px width, proper alignment
+  ═══════════════════════════════════════════════════════════════════════════ */
+  
+  .sidebar {
+    @apply fixed lg:static inset-y-0 z-40 w-60 bg-white border-r border-gray-200 flex flex-col h-full;
+  }
+
+  .sidebar-nav-item {
+    @apply h-11 flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-600 
+           hover:bg-gray-50 hover:text-gray-900 transition-colors rounded-lg mx-2;
+  }
+
+  .sidebar-nav-item.active {
+    @apply bg-primary/10 text-primary border-l-4 border-primary rounded-l-none;
+  }
+
+  .sidebar-logout {
+    @apply mt-auto h-11 flex items-center gap-3 px-4 py-3 mx-2 mb-4 text-sm font-medium 
+           text-red-600 hover:bg-red-50 rounded-lg transition-colors;
+  }
+
+  /* Cart Badge */
+  .cart-badge {
+    @apply absolute -top-1.5 -right-1.5 bg-red-600 text-white text-xs font-bold 
+           w-5 h-5 flex items-center justify-center rounded-full;
+  }
+}
 
 /* Custom scrollbar for the ticker */
 .no-scrollbar::-webkit-scrollbar {
