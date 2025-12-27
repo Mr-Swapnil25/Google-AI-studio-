@@ -55,13 +55,12 @@ const StepIndicator = ({
     return (
         <div className={`flex flex-col items-center gap-3 relative z-10 transition-opacity duration-300 ${isActive ? 'opacity-100' : isPast ? 'opacity-100' : 'opacity-60'}`}>
             <div
-                className={`relative flex items-center justify-center rounded-full font-bold shadow-sm transition-all duration-500 ${
-                    isActive
+                className={`relative flex items-center justify-center rounded-full font-bold shadow-sm transition-all duration-500 ${isActive
                         ? 'size-14 bg-gradient-to-br from-primary to-green-600 text-white ring-4 ring-primary/20 scale-110'
                         : isPast
                             ? 'size-12 bg-primary text-white'
                             : 'size-12 bg-white/70 backdrop-blur-sm text-stone-400 border-2 border-stone-200'
-                }`}
+                    }`}
             >
                 {isPast && !isActive ? (
                     <span className="material-symbols-outlined text-2xl">check</span>
@@ -237,13 +236,26 @@ export const FarmerKYC = ({ isOpen, currentUser, onClose, onComplete, required =
         setIsSubmitting(true);
         try {
             // Upload documents to Firebase Storage
+            // Note: Using uploadProductImage which stores under productImages/ path
+            // The file will be stored with timestamp prefix for uniqueness
             let aadhaarUrl = '';
             let kisanUrl = '';
             if (documents.aadhaarFile) {
-                aadhaarUrl = await firebaseService.uploadProductImage(documents.aadhaarFile, `kyc/${currentUser.uid}/aadhaar`);
+                // Create a renamed file with kyc prefix for organization
+                const aadhaarFileRenamed = new File(
+                    [documents.aadhaarFile],
+                    `kyc_aadhaar_${documents.aadhaarFile.name}`,
+                    { type: documents.aadhaarFile.type }
+                );
+                aadhaarUrl = await firebaseService.uploadProductImage(aadhaarFileRenamed, currentUser.uid);
             }
             if (documents.kisanFile) {
-                kisanUrl = await firebaseService.uploadProductImage(documents.kisanFile, `kyc/${currentUser.uid}/kisan`);
+                const kisanFileRenamed = new File(
+                    [documents.kisanFile],
+                    `kyc_kisan_${documents.kisanFile.name}`,
+                    { type: documents.kisanFile.type }
+                );
+                kisanUrl = await firebaseService.uploadProductImage(kisanFileRenamed, currentUser.uid);
             }
 
             // Save KYC data to Firestore
@@ -342,9 +354,8 @@ export const FarmerKYC = ({ isOpen, currentUser, onClose, onComplete, required =
                     {/* Step Content with slide animation */}
                     <div className="w-full max-w-2xl overflow-hidden">
                         <div
-                            className={`transform transition-all duration-500 ease-out ${
-                                slideDirection === 'right' ? 'animate-slide-in-right' : 'animate-slide-in-left'
-                            }`}
+                            className={`transform transition-all duration-500 ease-out ${slideDirection === 'right' ? 'animate-slide-in-right' : 'animate-slide-in-left'
+                                }`}
                             key={step}
                         >
                             {step === 1 && (
