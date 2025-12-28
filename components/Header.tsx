@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { User, UserRole } from '../types';
 import { ShoppingCartIcon, UserIcon, HamburgerMenuIcon, XIcon, PackageIcon, ClipboardListIcon, ChatBubbleIcon, LogoutIcon } from './icons';
+import { ModeSelector } from './ModeSelector';
 
 interface HeaderProps {
     user: User;
     onLogout: () => void;
     cartItemCount: number;
     onCartClick: () => void;
+    onSwitchRole?: () => void;
+    isRoleSwitching?: boolean;
 }
 
 const UserMenu = ({ user, onLogout }: { user: User, onLogout: () => void }) => {
@@ -25,7 +28,7 @@ const UserMenu = ({ user, onLogout }: { user: User, onLogout: () => void }) => {
                 <>
                     <div className="fixed inset-0 z-30" onClick={() => setIsOpen(false)}></div>
                     <div 
-                        className="origin-top-right absolute right-0 mt-2 w-56 rounded-2xl shadow-lg py-1 bg-white/80 backdrop-blur-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-40 animate-fade-in border border-white/40" 
+                        className="origin-top-right absolute right-0 mt-2 w-56 rounded-lg shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-40 animate-fade-in border border-gray-200" 
                         role="menu" 
                         aria-orientation="vertical"
                     >
@@ -38,7 +41,7 @@ const UserMenu = ({ user, onLogout }: { user: User, onLogout: () => void }) => {
                         </div>
                         <div className="py-1">
                             <a href="#" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors" role="menuitem">
-                               <UserIcon className="w-4 h-4 text-gray-400" /> My Profile
+                               <UserIcon className="w-4 h-4 text-gray-500" /> My Profile
                             </a>
                             <button
                                 onClick={() => {
@@ -78,7 +81,7 @@ const MobileMenu = ({ user, onLogout, cartItemCount, onCartClick, onClose }: Hea
                 onClick={e => e.stopPropagation()}
             >
                 {/* Menu Header */}
-                <div className="p-4 bg-primary text-white flex items-center justify-between">
+                <div className="p-4 bg-[#15803D] text-white flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="w-11 h-11 rounded-full bg-white/20 flex items-center justify-center font-bold text-lg">
                             {user.avatarUrl ? <img src={user.avatarUrl} alt="User" className="w-full h-full rounded-full object-cover" /> : <span>{initials}</span>}
@@ -88,7 +91,7 @@ const MobileMenu = ({ user, onLogout, cartItemCount, onCartClick, onClose }: Hea
                             <p className="text-xs opacity-80">{user.role}</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2 -mr-2 hover:bg-white/10 rounded-full transition-colors" aria-label="Close menu">
+                    <button onClick={onClose} className="p-2 -mr-2 hover:bg-white/20 rounded-full transition-colors" aria-label="Close menu">
                         <XIcon className="w-5 h-5" />
                     </button>
                 </div>
@@ -127,7 +130,7 @@ const MobileMenu = ({ user, onLogout, cartItemCount, onCartClick, onClose }: Hea
     );
 };
 
-export const Header = ({ user, onLogout, cartItemCount, onCartClick }: HeaderProps) => {
+export const Header = ({ user, onLogout, cartItemCount, onCartClick, onSwitchRole, isRoleSwitching }: HeaderProps) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     
     useEffect(() => {
@@ -147,18 +150,15 @@ export const Header = ({ user, onLogout, cartItemCount, onCartClick }: HeaderPro
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-14">
                         {/* Logo Section - Left */}
-                        <div className="flex-shrink-0 flex items-center gap-2">
-                            <span className="material-symbols-outlined text-2xl text-primary">agriculture</span>
-                            <h1 className="text-lg sm:text-xl font-heading font-bold text-gray-900 tracking-tight">
-                                Anna Bazaar
-                            </h1>
+                        <div className="flex-shrink-0 flex items-center">
+                            <img src="/logo.png" alt="Anna Bazaar" className="h-10 sm:h-12 w-auto object-contain" />
                         </div>
 
                         {/* Center Section - Search (Buyer only, hidden on mobile) */}
                         {user.role === UserRole.Buyer && (
                             <div className="hidden md:flex flex-1 max-w-lg mx-8">
                                 <label className="flex w-full items-center h-10 rounded-2xl bg-gray-50 border border-gray-200 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/20 overflow-hidden transition-all">
-                                    <div className="flex items-center justify-center pl-3 text-gray-400">
+                                    <div className="flex items-center justify-center pl-3 text-gray-500">
                                         <span className="material-symbols-outlined text-xl">search</span>
                                     </div>
                                     <input 
@@ -169,8 +169,17 @@ export const Header = ({ user, onLogout, cartItemCount, onCartClick }: HeaderPro
                             </div>
                         )}
 
-                        {/* Right Section - User Profile + Cart */}
-                        <div className="hidden md:flex items-center gap-4">
+                        {/* Right Section - Mode Selector + Cart + User Profile */}
+                        <div className="hidden md:flex items-center gap-3">
+                            {/* Mode Selector - Premium Glassmorphic Toggle */}
+                            {onSwitchRole && (
+                                <ModeSelector 
+                                    currentMode={user.role} 
+                                    onModeChange={onSwitchRole}
+                                    isLoading={isRoleSwitching}
+                                />
+                            )}
+
                             {/* Cart Icon (Buyer only) */}
                             {user.role === UserRole.Buyer && (
                                 <button 

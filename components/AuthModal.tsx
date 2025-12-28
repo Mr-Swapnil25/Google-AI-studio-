@@ -195,7 +195,7 @@ export const AuthModal = ({ isOpen, onClose, initialRole, onAuthenticated }: Aut
             <button type="button" onClick={handleGoogleSignIn} disabled={isLoading} className="w-full flex justify-center items-center py-3 px-4 border border-stone-300 rounded-2xl shadow-sm bg-white text-sm font-medium text-stone-700 hover:bg-stone-50 disabled:bg-stone-100 transition-colors">
                 {isLoading ? <Spinner /> : <><GoogleIcon className="h-5 w-5 mr-3" /> Sign in with Google</>}
             </button>
-            <div className="my-4 flex items-center"><div className="flex-grow border-t border-stone-300"></div><span className="flex-shrink mx-4 text-stone-400 text-sm">OR</span><div className="flex-grow border-t border-stone-300"></div></div>
+            <div className="my-4 flex items-center"><div className="flex-grow border-t border-stone-300"></div><span className="flex-shrink mx-4 text-gray-500 text-sm">OR</span><div className="flex-grow border-t border-stone-300"></div></div>
             <form onSubmit={handleEmailAuth}>
                 <label htmlFor="email" className="block text-sm font-medium text-stone-700">Email</label>
                 <input
@@ -276,12 +276,12 @@ export const AuthModal = ({ isOpen, onClose, initialRole, onAuthenticated }: Aut
     const roleColor = selectedRole === UserRole.Farmer ? 'text-primary' : 'text-primary';
 
     return (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-lg z-50 flex justify-center items-center p-4" onClick={onClose}>
-            <div className="relative bg-white/60 backdrop-blur-lg rounded-2xl shadow-2xl w-full max-w-md font-sans overflow-hidden animate-fade-in border border-white/30" style={{animationDuration: '200ms'}} onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex justify-center items-center p-4" onClick={onClose}>
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md font-sans overflow-hidden animate-fade-in border border-gray-200" style={{animationDuration: '200ms'}} onClick={e => e.stopPropagation()}>
                 {/* Header with role indicator */}
-                <div className="bg-gradient-to-r from-primary/10 to-secondary/10 backdrop-blur-sm px-6 pt-6 pb-4 border-b border-white/30">
-                    <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-full hover:bg-white/50 transition-colors">
-                        <XIcon className="h-5 w-5 text-stone-400" />
+                <div className="bg-gradient-to-r from-primary/5 to-secondary/5 px-6 pt-6 pb-4 border-b border-gray-200">
+                    <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition-colors">
+                        <XIcon className="h-5 w-5 text-gray-500" />
                     </button>
                     <div className="flex items-center gap-3 mb-3">
                         <div className="h-10 w-10 rounded-2xl bg-primary flex items-center justify-center shadow-lg">

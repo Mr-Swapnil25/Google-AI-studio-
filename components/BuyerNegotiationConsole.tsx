@@ -215,7 +215,7 @@ export const BuyerNegotiationConsole: React.FC<BuyerNegotiationConsoleProps> = (
                             <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-full text-xs shadow-sm">
                                 <span className="text-gray-600">Your offer:</span>
                                 <span className="font-bold font-mono text-primary">₹{negotiation.offeredPrice}/kg</span>
-                                <span className="text-gray-400">×</span>
+                                <span className="text-gray-500">×</span>
                                 <span className="font-medium font-mono">{negotiation.quantity}kg</span>
                                 <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium uppercase ${
                                     negotiation.status === NegotiationStatus.Accepted ? 'bg-green-100 text-green-700' :
@@ -237,7 +237,7 @@ export const BuyerNegotiationConsole: React.FC<BuyerNegotiationConsoleProps> = (
                                     </div>
                                     <div className={`px-3 py-2 rounded-2xl text-sm ${isMe ? 'bg-primary/10 text-gray-900' : 'bg-white border border-gray-200'}`}>
                                         <p>{msg.text}</p>
-                                        <span className="text-[10px] text-gray-400 mt-1 block">
+                                        <span className="text-[10px] text-gray-500 mt-1 block">
                                             {new Date(msg.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
                                         </span>
                                     </div>
@@ -246,7 +246,7 @@ export const BuyerNegotiationConsole: React.FC<BuyerNegotiationConsoleProps> = (
                         })}
 
                         {messages.length === 0 && (
-                            <p className="text-center text-xs text-gray-400 py-4">Start a conversation</p>
+                            <p className="text-center text-xs text-gray-500 py-4">Start a conversation</p>
                         )}
 
                         {/* Status Badges */}
@@ -322,7 +322,7 @@ export const BuyerNegotiationConsole: React.FC<BuyerNegotiationConsoleProps> = (
                                     <span className="font-medium text-primary">₹{counterPrice}</span>
                                     <span>₹{priceBand.targetPrice}</span>
                                 </div>
-                                <div className="flex justify-between text-[10px] text-gray-400 mt-0.5">
+                                <div className="flex justify-between text-[10px] text-gray-500 mt-0.5">
                                     <span>Floor</span>
                                     <span>Your Offer</span>
                                     <span>Fair</span>
@@ -416,7 +416,7 @@ export const BuyerNegotiationConsole: React.FC<BuyerNegotiationConsoleProps> = (
                                     className={`w-full h-10 rounded-2xl font-semibold text-sm transition-colors ${
                                         canSubmitOffer
                                             ? 'bg-accent text-gray-900 hover:bg-accent-dark'
-                                            : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                            : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                                     }`}
                                 >
                                     {canSubmitOffer ? 'Update Offer' : 'Invalid Offer'}
@@ -465,7 +465,7 @@ export const BuyerNegotiationConsole: React.FC<BuyerNegotiationConsoleProps> = (
                                 <div className="w-px h-3 bg-gray-300 ml-2.5" />
                                 <div className="flex items-center gap-2">
                                     <div className={`size-5 rounded-full border ${isAgreement ? 'bg-gray-100 border-gray-300' : 'border-gray-300'} flex items-center justify-center`}>
-                                        <span className="material-symbols-outlined text-gray-400 text-xs">payments</span>
+                                        <span className="material-symbols-outlined text-gray-500 text-xs">payments</span>
                                     </div>
                                     <span className="text-xs text-gray-500">Payment</span>
                                 </div>

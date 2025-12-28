@@ -104,8 +104,8 @@ export const NegotiationModal = ({ isOpen, onClose, item, userRole, onSubmit }: 
     const inputClasses = `mt-1 block w-full rounded-xl bg-stone-100 text-stone-900 placeholder-stone-500 px-4 py-3 border border-stone-200 focus:outline-none focus:ring-2 ${ringColorClass}`;
 
     return (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-lg z-30 flex justify-center items-center p-4" onClick={onClose}>
-            <div className="bg-white/60 backdrop-blur-lg rounded-2xl shadow-2xl p-6 w-full max-w-md font-sans animate-fade-in border border-white/30" style={{ animationDuration: '200ms' }} onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-30 flex justify-center items-center p-4" onClick={onClose}>
+            <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md font-sans animate-fade-in border border-gray-200" style={{ animationDuration: '200ms' }} onClick={e => e.stopPropagation()}>
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-2xl font-bold font-heading text-stone-900">
                         {isFarmerCountering ? 'Make Counter-Offer' : 'Negotiate Bulk Order'}

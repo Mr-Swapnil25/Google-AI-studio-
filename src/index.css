@@ -5,9 +5,9 @@
 @tailwind utilities;
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   ANNA BAZAAR - SHARP B2B DESIGN SYSTEM
-   Typography: Syne (Headings) + Inter (Body) + JetBrains Mono (Prices/Data)
-   Sharp Edges | Strategic Glassmorphism | Apple-Grade Professional
+   ANNA BAZAAR - CLEAN B2B SAAS DESIGN SYSTEM
+   Inspired by: Stripe, Linear, Vercel
+   Clean White Backgrounds | High Contrast | Eye-Soothing | Professional
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @layer base {
@@ -18,88 +18,74 @@
   }
 
   body {
-    @apply bg-background-light text-text-main font-sans leading-normal;
+    @apply bg-[#FAFBFC] text-[#1F2937] font-sans leading-relaxed;
     font-family: 'Inter', system-ui, sans-serif;
   }
 
-  /* Typography System - Sharp B2B Professional */
+  /* Typography System - Clean & Professional */
   h1, h2, h3, h4, h5, h6 {
-    @apply font-heading font-bold tracking-tight leading-tight;
+    @apply font-heading font-bold tracking-tight leading-tight text-[#0F172A];
     font-family: 'Syne', system-ui, sans-serif;
   }
 
-  /* Display: H1 - 48px desktop / 32px mobile */
   h1 { @apply text-2xl md:text-4xl lg:text-5xl; }
-  /* H2 - 36px desktop / 28px mobile */
   h2 { @apply text-xl md:text-3xl lg:text-4xl; }
-  /* H3 - 28px desktop / 24px mobile */
   h3 { @apply text-lg md:text-2xl lg:text-3xl font-semibold; }
-  /* H4 - 20px */
   h4 { @apply text-base md:text-xl font-semibold; }
 
-  /* Body text: Inter for readability */
   p, span, div {
     font-family: 'Inter', system-ui, sans-serif;
+    @apply text-[#475569];
   }
 
-  /* Prices and Numbers - JetBrains Mono for tabular alignment */
   .price, .currency, [data-price], .font-data, .font-mono {
     font-family: 'JetBrains Mono', monospace;
     font-feature-settings: 'tnum' on;
     font-variant-numeric: tabular-nums;
   }
 
-  /* Labels: Small, uppercase, tracked */
   .text-label {
-    @apply text-xs font-semibold uppercase tracking-wide;
+    @apply text-xs font-semibold uppercase tracking-wide text-[#64748B];
     font-family: 'Inter', system-ui, sans-serif;
   }
 }
 
 @layer components {
   /* ═══════════════════════════════════════════════════════════════════════════
-     SOFT ROUNDED GLASSMORPHIC DESIGN SYSTEM
-     Elegant curves + subtle blur + depth shadows
+     CLEAN WHITE CARDS - No more glassmorphism everywhere
+     Pure white backgrounds, subtle borders, soft shadows
   ═══════════════════════════════════════════════════════════════════════════ */
 
-  /* ═══════════════════════════════════════════════════════════════════════════
-     GLASSMORPHIC CARDS - Soft, rounded, premium feel
-  ═══════════════════════════════════════════════════════════════════════════ */
-
-  /* Premium Glass Card - For product cards, main content */
+  /* Primary Card - Clean white with subtle shadow */
   .card-glass {
-    @apply rounded-3xl bg-white/70 backdrop-blur-md border border-white/40 shadow-lg p-6;
+    @apply rounded-lg bg-white border border-[#E2E8F0] shadow-sm p-6;
   }
 
-  /* Standard Glass Card - For medium containers */
   .card-glass-md {
-    @apply rounded-2xl bg-white/70 backdrop-blur-md border border-white/40 shadow-lg p-5;
+    @apply rounded-lg bg-white border border-[#E2E8F0] shadow-sm p-5;
   }
 
-  /* Subtle Glass Card - For nested content */
   .card-glass-subtle {
-    @apply rounded-2xl bg-white/80 backdrop-blur-sm border border-white/50 shadow-md p-4;
+    @apply rounded-lg bg-white border border-[#E2E8F0] shadow-sm p-4;
   }
 
-  /* Legacy card-pro - now glassmorphic */
   .card-pro {
-    @apply rounded-2xl bg-white/70 backdrop-blur-md border border-white/40 shadow-lg;
+    @apply rounded-lg bg-white border border-[#E2E8F0] shadow-sm;
   }
 
-  /* Information Strip - Dense data display */
   .info-strip {
-    @apply flex items-center justify-between px-3 py-2 border-b border-gray-100/50 last:border-b-0;
+    @apply flex items-center justify-between px-3 py-2 border-b border-gray-100 last:border-b-0;
   }
 
   /* ═══════════════════════════════════════════════════════════════════════════
-     SOFT ROUNDED INPUTS - Elegant form fields
+     CLEAN INPUTS - White background, gray borders
   ═══════════════════════════════════════════════════════════════════════════ */
 
   .input-glass {
-    @apply w-full h-11 px-4 rounded-xl bg-white/90 backdrop-blur-sm 
-           border border-gray-300 text-sm font-medium
-           placeholder:text-gray-400 
-           focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20
+    @apply w-full h-11 px-4 rounded-lg bg-white 
+           border border-[#D1D5DB] text-sm font-medium text-[#475569]
+           placeholder:text-[#9CA3AF] 
+           focus:outline-none focus:border-[#15803D] focus:ring-2 focus:ring-[#15803D]/20
            transition-all;
   }
 
@@ -108,15 +94,15 @@
   }
 
   /* ═══════════════════════════════════════════════════════════════════════════
-     SOFT ROUNDED BUTTONS - Elegant, touchable
+     CLEAN BUTTONS - Solid colors, no glass effects
   ═══════════════════════════════════════════════════════════════════════════ */
 
   .btn-soft {
-    @apply h-11 px-5 inline-flex items-center justify-center gap-2
-           text-sm font-semibold rounded-xl shadow-md
+    @apply h-12 px-6 inline-flex items-center justify-center gap-2
+           text-sm font-semibold rounded-lg shadow-sm
            transition-all duration-200
            focus:outline-none focus:ring-2 focus:ring-offset-2
-           hover:shadow-lg hover:-translate-y-0.5;
+           hover:shadow-md;
   }
 
   .btn-pro {
@@ -124,53 +110,52 @@
   }
 
   .btn-primary {
-    @apply btn-soft bg-primary text-white hover:bg-primary-dark focus:ring-primary/50;
+    @apply btn-soft bg-[#15803D] text-white hover:bg-[#166534] focus:ring-[#15803D]/50;
   }
 
   .btn-secondary {
-    @apply btn-soft bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 focus:ring-gray-200;
+    @apply btn-soft bg-white text-[#475569] border border-[#E2E8F0] hover:bg-[#F3F4F6] focus:ring-gray-200;
   }
 
   .btn-accent {
-    @apply btn-soft bg-accent text-gray-900 hover:bg-accent-dark focus:ring-accent/50;
+    @apply btn-soft bg-[#FFB703] text-[#0F172A] hover:bg-[#E5A503] focus:ring-[#FFB703]/50;
   }
 
   /* ═══════════════════════════════════════════════════════════════════════════
-     GLASSMORPHIC MODALS & OVERLAYS - Maximum blur effect
+     MODALS - Only place where backdrop blur is allowed
   ═══════════════════════════════════════════════════════════════════════════ */
 
-  /* Modal Backdrop - Blurred background */
   .modal-backdrop {
-    @apply fixed inset-0 backdrop-blur-lg bg-black/40 flex items-center justify-center z-50;
+    @apply fixed inset-0 backdrop-blur-md bg-black/30 flex items-center justify-center z-50;
   }
 
-  /* Modal Content - Premium glass effect */
+  /* Modal content - clean white, no glass */
   .modal-glass {
-    @apply rounded-2xl bg-white/60 backdrop-blur-lg border border-white/30 shadow-2xl p-6 md:p-8;
+    @apply rounded-2xl bg-white border border-[#E2E8F0] shadow-2xl p-6 md:p-8;
   }
 
-  /* Glassmorphic Modal - Legacy class */
   .glass-modal {
-    @apply rounded-2xl bg-white/60 backdrop-blur-lg border border-white/30 shadow-2xl;
+    @apply rounded-2xl bg-white border border-[#E2E8F0] shadow-2xl;
   }
 
-  /* Glassmorphic Overlay - For floating elements */
   .glass-overlay {
-    @apply rounded-2xl bg-white/70 backdrop-blur-md border border-white/40 shadow-xl;
+    @apply rounded-lg bg-white border border-[#E2E8F0] shadow-lg;
   }
 
-  /* Dark glass for dramatic overlays */
   .glass-dark {
-    @apply backdrop-blur-lg bg-black/40;
+    @apply backdrop-blur-md bg-black/30;
   }
 
-  /* Widget glass - subtle, for sidebar widgets */
   .glass-widget {
-    @apply rounded-2xl bg-white/50 backdrop-blur-sm border border-white/30 shadow-md;
+    @apply rounded-lg bg-white border border-[#E2E8F0] shadow-sm;
+  }
+
+  .glass-panel {
+    @apply rounded-lg bg-white border border-[#E2E8F0] shadow-sm;
   }
 
   /* ═══════════════════════════════════════════════════════════════════════════
-     STATUS BADGES - Soft rounded
+     STATUS BADGES - Clean, readable
   ═══════════════════════════════════════════════════════════════════════════ */
 
   .badge {
@@ -182,51 +167,52 @@
   .badge-error { @apply bg-red-100 text-red-700 border border-red-200; }
   .badge-info { @apply bg-blue-100 text-blue-700 border border-blue-200; }
 
-  /* Trading Desk Table Row */
   .trade-row {
-    @apply flex items-center gap-3 px-3 py-2.5 border-b border-gray-100 hover:bg-gray-50 transition-colors;
+    @apply flex items-center gap-3 px-3 py-2.5 border-b border-gray-100 hover:bg-[#F3F4F6] transition-colors;
   }
 
-  /* Section Container - Sharp */
   .section-container {
-    @apply bg-white border border-gray-200 rounded-sm overflow-hidden;
+    @apply bg-white border border-[#E2E8F0] rounded-lg overflow-hidden;
   }
 
   .section-header {
-    @apply px-4 py-3 border-b border-gray-200 bg-gray-50;
+    @apply px-4 py-3 border-b border-[#E2E8F0] bg-[#F9FAFB];
   }
 
-  /* Mobile-first responsive padding */
   .container-mobile {
     @apply px-4 sm:px-6 lg:px-8;
   }
 
   /* ═══════════════════════════════════════════════════════════════════════════
-     SIDEBAR COMPONENTS - Sharp edges, 240px width
+     SIDEBAR - Clean white, subtle border
   ═══════════════════════════════════════════════════════════════════════════ */
   
   .sidebar {
-    @apply fixed lg:static inset-y-0 z-40 w-60 bg-white border-r border-gray-200 flex flex-col h-full;
+    @apply fixed lg:static inset-y-0 z-40 w-60 bg-white border-r border-[#E2E8F0] flex flex-col h-full;
   }
 
   .sidebar-nav-item {
-    @apply h-11 flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-600 
-           hover:bg-gray-50 hover:text-gray-900 transition-colors rounded-sm mx-2;
+    @apply h-11 flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#475569] 
+           hover:bg-[#F3F4F6] hover:text-[#0F172A] transition-colors rounded-lg mx-2;
   }
 
   .sidebar-nav-item.active {
-    @apply bg-primary/10 text-primary border-l-4 border-primary rounded-l-none;
+    @apply bg-[#15803D]/10 text-[#15803D] border-l-4 border-[#15803D] rounded-l-none;
   }
 
   .sidebar-logout {
     @apply mt-auto h-11 flex items-center gap-3 px-4 py-3 mx-2 mb-4 text-sm font-medium 
-           text-red-600 hover:bg-red-50 rounded-sm transition-colors;
+           text-[#DC2626] hover:bg-red-50 rounded-lg transition-colors;
   }
 
-  /* Cart Badge - Keep rounded-full for circles */
   .cart-badge {
-    @apply absolute -top-1.5 -right-1.5 bg-red-600 text-white text-xs font-bold 
+    @apply absolute -top-1.5 -right-1.5 bg-[#DC2626] text-white text-xs font-bold 
            w-5 h-5 flex items-center justify-center rounded-full;
+  }
+
+  /* Ethereal background - now clean gradient */
+  .ethereal-bg {
+    @apply bg-gradient-to-br from-[#15803D]/5 via-white to-[#15803D]/5;
   }
 }
 

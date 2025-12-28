@@ -87,7 +87,7 @@ export const NeonProgressBar: React.FC<NeonProgressBarProps> = ({
                     ? 'size-16 md:size-20 bg-gradient-to-br from-primary to-green-600 text-white shadow-[0_0_25px_rgba(19,236,30,0.5)] ring-4 ring-white'
                     : isPast
                       ? 'size-14 md:size-16 bg-gradient-to-br from-primary to-green-600 text-white shadow-lg'
-                      : 'size-14 md:size-16 bg-white/70 backdrop-blur-md text-stone-400 border-2 border-white/80 shadow-sm'
+                      : 'size-14 md:size-16 bg-white text-gray-500 border-2 border-gray-200 shadow-sm'
                 }`}
               >
                 {/* Step number or check mark */}

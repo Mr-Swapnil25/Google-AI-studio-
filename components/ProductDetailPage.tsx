@@ -198,7 +198,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                                         Bulk Lot / Negotiable
                                     </span>
                                 </div>
-                                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full text-xs font-bold shadow-sm flex items-center gap-1">
+                                <div className="absolute top-4 right-4 bg-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm flex items-center gap-1 border border-gray-200">
                                     <span className="material-symbols-outlined text-sm">zoom_in</span> 
                                     Click to Zoom
                                 </div>

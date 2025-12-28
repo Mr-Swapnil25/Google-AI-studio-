@@ -164,8 +164,7 @@ export const FarmerWallet: React.FC<FarmerWalletProps> = ({ farmerId, onNavigate
 
     setIsProcessing(true);
     try {
-      // In a real scenario, this would redirect to a payment gateway
-      // For now, we'll create a pending transaction
+      // Create a pending transaction for the top-up
       const txId = await firebaseService.createTransaction({
         farmerId,
         type: 'TopUp',
@@ -177,24 +176,37 @@ export const FarmerWallet: React.FC<FarmerWalletProps> = ({ farmerId, onNavigate
         },
       });
 
-      showToast(
-        'Redirecting to payment gateway...\nThis is a demo. In production, you would complete payment.',
-        'info'
-      );
+      // Import Dodo Payment service dynamically
+      const { dodoPaymentService } = await import('../services/dodoPaymentService');
       
-      // Simulate successful payment after 2 seconds (demo)
-      setTimeout(async () => {
-        await firebaseService.updateTransaction(txId, {
-          status: 'Completed',
-        });
-        showToast('Top-up completed successfully!', 'success');
-        setTopUpModal({ isOpen: false, amount: 0, paymentMethod: 'upi' });
-      }, 2000);
+      if (!dodoPaymentService.isConfigured()) {
+        showToast('Payment service not configured. Please contact support.', 'error');
+        await firebaseService.updateTransaction(txId, { status: 'Failed' });
+        return;
+      }
+
+      // Create payment link via Dodo
+      const result = await dodoPaymentService.createPaymentLink({
+        amount: topUpModal.amount,
+        productName: 'Wallet Top-Up',
+        productDescription: `Top-up ₹${topUpModal.amount} to Anna Bazaar wallet`,
+        orderId: txId,
+        returnUrl: `${window.location.origin}?topup=success&txId=${txId}`,
+      });
+
+      if (result.success && result.checkoutUrl) {
+        showToast('Redirecting to payment gateway...', 'info');
+        // Redirect to Dodo checkout
+        window.location.href = result.checkoutUrl;
+      } else {
+        throw new Error(result.error || 'Failed to create payment link');
+      }
     } catch (error) {
       console.error('Top-up failed:', error);
       showToast('Failed to process top-up. Please try again.', 'error');
     } finally {
       setIsProcessing(false);
+      setTopUpModal({ isOpen: false, amount: 0, paymentMethod: 'upi' });
     }
   };
 
@@ -255,17 +267,11 @@ export const FarmerWallet: React.FC<FarmerWalletProps> = ({ farmerId, onNavigate
   const changePercentage = wallet.balance > 0 ? ((wallet.weeklyChange / wallet.balance) * 100).toFixed(1) : '0';
 
   return (
-    <div className="h-screen w-full overflow-hidden text-slate-800 bg-background-light dark:bg-background-dark relative">
-      {/* Background blobs */}
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-blue-200 blur-[120px] mix-blend-multiply filter animate-blob opacity-40"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-green-200 blur-[120px] mix-blend-multiply filter animate-blob animation-delay-2000 opacity-40"></div>
-        <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] rounded-full bg-purple-200 blur-[100px] mix-blend-multiply filter animate-blob animation-delay-4000 opacity-40"></div>
-      </div>
+    <div className="h-screen w-full overflow-hidden text-slate-800 bg-[#FAFBFC] relative">
 
       <div className="flex h-full w-full relative">
         {/* Desktop Sidebar - Hidden on mobile */}
-        <aside className="hidden lg:flex w-80 border-r border-white/50 bg-white/40 backdrop-blur-2xl p-6 overflow-y-auto shadow-card flex-col gap-10">
+        <aside className="hidden lg:flex w-80 border-r border-gray-200 bg-white p-6 overflow-y-auto shadow-sm flex-col gap-10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4 group">
               <div className="relative flex items-center justify-center h-12 w-12 rounded-2xl bg-gradient-to-br from-primary to-primary-dark text-white shadow-card">
@@ -296,7 +302,7 @@ export const FarmerWallet: React.FC<FarmerWalletProps> = ({ farmerId, onNavigate
                 className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all text-left font-medium ${
                   item.id === 'wallet'
                     ? 'bg-primary/90 text-white shadow-lg'
-                    : 'text-slate-600 hover:bg-white/60 hover:text-slate-900'
+                    : 'text-slate-600 hover:bg-gray-100 hover:text-slate-900'
                 }`}
               >
                 <span className="material-symbols-outlined text-xl">{item.icon}</span>
@@ -317,7 +323,7 @@ export const FarmerWallet: React.FC<FarmerWalletProps> = ({ farmerId, onNavigate
         </div>
 
         <div
-          className={`fixed left-0 top-0 h-screen w-80 bg-white/95 backdrop-blur-2xl shadow-xl z-50 transform transition-transform duration-300 overflow-y-auto ${
+          className={`fixed left-0 top-0 h-screen w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 overflow-y-auto ${
             drawerOpen ? 'translate-x-0' : '-translate-x-full'
           } lg:hidden`}
         >
@@ -388,7 +394,7 @@ export const FarmerWallet: React.FC<FarmerWalletProps> = ({ farmerId, onNavigate
             <h2 className="text-2xl font-bold text-slate-800">My Wallet</h2>
             <button
               onClick={() => setDrawerOpen(true)}
-              className="p-3 rounded-2xl bg-white/60 backdrop-blur-md hover:bg-white/80 transition-colors shadow-sm border border-white/50"
+              className="p-3 rounded-lg bg-white hover:bg-gray-50 transition-colors shadow-sm border border-gray-200"
             >
               <span className="material-symbols-outlined text-2xl text-slate-700">menu</span>
             </button>
@@ -396,7 +402,7 @@ export const FarmerWallet: React.FC<FarmerWalletProps> = ({ farmerId, onNavigate
           <div className="max-w-6xl mx-auto flex flex-col gap-8">
             {/* Balance Section */}
             <section className="glass-panel rounded-[2.5rem] p-0 relative overflow-hidden ethereal-bg shadow-lg border border-white/60">
-              <div className="absolute top-0 right-0 w-96 h-96 bg-white/30 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none"></div>
+              <div className="absolute top-0 right-0 w-96 h-96 bg-gray-100 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none opacity-50"></div>
               <div className="p-6 md:p-12 relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
                 {/* Left side - Balance info */}
                 <div className="flex flex-col gap-6 w-full lg:w-1/2">
@@ -416,7 +422,7 @@ export const FarmerWallet: React.FC<FarmerWalletProps> = ({ farmerId, onNavigate
                       .{String(Math.floor((wallet.balance % 1) * 100)).padStart(2, '0')}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 text-green-600 font-bold bg-green-100/60 px-4 py-1.5 rounded-full w-fit backdrop-blur-md border border-green-200 shadow-sm">
+                  <div className="flex items-center gap-2 text-green-600 font-bold bg-green-100 px-4 py-1.5 rounded-full w-fit border border-green-200 shadow-sm">
                     <span className="material-symbols-outlined text-lg">trending_up</span>
                     <span>+ {changePercentage}% this week</span>
                   </div>
@@ -429,7 +435,7 @@ export const FarmerWallet: React.FC<FarmerWalletProps> = ({ farmerId, onNavigate
                     className="group flex-1 relative overflow-hidden rounded-2xl p-[1px] bg-gradient-to-b from-blue-300 to-blue-500 active:scale-95 transition-all shadow-lg hover:shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={isProcessing}
                   >
-                    <div className="relative flex items-center justify-center gap-3 px-6 py-4 bg-white/95 group-hover:bg-white rounded-2xl transition-colors h-full">
+                    <div className="relative flex items-center justify-center gap-3 px-6 py-4 bg-white group-hover:bg-gray-50 rounded-2xl transition-colors h-full">
                       <div className="bg-blue-50 rounded-2xl p-2.5 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-inner group-hover:shadow-glow">
                         <span className="material-symbols-outlined text-2xl">upload</span>
                       </div>
@@ -441,9 +447,9 @@ export const FarmerWallet: React.FC<FarmerWalletProps> = ({ farmerId, onNavigate
                     className="group flex-1 relative overflow-hidden rounded-2xl bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/30 hover:shadow-green-500/50 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={isProcessing}
                   >
-                    <div className="absolute inset-0 bg-white/10 group-hover:bg-transparent transition-colors"></div>
+                    <div className="absolute inset-0 bg-white/5 group-hover:bg-transparent transition-colors"></div>
                     <div className="relative flex items-center justify-center gap-3 px-6 py-4 h-full">
-                      <div className="bg-white/20 rounded-2xl p-2.5 flex items-center justify-center backdrop-blur-md shadow-inner">
+                      <div className="bg-white/20 rounded-2xl p-2.5 flex items-center justify-center shadow-inner">
                         <span className="material-symbols-outlined text-2xl">download</span>
                       </div>
                       <span className="text-lg font-bold">Top Up</span>
@@ -461,7 +467,7 @@ export const FarmerWallet: React.FC<FarmerWalletProps> = ({ farmerId, onNavigate
                       <span className="sm:hidden">Trend</span>
                     </h3>
                     <div className="flex gap-2">
-                      <span className="text-xs font-semibold bg-white/50 px-2 sm:px-3 py-1 rounded-full text-slate-500 cursor-pointer hover:bg-white transition-colors border border-white/30">
+                      <span className="text-xs font-semibold bg-gray-100 px-2 sm:px-3 py-1 rounded-full text-slate-500 cursor-pointer hover:bg-gray-200 transition-colors border border-gray-200">
                         30 Days
                       </span>
                       <span className="text-xs font-semibold bg-white px-2 sm:px-3 py-1 rounded-full text-primary shadow-sm border border-primary/10">
@@ -472,7 +478,7 @@ export const FarmerWallet: React.FC<FarmerWalletProps> = ({ farmerId, onNavigate
 
                   {/* Graph Visualization */}
                   <div className="relative w-full h-[160px] sm:h-[180px] graph-container flex-1">
-                    <div className="absolute inset-0 flex flex-col justify-between text-xs text-slate-400 font-medium z-0 pointer-events-none">
+                    <div className="absolute inset-0 flex flex-col justify-between text-xs text-gray-500 font-medium z-0 pointer-events-none">
                       <div className="w-full border-b border-dashed border-slate-300/50 pb-1">₹25k</div>
                       <div className="w-full border-b border-dashed border-slate-300/50 pb-1">₹15k</div>
                       <div className="w-full border-b border-dashed border-slate-300/50 pb-1">₹5k</div>
@@ -512,7 +518,7 @@ export const FarmerWallet: React.FC<FarmerWalletProps> = ({ farmerId, onNavigate
                     </svg>
                   </div>
 
-                  <div className="flex justify-between mt-3 px-2 text-[10px] text-slate-400 font-medium">
+                  <div className="flex justify-between mt-3 px-2 text-[10px] text-gray-500 font-medium">
                     <span>Oct 1</span>
                     <span className="hidden sm:inline">Oct 8</span>
                     <span>Oct 15</span>
@@ -530,7 +536,7 @@ export const FarmerWallet: React.FC<FarmerWalletProps> = ({ farmerId, onNavigate
                 <div className="h-8 w-1.5 bg-gradient-to-b from-primary to-blue-300 rounded-full shadow-glow"></div>
                 <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Recent Transactions</h2>
               </div>
-              <button className="hidden md:flex items-center gap-2 text-primary font-bold hover:text-white transition-all bg-white/60 hover:bg-primary px-5 py-2.5 rounded-full border border-white/60 shadow-sm hover:shadow-glow group">
+              <button className="hidden md:flex items-center gap-2 text-primary font-bold hover:text-white transition-all bg-white hover:bg-primary px-5 py-2.5 rounded-full border border-gray-200 shadow-sm hover:shadow-glow group">
                 <span>View All</span>
                 <span className="material-symbols-outlined text-sm transform group-hover:translate-x-1 transition-transform">
                   arrow_forward
@@ -572,7 +578,7 @@ export const FarmerWallet: React.FC<FarmerWalletProps> = ({ farmerId, onNavigate
 
                     {/* Content */}
                     <div className="flex flex-col gap-2 z-10 pl-6">
-                      <span className="text-slate-400 font-medium text-sm flex items-center gap-2">
+                      <span className="text-gray-500 font-medium text-sm flex items-center gap-2">
                         <span className={`size-2 bg-${color}-400 rounded-full ${transaction.status === TransactionStatus.Pending ? 'animate-pulse' : ''}`}></span>
                         {new Date(transaction.timestamp).toLocaleDateString('en-IN', {
                           month: 'short',
@@ -587,7 +593,7 @@ export const FarmerWallet: React.FC<FarmerWalletProps> = ({ farmerId, onNavigate
                     {/* Amount and Status */}
                     <div className="mt-8 flex items-end justify-between z-10">
                       <div className="flex flex-col">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">
                           {isIncoming ? 'Received Amount' : 'Amount'}
                         </span>
                         <span className={`text-3xl font-black drop-shadow-sm group-hover:text-${color}-500 transition-colors ${isIncoming ? `text-${color}-600` : `text-${color}-500`}`}>
@@ -606,12 +612,12 @@ export const FarmerWallet: React.FC<FarmerWalletProps> = ({ farmerId, onNavigate
 
             {wallet.transactions.length === 0 && (
               <div className="text-center py-12">
-                <span className="material-symbols-outlined text-6xl text-slate-300 mx-auto block">inbox</span>
-                <p className="text-slate-400 mt-4 font-medium">No transactions yet</p>
+                <span className="material-symbols-outlined text-6xl text-slate-400 mx-auto block">inbox</span>
+                <p className="text-slate-500 mt-4 font-medium">No transactions yet</p>
               </div>
             )}
 
-            <button className="md:hidden flex w-full items-center justify-center gap-2 text-primary font-bold bg-white/70 backdrop-blur-md px-6 py-4 rounded-full shadow-lg border border-white/50 mt-4 active:scale-95 transition-transform">
+            <button className="md:hidden flex w-full items-center justify-center gap-2 text-primary font-bold bg-white px-6 py-4 rounded-full shadow-lg border border-gray-200 mt-4 active:scale-95 transition-transform">
               <span>View All Transactions</span>
               <span className="material-symbols-outlined text-sm">arrow_forward</span>
             </button>

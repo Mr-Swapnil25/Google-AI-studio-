@@ -43,9 +43,9 @@ export const ChatBot = ({ isOpen, onClose, messages, onSendMessage, isLoading }:
             
             {/* Chat Window */}
             <div className="fixed bottom-24 right-4 sm:right-6 lg:right-8 z-40" aria-modal="true" role="dialog" aria-labelledby="chatbot-title">
-                <div className="bg-white/70 backdrop-blur-lg rounded-2xl shadow-xl w-[calc(100vw-2rem)] sm:w-96 h-[60vh] flex flex-col font-sans animate-slide-in-up border border-white/40" style={{ animationDuration: '300ms' }}>
+                <div className="bg-white rounded-2xl shadow-xl w-[calc(100vw-2rem)] sm:w-96 h-[60vh] flex flex-col font-sans animate-slide-in-up border border-gray-200" style={{ animationDuration: '300ms' }}>
                     {/* Header */}
-                    <header className="flex items-center justify-between p-4 border-b border-white/30 bg-white/50 backdrop-blur-sm rounded-t-2xl">
+                    <header className="flex items-center justify-between p-4 border-b border-gray-200 bg-[#F9FAFB] rounded-t-2xl">
                         <div className="flex items-center space-x-2">
                              <SparklesIcon className="h-6 w-6 text-primary" />
                             <h2 id="chatbot-title" className="text-lg font-bold font-heading text-stone-800">Anna Helper</h2>
@@ -63,7 +63,7 @@ export const ChatBot = ({ isOpen, onClose, messages, onSendMessage, isLoading }:
                                      <span className={`${useThinkingMode ? 'translate-x-5' : 'translate-x-1'} inline-block h-3 w-3 transform rounded-full bg-white transition-transform`} />
                                  </button>
                              </div>
-                            <button onClick={onClose} className="text-stone-400 hover:text-stone-600" aria-label="Close chat">
+                            <button onClick={onClose} className="text-gray-500 hover:text-gray-700" aria-label="Close chat">
                                <XIcon className="h-5 w-5"/>
                             </button>
                         </div>

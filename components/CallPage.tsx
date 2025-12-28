@@ -225,13 +225,13 @@ export const CallPage: React.FC<CallPageProps> = ({
             <div>
               <h1 className="text-white font-bold text-lg">Anna Bazaar Call</h1>
               {productName && (
-                <p className="text-white/70 text-sm">Discussing: {productName}</p>
+                <p className="text-white/90 text-sm">Discussing: {productName}</p>
               )}
             </div>
           </div>
           {otherPartyName && (
             <div className="text-right">
-              <p className="text-white/70 text-sm">Connected with</p>
+              <p className="text-white/90 text-sm">Connected with</p>
               <p className="text-white font-medium">{otherPartyName}</p>
             </div>
           )}
@@ -244,7 +244,7 @@ export const CallPage: React.FC<CallPageProps> = ({
           <div className="text-center">
             <div className="w-16 h-16 border-4 border-[#2E7D32] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-white text-lg font-medium">Connecting to call...</p>
-            <p className="text-white/60 text-sm mt-2">Please wait while we set up your video</p>
+            <p className="text-white/80 text-sm mt-2">Please wait while we set up your video</p>
           </div>
         </div>
       )}

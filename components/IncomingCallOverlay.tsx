@@ -93,7 +93,7 @@ export const IncomingCallOverlay: React.FC<IncomingCallOverlayProps> = ({
             <p className="text-white/70 text-sm">
               Regarding: <span className="font-medium text-white">{productName}</span>
             </p>
-            <p className="text-white/50 text-xs mt-2">
+            <p className="text-white/70 text-xs mt-2">
               Ringing for {ringDuration}s...
             </p>
           </div>
@@ -128,7 +128,7 @@ export const IncomingCallOverlay: React.FC<IncomingCallOverlayProps> = ({
           </div>
 
           {/* Anna Bazaar Branding */}
-          <div className="mt-6 flex items-center justify-center gap-2 text-white/40 text-xs">
+          <div className="mt-6 flex items-center justify-center gap-2 text-white/60 text-xs">
             <span className="material-symbols-outlined text-sm">agriculture</span>
             <span>Anna Bazaar Video Call</span>
           </div>

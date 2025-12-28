@@ -32,12 +32,12 @@ const AddToCartModal: React.FC<{
         <>
             {/* Backdrop */}
             <div 
-                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+                className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50"
                 onClick={onClose}
             />
             {/* Modal */}
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                <div className="bg-white/60 backdrop-blur-lg rounded-2xl shadow-2xl max-w-md w-full p-6 animate-fade-in border border-white/30">
+                <div className="bg-white rounded-lg shadow-2xl max-w-md w-full p-6 animate-fade-in border border-gray-200">
                     <div className="flex items-center gap-4 mb-4">
                         <img 
                             src={product.imageUrl} 
@@ -147,11 +147,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
     return (
         <>
-            <div className="bg-white/70 backdrop-blur-md rounded-3xl shadow-lg overflow-hidden group transform hover:-translate-y-1 transition-all duration-300 flex flex-col h-full border border-white/40 hover:shadow-xl">
+            <div className="bg-white rounded-lg shadow-sm overflow-hidden group transform hover:-translate-y-1 transition-all duration-300 flex flex-col h-full border border-gray-200 hover:shadow-lg">
                 <div className="relative">
                     <button 
                         onClick={() => onToggleWishlist(product.id)}
-                        className={`absolute top-3 right-3 z-10 p-2 rounded-full transition-all duration-300 ${isInWishlist ? 'bg-red-500/20 text-red-500' : 'text-stone-500 bg-white/70 backdrop-blur-sm hover:text-red-500 hover:bg-white'}`}
+                        className={`absolute top-3 right-3 z-10 p-2 rounded-full transition-all duration-300 ${isInWishlist ? 'bg-red-500/20 text-red-500' : 'text-stone-500 bg-white shadow-sm hover:text-red-500 hover:bg-gray-50'}`}
                         aria-label={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
                     >
                         <HeartIcon isFilled={isInWishlist} className="w-5 h-5" />

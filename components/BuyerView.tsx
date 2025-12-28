@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { Product, Negotiation, ProductType, NegotiationStatus, ProductCategory, Farmer, ChatMessage, User, CartItem } from '../types';
+import { Product, Negotiation, ProductType, NegotiationStatus, ProductCategory, Farmer, ChatMessage, User, CartItem, UserRole } from '../types';
 import { XIcon, ShoppingCartIcon } from './icons';
 import { ProductDetailPage } from './ProductDetailPage';
 import { BuyerNegotiationConsole } from './BuyerNegotiationConsole';
 import { ProductCardSkeleton } from './ProductCardSkeleton';
 import { firebaseService } from '../services/firebaseService';
 import { CartDrawer } from './CartDrawer';
+import { ModeSelector } from './ModeSelector';
 
 // B2B Platform - Cart functionality for bulk orders
 interface BuyerViewProps {
@@ -24,6 +25,8 @@ interface BuyerViewProps {
     farmers: Farmer[];
     onViewFarmerProfile: (farmerId: string) => void;
     onLogout: () => void;
+    onSwitchRole?: () => void;
+    isRoleSwitching?: boolean;
     isLoadingProducts?: boolean;
     // Cart props
     cart: CartItem[];
@@ -49,6 +52,8 @@ export const BuyerView = ({
     farmers, 
     onViewFarmerProfile,
     onLogout,
+    onSwitchRole,
+    isRoleSwitching,
     isLoadingProducts = false,
     // Cart props
     cart,
@@ -159,8 +164,7 @@ export const BuyerView = ({
                     {/* Logo & Brand */}
                     <div className="flex items-center gap-2 sm:gap-4 w-full lg:w-auto justify-between lg:justify-start">
                         <div className="flex items-center gap-2 sm:gap-3 text-gray-900 cursor-pointer">
-                            <span className="material-symbols-outlined text-2xl sm:text-3xl lg:text-4xl text-[#2f7f33]">agriculture</span>
-                            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold tracking-tight">Anna Bazaar</h1>
+                            <img src="/logo.png" alt="Anna Bazaar" className="h-10 sm:h-12 lg:h-14 w-auto object-contain" />
                         </div>
                         {/* Mobile Menu Button */}
                         <button className="lg:hidden p-2 rounded-2xl bg-gray-100 hover:bg-gray-200 transition-colors">
@@ -195,7 +199,7 @@ export const BuyerView = ({
                     </div>
 
                     {/* Right Actions */}
-                    <div className="hidden lg:flex items-center gap-6">
+                    <div className="hidden lg:flex items-center gap-4">
                         <nav className="flex items-center gap-6">
                             <a className="text-sm font-semibold hover:text-[#2f7f33] transition-colors" href="#">Home</a>
                             <a className="text-sm font-semibold hover:text-[#2f7f33] transition-colors" href="#">My Orders</a>
@@ -243,13 +247,14 @@ export const BuyerView = ({
                 </div>
             </header>
 
-            <div className="flex flex-1 w-full max-w-7xl mx-auto px-0 sm:px-2 lg:px-4">
+            <div className="flex flex-1 w-full">
                 {/* Left Sidebar (Filters) - Hidden on mobile */}
-                <aside className="hidden lg:flex flex-col w-60 shrink-0 border-r border-gray-200 bg-white h-[calc(100vh-56px)] sticky top-[56px] overflow-y-auto">
+                <aside className="hidden lg:flex flex-col w-64 shrink-0 bg-gradient-to-b from-green-50/80 to-white border-r border-green-100 h-[calc(100vh-56px)] sticky top-[56px] overflow-y-auto shadow-lg">
                     {/* Filters Section */}
                     <div className="p-4 flex-1">
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider">
+                        <div className="flex items-center justify-between mb-4 pb-3 border-b border-green-100">
+                            <h2 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                                <span className="material-symbols-outlined text-lg">filter_list</span>
                                 Filters
                             </h2>
                             <button 
@@ -286,7 +291,7 @@ export const BuyerView = ({
                                             className="rounded border-gray-300 text-primary focus:ring-primary w-4 h-4"
                                         />
                                         <span className="flex-1 text-gray-700">{cat}</span>
-                                        <span className="text-xs text-gray-400">
+                                        <span className="text-xs text-gray-500">
                                             {products.filter(p => p.category === cat).length}
                                         </span>
                                     </label>
@@ -344,10 +349,10 @@ export const BuyerView = ({
                     </div>
 
                     {/* Logout Button - Bottom aligned */}
-                    <div className="mt-auto p-3 border-t border-gray-100">
+                    <div className="mt-auto p-3 border-t border-green-100 bg-green-50/50">
                         <button 
                             onClick={onLogout}
-                            className="w-full h-11 flex items-center justify-center gap-2 px-4 text-red-600 bg-red-50 hover:bg-red-100 rounded-2xl font-medium text-sm transition-colors"
+                            className="w-full h-11 flex items-center justify-center gap-2 px-4 text-red-600 bg-white hover:bg-red-50 rounded-2xl font-medium text-sm transition-colors shadow-sm border border-red-100"
                         >
                             <span className="material-symbols-outlined text-xl">logout</span>
                             <span>Sign Out</span>
@@ -356,7 +361,7 @@ export const BuyerView = ({
                 </aside>
 
                 {/* Main Content Area */}
-                <main className="flex-1 p-3 sm:p-4 lg:p-6 xl:p-8 overflow-x-hidden">
+                <main className="flex-1 p-3 sm:p-4 lg:p-6 xl:p-8 overflow-x-hidden max-w-7xl">
                     {/* Quick Filter Chips - Horizontal scroll on mobile */}
                     <div className="flex gap-2 sm:gap-3 pb-4 sm:pb-6 overflow-x-auto scrollbar-hide -mx-3 px-3 sm:mx-0 sm:px-0">
                         {categoryChips.map(chip => (
@@ -419,7 +424,7 @@ export const BuyerView = ({
                                 <div 
                                     key={product.id}
                                     onClick={() => setSelectedProduct(product)}
-                                    className="group relative bg-white/70 backdrop-blur-md rounded-3xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-white/40 hover:border-[#2f7f33]/50 flex flex-col cursor-pointer"
+                                    className="group relative bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200 hover:border-[#15803D]/50 flex flex-col cursor-pointer"
                                 >
                                     <div className="relative aspect-[4/3] w-full bg-gray-100 overflow-hidden">
                                         <img 
@@ -440,8 +445,8 @@ export const BuyerView = ({
                                         </div>
                                         <button 
                                             onClick={(e) => { e.stopPropagation(); onToggleWishlist(product.id); }}
-                                            className={`absolute top-3 right-3 size-8 rounded-full flex items-center justify-center backdrop-blur-sm transition-colors ${
-                                                isWishlisted ? 'bg-red-500 text-white' : 'bg-black/40 text-white hover:bg-[#2f7f33]'
+                                            className={`absolute top-3 right-3 size-8 rounded-full flex items-center justify-center transition-colors ${
+                                                isWishlisted ? 'bg-red-500 text-white' : 'bg-black/40 text-white hover:bg-[#15803D]'
                                             }`}
                                         >
                                             <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: isWishlisted ? "'FILL' 1" : "'FILL' 0" }}>favorite</span>
@@ -513,7 +518,7 @@ export const BuyerView = ({
 
                     {displayedProducts.length === 0 && (
                         <div className="text-center py-20">
-                            <span className="material-symbols-outlined text-6xl text-gray-300 mb-4">search_off</span>
+                            <span className="material-symbols-outlined text-6xl text-gray-400 mb-4">search_off</span>
                             <h3 className="text-xl font-bold text-gray-600 mb-2">No bulk listings found</h3>
                             <p className="text-gray-500">Try adjusting your filters or search query</p>
                         </div>
@@ -548,7 +553,7 @@ export const BuyerView = ({
                         <div className="p-4 space-y-4">
                             {negotiations.length === 0 ? (
                                 <div className="text-center py-10">
-                                    <span className="material-symbols-outlined text-5xl text-gray-300 mb-2">handshake</span>
+                                    <span className="material-symbols-outlined text-5xl text-gray-400 mb-2">handshake</span>
                                     <p className="text-gray-500">No active negotiations</p>
                                 </div>
                             ) : (

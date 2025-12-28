@@ -10,6 +10,8 @@
  */
 
 import DodoPayments from 'dodopayments';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../firebase';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // CONFIGURATION
@@ -153,12 +155,10 @@ class DodoPaymentService {
         returnUrl?: string;
     }): Promise<CheckoutSessionResult> {
         if (!this.isConfigured()) {
-            // In test mode without API key, return a mock checkout URL
-            console.warn('[DodoPaymentService] API key not configured, using mock mode');
+            console.error('[DodoPaymentService] API key not configured');
             return {
-                success: true,
-                sessionId: `mock_session_${Date.now()}`,
-                checkoutUrl: `https://checkout.dodopayments.com/demo?amount=${params.amount}&name=${encodeURIComponent(params.productName)}`,
+                success: false,
+                error: 'Payment service not configured. Please set VITE_DODO_API_KEY.',
             };
         }
 
@@ -245,7 +245,7 @@ class DodoPaymentService {
 
     /**
      * Poll for payment completion after returning from checkout
-     * Useful when webhook hasn't processed yet
+     * Checks Firestore for payment status updates from webhook
      */
     async pollPaymentStatus(
         orderId: string,
@@ -254,20 +254,43 @@ class DodoPaymentService {
         const { maxAttempts = 10, intervalMs = 2000 } = options;
         
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
-            // For now, return completed after first attempt (demo mode)
-            // In production, this would check the actual payment status
-            if (attempt === 0) {
-                return {
-                    status: 'completed',
-                    transactionId: `TXN_${orderId}_${Date.now()}`,
-                };
+            try {
+                // Check Firestore for payment status (updated by webhook)
+                const paymentsRef = collection(db, 'dodo_payments');
+                const q = query(paymentsRef, where('orderId', '==', orderId));
+                const snapshot = await getDocs(q);
+                
+                if (!snapshot.empty) {
+                    const paymentDoc = snapshot.docs[0].data();
+                    const status = paymentDoc.status?.toLowerCase();
+                    
+                    if (status === 'completed' || status === 'succeeded' || status === 'paid') {
+                        return {
+                            status: 'completed',
+                            transactionId: paymentDoc.paymentId || `TXN_${orderId}`,
+                            amount: paymentDoc.amount,
+                            currency: paymentDoc.currency || 'INR',
+                            completedAt: paymentDoc.completedAt?.toDate() || new Date(),
+                        };
+                    } else if (status === 'failed' || status === 'cancelled') {
+                        return {
+                            status: status as 'failed' | 'cancelled',
+                            transactionId: paymentDoc.paymentId,
+                        };
+                    }
+                }
+            } catch (error) {
+                console.error('[DodoPaymentService] Error polling payment status:', error);
             }
             
             // Wait before next attempt
-            await new Promise(resolve => setTimeout(resolve, intervalMs));
+            if (attempt < maxAttempts - 1) {
+                await new Promise(resolve => setTimeout(resolve, intervalMs));
+            }
         }
         
-        return null;
+        // If no status found after all attempts, return pending
+        return { status: 'pending' };
     }
 }
 

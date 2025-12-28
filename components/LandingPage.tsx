@@ -170,13 +170,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           <div className="flex items-center justify-between h-20 gap-4">
             {/* Logo */}
             <div className="flex items-center gap-3 shrink-0 cursor-pointer group">
-              <div className={`size-10 flex items-center justify-center rounded-2xl ${role === 'farmer' ? 'bg-primary' : 'bg-orange-500'} text-white shadow-[0_0_15px_rgba(43,75,238,0.5)] transition-colors duration-300`}>
-                <span className="material-symbols-outlined text-[28px]">agriculture</span>
-              </div>
-              <div className="hidden sm:flex flex-col">
-                <span className="text-xl font-bold tracking-tight text-white">Anna Bazaar</span>
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-white/60">Farm ↔ Fork</span>
-              </div>
+              <img src="/logo.png" alt="Anna Bazaar" className="h-12 sm:h-14 w-auto object-contain" />
             </div>
 
             {/* Persona Switcher (Segmented Button) - Desktop */}
@@ -191,7 +185,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   onChange={() => setRole('farmer')}
                 />
                 <div className={`absolute inset-0 ${role === 'farmer' ? 'bg-primary' : 'bg-transparent'} rounded-2xl shadow-sm transition-all duration-300`} />
-                <span className={`relative z-10 text-sm font-bold ${role === 'farmer' ? 'text-white' : 'text-white/60'} transition-colors`}>
+                <span className={`relative z-10 text-sm font-bold ${role === 'farmer' ? 'text-white' : 'text-white/80'} transition-colors`}>
                   Farmer Mode
                 </span>
               </label>
@@ -205,7 +199,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   onChange={() => setRole('buyer')}
                 />
                 <div className={`absolute inset-0 ${role === 'buyer' ? 'bg-orange-500' : 'bg-transparent'} rounded-2xl shadow-sm transition-all duration-300`} />
-                <span className={`relative z-10 text-sm font-bold ${role === 'buyer' ? 'text-white' : 'text-white/60'} transition-colors`}>
+                <span className={`relative z-10 text-sm font-bold ${role === 'buyer' ? 'text-white' : 'text-white/80'} transition-colors`}>
                   Buyer Mode
                 </span>
               </label>
@@ -240,7 +234,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             <div className="flex w-full bg-white/10 p-1 rounded-2xl border border-white/10">
               <label
                 className={`flex-1 cursor-pointer text-center py-2.5 rounded-2xl text-sm font-bold shadow-sm transition-all ${
-                  role === 'farmer' ? 'bg-primary text-white' : 'text-white/60 hover:text-white'
+                  role === 'farmer' ? 'bg-primary text-white' : 'text-white/80 hover:text-white'
                 }`}
               >
                 Farmer Mode
@@ -254,7 +248,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               </label>
               <label
                 className={`flex-1 cursor-pointer text-center py-2.5 rounded-2xl text-sm font-bold transition-all ${
-                  role === 'buyer' ? 'bg-orange-500 text-white' : 'text-white/60 hover:text-white'
+                  role === 'buyer' ? 'bg-orange-500 text-white' : 'text-white/80 hover:text-white'
                 }`}
               >
                 Buyer Mode
@@ -286,7 +280,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   {item.name}: {item.price} ({item.change})
                 </span>
               ))}
-              <span className="ticker-item text-white/40">|</span>
+              <span className="ticker-item text-white/50">|</span>
               <span className="ticker-item">🌤️ Weather Alert: Heavy rain expected in Punjab region tomorrow.</span>
               {/* Duplicate for seamless loop */}
               {MARKET_DATA.map((item, index) => (
@@ -297,7 +291,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   {item.name}: {item.price} ({item.change})
                 </span>
               ))}
-              <span className="ticker-item text-white/40">|</span>
+              <span className="ticker-item text-white/50">|</span>
               <span className="ticker-item">🌤️ Weather Alert: Heavy rain expected in Punjab region tomorrow.</span>
             </div>
           </div>
@@ -477,7 +471,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   ))}
                 </div>
                 <p className="text-white font-bold text-lg">"{SUCCESS_STORIES[0].quote}"</p>
-                <p className="text-slate-300 text-sm mt-1">- {SUCCESS_STORIES[0].author}, {SUCCESS_STORIES[0].location}</p>
+                <p className="text-white/80 text-sm mt-1">- {SUCCESS_STORIES[0].author}, {SUCCESS_STORIES[0].location}</p>
               </div>
             </div>
 
@@ -525,7 +519,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               >
                 Create Account
               </button>
-              <p className="text-white/70 text-sm text-center">No hidden fees. Free registration.</p>
+              <p className="text-white/90 text-sm text-center">No hidden fees. Free registration.</p>
             </div>
           </div>
         </section>
@@ -538,13 +532,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             {/* Brand */}
             <div className="flex flex-col items-center md:items-start gap-4">
               <div className="flex items-center gap-2">
-                <div className={`size-8 flex items-center justify-center rounded-2xl ${role === 'farmer' ? 'bg-primary' : 'bg-orange-500'} text-white`}>
-                  <span className="material-symbols-outlined text-xl">agriculture</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xl font-bold text-white">Anna Bazaar</span>
-                  <span className="text-[9px] font-semibold uppercase tracking-widest text-white/70">Farm ↔ Fork</span>
-                </div>
+                <img src="/logo.png" alt="Anna Bazaar" className="h-12 w-auto object-contain" />
               </div>
               <p className="text-white/80 text-sm">Empowering farmers, connecting India.</p>
             </div>
@@ -574,7 +562,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             </div>
           </div>
 
-          <div className="flex flex-col-reverse md:flex-row justify-between items-center mt-12 pt-8 border-t-2 border-white/20 gap-4 text-xs text-white/60">
+          <div className="flex flex-col-reverse md:flex-row justify-between items-center mt-12 pt-8 border-t-2 border-white/20 gap-4 text-xs text-white/80">
             <p>© 2024 Anna Bazaar Technologies Pvt Ltd.</p>
             <div className="flex gap-6">
               <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>

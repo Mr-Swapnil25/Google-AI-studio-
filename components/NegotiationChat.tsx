@@ -119,7 +119,7 @@ export const NegotiationChat: React.FC<NegotiationChatProps> = ({
                     <div className="flex-1 overflow-y-auto p-2 space-y-2">
                         {filteredNegotiations.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-full text-center p-4">
-                                <span className="material-symbols-outlined text-6xl text-gray-300 mb-2">forum</span>
+                                <span className="material-symbols-outlined text-6xl text-gray-400 mb-2">forum</span>
                                 <p className="text-gray-500 font-medium">No active negotiations</p>
                             </div>
                         ) : (
@@ -352,7 +352,7 @@ export const NegotiationChat: React.FC<NegotiationChatProps> = ({
                     </main>
                 ) : (
                     <main className="flex-1 flex flex-col items-center justify-center bg-[#f8fafc]">
-                        <span className="material-symbols-outlined text-8xl text-gray-300 mb-4">chat</span>
+                        <span className="material-symbols-outlined text-8xl text-gray-400 mb-4">chat</span>
                         <h3 className="text-2xl font-bold text-gray-400 mb-2">No Negotiation Selected</h3>
                         <p className="text-gray-400">Select a negotiation from the list to start chatting</p>
                     </main>

@@ -67,6 +67,9 @@ export default function App() {
     // Voice/Video Call State
     const [activeCallNegotiationId, setActiveCallNegotiationId] = useState<string | null>(null);
     
+    // Role switching state
+    const [isRoleSwitching, setIsRoleSwitching] = useState(false);
+    
     const { showToast } = useToast();
 
     const handleAuthClose = () => {
@@ -235,24 +238,31 @@ export default function App() {
             console.log('[App] Detected payment return for order:', orderId);
             showToast('Checking payment status...', 'info');
             
-            // Poll for payment completion
-            const status = await dodoPaymentService.pollPaymentStatus(orderId, {
-                maxAttempts: 10,
-                intervalMs: 2000,
-            });
-            
-            // Clear URL params regardless of result
-            dodoPaymentService.clearPaymentParams();
-            
-            if (status?.status === 'completed') {
-                showToast('Payment successful! Order confirmed.', 'success');
-                // Clear cart after successful payment
-                setCart([]);
-            } else if (status?.status === 'failed') {
-                showToast('Payment failed. Please try again.', 'error');
-            } else {
-                // Payment still pending or unknown - webhook may not have processed yet
-                showToast('Payment is being processed. You will be notified once confirmed.', 'info');
+            try {
+                // Poll for payment completion
+                const status = await dodoPaymentService.pollPaymentStatus(orderId, {
+                    maxAttempts: 10,
+                    intervalMs: 2000,
+                });
+                
+                // Clear URL params only after successful processing
+                if (status?.status === 'completed') {
+                    dodoPaymentService.clearPaymentParams();
+                    showToast('Payment successful! Order confirmed.', 'success');
+                    // Clear cart after successful payment
+                    setCart([]);
+                } else if (status?.status === 'failed') {
+                    dodoPaymentService.clearPaymentParams();
+                    showToast('Payment failed. Please try again.', 'error');
+                } else {
+                    // Payment still pending or unknown - webhook may not have processed yet
+                    // Keep URL params so user can refresh to check again
+                    showToast('Payment is being processed. Refresh the page to check status.', 'info');
+                }
+            } catch (error) {
+                console.error('[App] Payment status check failed:', error);
+                // Don't clear params - let user retry by refreshing
+                showToast('Could not verify payment. Please check your order status or try refreshing.', 'error');
             }
         };
         
@@ -263,8 +273,9 @@ export default function App() {
     const MIN_CART_VALUE = 199;
 
     const handleSwitchRole = async () => {
-        if (!currentUser) return;
+        if (!currentUser || isRoleSwitching) return;
 
+        setIsRoleSwitching(true);
         const nextRole = currentUser.role === UserRole.Buyer ? UserRole.Farmer : UserRole.Buyer;
         try {
             await firebaseService.setUserRole(currentUser.uid, nextRole);
@@ -275,6 +286,7 @@ export default function App() {
         } catch (e) {
             console.error('Failed to switch role', e);
             showToast('Could not switch role. Please try again.', 'error');
+            setIsRoleSwitching(false);
             return;
         }
         
@@ -285,6 +297,7 @@ export default function App() {
         setNegotiations([]);
         setMessages([]);
         
+        setIsRoleSwitching(false);
         showToast(`Switched to ${nextRole} view.`, 'info');
     };
 
@@ -690,6 +703,8 @@ export default function App() {
                          onSendMessage: handleSendMessageToNegotiation,
                          onAcceptCall: handleStartCall,
                          onLogout: handleLogout,
+                         onSwitchRole: handleSwitchRole,
+                         isRoleSwitching: isRoleSwitching,
                          products: products.filter(p => p.farmerId === currentUser.uid), 
                          negotiations: negotiations.filter(n => n.farmerId === currentUser.uid),
                          messages: messages,
@@ -717,6 +732,8 @@ export default function App() {
                     farmers={farmers}
                     onViewFarmerProfile={handleViewFarmerProfile}
                     onLogout={handleLogout}
+                    onSwitchRole={handleSwitchRole}
+                    isRoleSwitching={isRoleSwitching}
                     isLoadingProducts={isLoadingProducts}
                     cart={cart}
                     onAddToCart={handleAddToCart}

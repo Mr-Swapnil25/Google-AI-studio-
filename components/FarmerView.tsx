@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Farmer, FarmerDashboardWeather, MarketRate, Negotiation, ProductCategory, NegotiationStatus, Product, ProductType, ChatMessage, User, CallStatus } from '../types';
+import { Farmer, FarmerDashboardWeather, MarketRate, Negotiation, ProductCategory, NegotiationStatus, Product, ProductType, ChatMessage, User, CallStatus, UserRole } from '../types';
 import { generateProductDetails } from '../services/geminiService';
 import { XIcon, LoaderIcon, PlusIcon } from './icons';
 import { useToast } from '../context/ToastContext';
@@ -9,6 +9,7 @@ import { FarmerWallet } from './FarmerWallet';
 import { firebaseService } from '../services/firebaseService';
 import { WeatherWidget } from './WeatherWidget';
 import { IncomingCallOverlay } from './IncomingCallOverlay';
+import { ModeSelector } from './ModeSelector';
 
 interface FarmerViewProps {
     products: Product[];
@@ -24,6 +25,8 @@ interface FarmerViewProps {
     onSendMessage: (negotiationId: string, text: string) => void;
     onAcceptCall?: (negotiationId: string) => void;
     onLogout?: () => void;
+    onSwitchRole?: () => void;
+    isRoleSwitching?: boolean;
 }
 
 type FormErrors = { [key in keyof Omit<Product, 'id' | 'farmerId' | 'imageUrl' | 'isVerified' | 'verificationFeedback'>]?: string } & { image?: string };
@@ -44,7 +47,7 @@ const fileToDataUrl = (file: File): Promise<string> =>
         reader.onerror = error => reject(error);
     });
 
-export const FarmerView = ({ products, negotiations, messages, currentUserId, currentUser, onAddNewProduct, onUpdateProduct, onRespond, onCounter, onOpenChat, onSendMessage, onAcceptCall, onLogout }: FarmerViewProps) => {
+export const FarmerView = ({ products, negotiations, messages, currentUserId, currentUser, onAddNewProduct, onUpdateProduct, onRespond, onCounter, onOpenChat, onSendMessage, onAcceptCall, onLogout, onSwitchRole, isRoleSwitching }: FarmerViewProps) => {
     const [aiIsLoading, setAiIsLoading] = useState(false);
     const [formIsSubmitting, setFormIsSubmitting] = useState(false);
     const [imageFile, setImageFile] = useState<File | null>(null);
@@ -405,42 +408,29 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
     }
 
     return (
-        <div className="h-screen w-full overflow-hidden text-stone-800 bg-background relative">
-            <div className="pointer-events-none absolute inset-0">
-                <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
-                <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-secondary/10 blur-3xl" />
-                <div className="absolute -bottom-24 right-24 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
-            </div>
-
+        <div className="h-screen w-full overflow-hidden text-[#0F172A] bg-[#FAFBFC] relative">
             <div className="flex h-full w-full relative">
-                {/* Sidebar */}
-                <aside className={`fixed lg:static inset-y-0 left-0 z-40 w-72 sm:w-80 lg:w-72 xl:w-80 border-r border-white/50 bg-white/40 backdrop-blur-xl lg:backdrop-blur-2xl p-4 sm:p-6 overflow-y-auto shadow-card transform transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+                {/* Sidebar - Clean white */}
+                <aside className={`fixed lg:static inset-y-0 left-0 z-40 w-72 sm:w-80 lg:w-72 xl:w-80 border-r border-gray-200 bg-white p-4 sm:p-6 overflow-y-auto shadow-sm transform transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
                     <div className="flex flex-col gap-6 sm:gap-10 min-h-full">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3 sm:gap-4 group">
-                                <div className="relative flex items-center justify-center h-10 w-10 sm:h-14 sm:w-14 rounded-2xl sm:rounded-2xl bg-gradient-to-br from-primary to-primary-dark text-white shadow-card transition-transform group-hover:scale-105">
-                                    <span className="material-symbols-outlined text-2xl sm:text-4xl">agriculture</span>
-                                    <div className="absolute inset-0 rounded-2xl bg-white/20 blur-sm opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                </div>
+                                <img src="/logo.png" alt="Anna Bazaar" className="h-12 sm:h-16 w-auto object-contain transition-transform group-hover:scale-105" />
                                 <div className="flex flex-col">
-                                    <h1 className="text-xl sm:text-2xl lg:text-3xl font-display font-bold tracking-tight text-stone-900 relative">
-                                        Anna Bazaar
-                                        <span className="absolute -top-1 -right-2 h-2 w-2 bg-primary rounded-full animate-pulse"></span>
-                                    </h1>
-                                    <span className="text-[10px] sm:text-xs font-mono text-primary font-bold tracking-widest uppercase">Farmer Mode</span>
+                                    <span className="text-[10px] sm:text-xs font-mono text-[#15803D] font-bold tracking-widest uppercase">Farmer Mode</span>
                                 </div>
                             </div>
 
-                            <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden p-2 rounded-full hover:bg-white/40">
-                                <XIcon className="h-6 w-6 text-stone-700" />
+                            <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden p-2 rounded-lg hover:bg-gray-100">
+                                <XIcon className="h-6 w-6 text-gray-700" />
                             </button>
                         </div>
 
-                        <div className="rounded-2xl p-[1px] bg-gradient-to-br from-white/80 to-white/20">
-                            <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/40 backdrop-blur-xl">
+                        <div className="rounded-lg border border-gray-200">
+                            <div className="flex items-center gap-4 p-4 rounded-lg bg-gray-50">
                                 <div className="relative">
                                     <div
-                                        className="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-16 w-16 ring-2 ring-white shadow-lg flex items-center justify-center font-bold text-primary"
+                                        className="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-16 w-16 ring-2 ring-white shadow-sm flex items-center justify-center font-bold text-[#15803D] bg-gray-100"
                                         style={{ backgroundImage: avatarUrl ? `url('${avatarUrl}')` : 'none' }}
                                     >
                                         {!avatarUrl && (displayName?.charAt(0)?.toUpperCase() || 'F')}
@@ -452,16 +442,16 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                                     )}
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className="text-xl font-bold font-display leading-tight text-stone-900">{currentUser.name || 'Farmer'}</span>
+                                    <span className="text-xl font-bold font-display leading-tight text-[#0F172A]">{currentUser.name || 'Farmer'}</span>
                                     <div className="flex items-center gap-2 mt-1">
                                         <span className="h-2 w-2 rounded-full bg-green-500"></span>
-                                        <span className="text-xs font-mono uppercase text-stone-500 font-bold">Online</span>
+                                        <span className="text-xs font-mono uppercase text-gray-500 font-bold">Online</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <nav className="flex flex-col gap-3">
+                        <nav className="flex flex-col gap-2">
                             {navItems.map((item) => {
                                 const isActive = activeNav === item.id;
                                 return (
@@ -474,14 +464,14 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                                         }}
                                         className={
                                             isActive
-                                                ? 'flex items-center gap-4 px-6 py-4 rounded-2xl bg-gradient-to-r from-primary/90 to-primary text-white shadow-card transition-all hover:scale-[1.02]'
-                                                : 'group flex items-center gap-4 px-6 py-4 rounded-2xl hover:bg-white/60 text-stone-600 hover:text-stone-900 transition-all hover:shadow-card border border-transparent hover:border-white/50'
+                                                ? 'flex items-center gap-4 px-4 py-3 rounded-lg bg-[#15803D] text-white shadow-sm transition-all'
+                                                : 'group flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-all'
                                         }
                                     >
                                         <span className={`material-symbols-outlined text-2xl ${!isActive ? 'group-hover:scale-110 transition-transform' : ''}`}>{item.icon}</span>
-                                        <span className={`text-lg ${isActive ? 'font-bold' : 'font-medium'}`}>{item.label}</span>
+                                        <span className={`text-base ${isActive ? 'font-bold' : 'font-medium'}`}>{item.label}</span>
                                         {item.id === 'messages' && messagesBadgeCount > 0 && (
-                                            <span className="ml-auto bg-gradient-to-r from-farmer-primary to-red-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-card">
+                                            <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-sm">
                                                 {messagesBadgeCount}
                                             </span>
                                         )}
@@ -491,14 +481,14 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                         </nav>
 
                         <div className="mt-auto flex flex-col gap-3">
-                            <button className="w-full py-3 px-4 rounded-2xl bg-gray-100 text-gray-700 font-medium flex items-center justify-center gap-2 hover:bg-gray-200 transition-all text-sm">
+                            <button className="w-full py-3 px-4 rounded-lg bg-gray-100 text-gray-700 font-medium flex items-center justify-center gap-2 hover:bg-gray-200 transition-all text-sm">
                                 <span className="material-symbols-outlined text-xl">headset_mic</span>
                                 <span>Help & Support</span>
                             </button>
                             {onLogout && (
                                 <button 
                                     onClick={onLogout}
-                                    className="w-full h-11 px-4 rounded-2xl text-red-600 bg-red-50 hover:bg-red-100 font-medium flex items-center justify-center gap-2 transition-all text-sm"
+                                    className="w-full h-11 px-4 rounded-lg text-[#DC2626] bg-red-50 hover:bg-red-100 font-medium flex items-center justify-center gap-2 transition-all text-sm"
                                 >
                                     <span className="material-symbols-outlined text-xl">logout</span>
                                     <span>Sign Out</span>
@@ -515,31 +505,37 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
 
                 {/* Main */}
                 <main className="flex-1 flex flex-col h-full overflow-hidden relative lg:ml-0">
-                    <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 p-3 sm:p-4 md:px-6 lg:px-8 md:py-4 lg:py-6 shrink-0 z-10 bg-gradient-to-b from-white/40 to-transparent backdrop-blur-sm">
+                    <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 p-3 sm:p-4 md:px-6 lg:px-8 md:py-4 lg:py-6 shrink-0 z-10 bg-white border-b border-gray-200">
                         <div className="flex flex-col gap-1 sm:gap-2 relative">
-                            <div className="absolute -left-10 -top-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
                             <div className="flex items-center gap-2 sm:gap-3">
-                                <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2 sm:p-3 rounded-2xl sm:rounded-2xl bg-white/60 backdrop-blur-md text-stone-900 shadow-card border border-white/50">
+                                <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2 sm:p-3 rounded-lg bg-gray-100 text-gray-900 shadow-sm border border-gray-200">
                                     <span className="material-symbols-outlined text-xl sm:text-2xl lg:text-3xl">menu</span>
                                 </button>
-                                <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-display font-bold text-stone-900 tracking-tight">
+                                <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-display font-bold text-[#0F172A] tracking-tight">
                                     Namaste, {displayName}
                                 </h2>
                             </div>
-                            <div className="flex items-center gap-2 sm:gap-3 text-stone-600 font-medium text-xs sm:text-sm lg:text-base bg-white/30 w-fit px-2 sm:px-3 lg:px-4 py-1 sm:py-1.5 rounded-full border border-white/40 backdrop-blur-sm">
-                                <span className="material-symbols-outlined text-primary">calendar_month</span>
+                            <div className="flex items-center gap-2 sm:gap-3 text-gray-600 font-medium text-xs sm:text-sm lg:text-base bg-gray-100 w-fit px-2 sm:px-3 lg:px-4 py-1 sm:py-1.5 rounded-full border border-gray-200">
+                                <span className="material-symbols-outlined text-[#15803D]">calendar_month</span>
                                 <span>{todayLabel}</span>
-                                <span className="w-1 h-4 bg-stone-300 rounded-full mx-1"></span>
-                                <span className="text-primary font-bold">Mandi Open</span>
+                                <span className="w-1 h-4 bg-gray-300 rounded-full mx-1"></span>
+                                <span className="text-[#15803D] font-bold">Mandi Open</span>
                             </div>
                         </div>
 
                         <div className="flex items-center gap-2 sm:gap-4">
+                            {/* Mode Selector */}
+                            {onSwitchRole && (
+                                <ModeSelector 
+                                    currentMode={UserRole.Farmer} 
+                                    onModeChange={onSwitchRole}
+                                    isLoading={isRoleSwitching}
+                                />
+                            )}
                             <button
                                 onClick={() => setShowUploadPage(true)}
-                                className="relative group overflow-hidden px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 lg:py-4 rounded-2xl sm:rounded-full bg-gradient-to-r from-primary to-primary-light text-white shadow-card transition-all duration-300 hover:-translate-y-0.5"
+                                className="relative group overflow-hidden px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 lg:py-4 rounded-lg bg-[#15803D] text-white shadow-sm transition-all duration-300 hover:bg-[#166534] hover:shadow-md"
                             >
-                                <div className="absolute inset-0 bg-white/20 group-hover:translate-x-full transition-transform duration-700 ease-in-out skew-x-12 -translate-x-full"></div>
                                 <div className="flex items-center gap-2 sm:gap-3 relative z-10">
                                     <span className="material-symbols-outlined text-xl sm:text-2xl lg:text-3xl font-bold">add_circle</span>
                                     <span className="text-sm sm:text-base lg:text-xl font-bold tracking-wide">New Listing</span>
@@ -560,25 +556,25 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                                     isLoading={false}
                                 />
 
-                                {/* Live Mandi Rates (match screenshot style) */}
-                                <div className="lg:col-span-8 rounded-2xl sm:rounded-[2rem] p-4 sm:p-5 md:p-6 overflow-hidden relative bg-white/70 backdrop-blur-xl border border-white/70 shadow-card">
+                                {/* Live Mandi Rates - Clean white card */}
+                                <div className="lg:col-span-8 rounded-lg p-4 sm:p-5 md:p-6 overflow-hidden relative bg-white border border-gray-200 shadow-sm">
                                     <div className="flex items-center justify-between mb-4">
                                         <div className="flex items-center gap-3">
                                             <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
                                                 <span className="material-symbols-outlined text-green-700">trending_up</span>
                                             </div>
-                                            <h3 className="text-xl font-bold text-stone-900">Mandi Rates (Live)</h3>
+                                            <h3 className="text-xl font-bold text-[#0F172A]">Mandi Rates (Live)</h3>
                                         </div>
                                         <button
                                             onClick={() => showToast('View all rates coming soon!', 'info')}
-                                            className="text-sm font-bold text-primary hover:underline flex items-center gap-1"
+                                            className="text-sm font-bold text-[#15803D] hover:underline flex items-center gap-1"
                                         >
                                             View All
                                             <span className="material-symbols-outlined text-base">arrow_forward</span>
                                         </button>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-3 rounded-2xl overflow-hidden border border-stone-100 bg-white">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 rounded-lg overflow-hidden border border-gray-100 bg-white">
                                         {effectiveRates.map((rate, idx) => {
                                             const isUp = rate.trend === 'up';
                                             const isDown = rate.trend === 'down';
@@ -609,7 +605,7 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                                                             <p className="text-sm font-bold text-stone-500">{rate.crop}</p>
                                                             <p className="mt-2 text-3xl font-extrabold text-stone-900">
                                                                 ?{Math.round(rate.pricePerQuintal).toLocaleString()}
-                                                                <span className="text-sm font-bold text-stone-400">/q</span>
+                                                                <span className="text-sm font-bold text-gray-500">/q</span>
                                                             </p>
                                                         </div>
                                                         <div className={`h-10 w-10 rounded-2xl flex items-center justify-center ${iconBoxClass}`}>
@@ -645,7 +641,7 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                                     {incomingOffers.map((offer) => (
                                         <div key={offer.id} className="group relative rounded-[2.5rem] transition-all duration-300 hover:-translate-y-1">
                                             <div className="absolute -inset-[2px] bg-gradient-to-r from-secondary/60 to-primary/40 rounded-[2.5rem] opacity-0 group-hover:opacity-100 blur-md transition-opacity duration-500"></div>
-                                            <div className="relative h-full bg-white/60 backdrop-blur-xl border border-white/70 rounded-[2.5rem] p-0 overflow-hidden shadow-card">
+                                            <div className="relative h-full bg-white border border-gray-200 rounded-2xl p-0 overflow-hidden shadow-sm">
                                                 <div className="flex justify-between items-center p-6 border-b border-white/60 bg-white/30">
                                                     <span className="px-4 py-1.5 rounded-full bg-white/60 border border-white/70 text-stone-800 text-sm font-bold uppercase tracking-wider backdrop-blur-sm shadow-soft">
                                                         {offer.status === NegotiationStatus.Pending ? 'New Offer' : 'In Negotiation'}
@@ -669,7 +665,7 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                                                         </h4>
                                                         <p className="text-lg font-medium text-stone-500 flex items-center gap-1">
                                                             <span className="material-symbols-outlined text-base">location_on</span>
-                                                            {buyerProfiles[offer.buyerId]?.location || '—'}
+                                                            {buyerProfiles[offer.buyerId]?.location || 'ï¿½'}
                                                         </p>
                                                     </div>
 
@@ -682,9 +678,9 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                                                             <span className="block text-xl font-medium text-stone-500 mt-1">{offer.quantity} Quintals</span>
                                                         </div>
                                                         <div className="ml-auto text-right">
-                                                            <span className="block text-xs font-bold uppercase text-stone-400 tracking-wider mb-1">Offer Price</span>
+                                                            <span className="block text-xs font-bold uppercase text-gray-500 tracking-wider mb-1">Offer Price</span>
                                                             <span className="block text-4xl font-display font-bold text-primary">?{Math.round(offer.offeredPrice).toLocaleString()}</span>
-                                                            <span className="text-sm font-bold text-stone-400">/quintal</span>
+                                                            <span className="text-sm font-bold text-gray-500">/quintal</span>
                                                         </div>
                                                     </div>
 
@@ -716,7 +712,7 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                                     ))}
 
                                     {incomingOffers.length === 0 && (
-                                        <div className="lg:col-span-2 bg-white/50 backdrop-blur-xl border border-white/60 rounded-[2rem] p-10 text-center shadow-card">
+                                        <div className="lg:col-span-2 bg-white border border-gray-200 rounded-2xl p-10 text-center shadow-sm">
                                             <p className="text-stone-600 font-medium">No incoming orders right now.</p>
                                             <button
                                                 onClick={() => handleOpenNegotiationChat()}
@@ -741,13 +737,13 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                                     <div className="flex gap-3">
                                         <button
                                             onClick={() => showToast('Filter feature coming soon!', 'info')}
-                                            className="px-6 py-3 bg-white/50 backdrop-blur-xl rounded-2xl text-lg font-bold shadow-soft hover:bg-white text-stone-600 transition-colors border border-white/60"
+                                            className="px-6 py-3 bg-white rounded-lg text-lg font-bold shadow-sm hover:bg-gray-50 text-stone-600 transition-colors border border-gray-200"
                                         >
                                             Filter
                                         </button>
                                         <button
                                             onClick={() => showToast('Sort feature coming soon!', 'info')}
-                                            className="px-6 py-3 bg-white/50 backdrop-blur-xl rounded-2xl text-lg font-bold shadow-soft hover:bg-white text-stone-600 transition-colors border border-white/60"
+                                            className="px-6 py-3 bg-white rounded-lg text-lg font-bold shadow-sm hover:bg-gray-50 text-stone-600 transition-colors border border-gray-200"
                                         >
                                             Sort by Date
                                         </button>
@@ -766,14 +762,14 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                                         const isNegotiating = offersCount > 0;
 
                                         return (
-                                            <div key={product.id} className="group flex flex-col rounded-[2rem] bg-white/50 backdrop-blur-xl p-0 shadow-card hover:shadow-xl transition-all duration-500 overflow-hidden transform hover:-translate-y-1 border border-white/60">
+                                            <div key={product.id} className="group flex flex-col rounded-2xl bg-white p-0 shadow-sm hover:shadow-lg transition-all duration-500 overflow-hidden transform hover:-translate-y-1 border border-gray-200">
                                                 <div className="relative h-64 w-full overflow-hidden">
                                                     <div
                                                         className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
                                                         style={{ backgroundImage: `url('${product.imageUrl}')` }}
                                                     ></div>
                                                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent"></div>
-                                                    <div className="absolute top-4 left-4 bg-green-500 text-white text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider shadow-card border border-white/20 backdrop-blur-md flex items-center gap-1">
+                                                    <div className="absolute top-4 left-4 bg-green-500 text-white text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider shadow-sm flex items-center gap-1">
                                                         <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>
                                                         Active
                                                     </div>
@@ -783,7 +779,7 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                                                     </div>
                                                 </div>
 
-                                                <div className="p-6 flex flex-col flex-1 gap-6 bg-white/30 backdrop-blur-lg">
+                                                <div className="p-6 flex flex-col flex-1 gap-6 bg-white">
                                                     <div className="flex items-center justify-between p-5 bg-white/40 rounded-2xl border border-white/60 shadow-soft">
                                                         <div className="flex flex-col">
                                                             <span className="text-xs text-stone-500 font-bold uppercase tracking-wide">Quantity</span>
@@ -837,8 +833,8 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                                 </div>
 
                                 {myProducts.length === 0 && (
-                                    <div className="bg-white/50 backdrop-blur-xl border border-white/60 rounded-[2rem] p-10 text-center shadow-card">
-                                        <p className="text-stone-600 font-medium">You haven’t listed any crops yet.</p>
+                                    <div className="bg-white border border-gray-200 rounded-2xl p-10 text-center shadow-sm">
+                                        <p className="text-stone-600 font-medium">You havenï¿½t listed any crops yet.</p>
                                         <button
                                             onClick={() => setShowUploadPage(true)}
                                             className="mt-4 px-6 py-3 rounded-full bg-gradient-to-r from-primary to-primary-light text-white font-bold"
@@ -874,7 +870,7 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
 
                             <form onSubmit={handleSubmit} className="space-y-6 relative">
                                 {(aiIsLoading || formIsSubmitting) && (
-                                    <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center rounded-2xl z-20">
+                                    <div className="absolute inset-0 bg-white/95 flex flex-col items-center justify-center rounded-2xl z-20">
                                         <LoaderIcon className="h-10 w-10 text-[#f9a824] animate-spin" />
                                         <p className="mt-3 text-[#1c160d] font-semibold text-lg">{formIsSubmitting ? 'Listing crop...' : 'Analyzing image...'}</p>
                                     </div>

@@ -90,6 +90,18 @@ export const ProductUploadPage: React.FC<ProductUploadPageProps> = ({ onBack, on
     const [userLocation, setUserLocation] = useState<GeoLocation | null>(null);
     const [locationLoading, setLocationLoading] = useState(false);
     const [locationError, setLocationError] = useState<GeolocationError | null>(null);
+    const [showManualLocation, setShowManualLocation] = useState(false);
+    const [manualState, setManualState] = useState('');
+    const [manualDistrict, setManualDistrict] = useState('');
+    
+    // Indian states for manual fallback
+    const INDIAN_STATES = [
+        'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
+        'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka',
+        'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram',
+        'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu',
+        'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal'
+    ];
     
     // ═══════════════════════════════════════════════════════════════════════════
     // PRICE ENGINE STATE
@@ -101,28 +113,54 @@ export const ProductUploadPage: React.FC<ProductUploadPageProps> = ({ onBack, on
     const { showToast } = useToast();
 
     // ═══════════════════════════════════════════════════════════════════════════
+    // GEOLOCATION HANDLERS
+    // ═══════════════════════════════════════════════════════════════════════════
+    const tryDetectLocation = async () => {
+        setLocationLoading(true);
+        setLocationError(null);
+        setShowManualLocation(false);
+        
+        try {
+            const location = await detectUserLocation();
+            location.state = normalizeStateName(location.state);
+            setUserLocation(location);
+            showToast(`📍 Location detected: ${location.district}, ${location.state}`, 'success');
+        } catch (error) {
+            const geoError = error as GeolocationError;
+            setLocationError(geoError);
+            console.warn('[ProductUpload] Location detection failed:', geoError);
+            // Show manual fallback on error
+            setShowManualLocation(true);
+            showToast('Could not detect location. Please select manually.', 'info');
+        } finally {
+            setLocationLoading(false);
+        }
+    };
+
+    const handleManualLocationSubmit = () => {
+        if (!manualState || !manualDistrict.trim()) {
+            showToast('Please select state and enter district', 'error');
+            return;
+        }
+        
+        const manualLocation: GeoLocation = {
+            state: manualState,
+            district: manualDistrict.trim(),
+            coordinates: { lat: 0, lng: 0 },
+            timestamp: Date.now(),
+        };
+        
+        setUserLocation(manualLocation);
+        setShowManualLocation(false);
+        setLocationError(null);
+        showToast(`📍 Location set: ${manualDistrict}, ${manualState}`, 'success');
+    };
+
+    // ═══════════════════════════════════════════════════════════════════════════
     // AUTO-DETECT LOCATION ON MOUNT
     // ═══════════════════════════════════════════════════════════════════════════
     useEffect(() => {
-        const detectLocation = async () => {
-            setLocationLoading(true);
-            setLocationError(null);
-            
-            try {
-                const location = await detectUserLocation();
-                location.state = normalizeStateName(location.state);
-                setUserLocation(location);
-                showToast(`📍 Location detected: ${location.district}, ${location.state}`, 'success');
-            } catch (error) {
-                const geoError = error as GeolocationError;
-                setLocationError(geoError);
-                console.warn('[ProductUpload] Location detection failed:', geoError);
-            } finally {
-                setLocationLoading(false);
-            }
-        };
-
-        detectLocation();
+        tryDetectLocation();
     }, []);
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -391,8 +429,7 @@ export const ProductUploadPage: React.FC<ProductUploadPageProps> = ({ onBack, on
                     <button onClick={onBack} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors">
                         <span className="material-symbols-outlined text-2xl text-gray-600">arrow_back</span>
                     </button>
-                    <span className="material-symbols-outlined text-4xl">eco</span>
-                    <h2 className="text-2xl font-bold leading-tight tracking-tight text-gray-900">Anna Bazaar</h2>
+                    <img src="/logo.png" alt="Anna Bazaar" className="h-10 sm:h-12 w-auto object-contain" />
                 </div>
                 <div className="flex items-center gap-4">
                     {/* Location indicator */}
@@ -403,16 +440,23 @@ export const ProductUploadPage: React.FC<ProductUploadPageProps> = ({ onBack, on
                         </div>
                     )}
                     {userLocation && !locationLoading && (
-                        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-green-50 rounded-full text-sm text-green-700 border border-green-200">
+                        <button 
+                            onClick={() => setShowManualLocation(true)}
+                            className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-green-50 rounded-full text-sm text-green-700 border border-green-200 hover:bg-green-100 transition-colors"
+                        >
                             <span className="material-symbols-outlined text-sm">location_on</span>
                             <span className="font-medium">{userLocation.district}, {userLocation.state}</span>
-                        </div>
+                            <span className="material-symbols-outlined text-xs">edit</span>
+                        </button>
                     )}
-                    {locationError && !locationLoading && (
-                        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-yellow-50 rounded-full text-sm text-yellow-700 border border-yellow-200">
+                    {locationError && !locationLoading && !userLocation && (
+                        <button 
+                            onClick={() => setShowManualLocation(true)}
+                            className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-yellow-50 rounded-full text-sm text-yellow-700 border border-yellow-200 hover:bg-yellow-100 transition-colors cursor-pointer"
+                        >
                             <span className="material-symbols-outlined text-sm">location_off</span>
-                            <span className="font-medium">Location unavailable</span>
-                        </div>
+                            <span className="font-medium">Set Location</span>
+                        </button>
                     )}
                     <div className="hidden md:flex flex-col items-end mr-2">
                         <span className="text-sm font-bold text-gray-900">Ramesh Kumar</span>
@@ -467,7 +511,7 @@ export const ProductUploadPage: React.FC<ProductUploadPageProps> = ({ onBack, on
                         ) : (
                             <>
                                 <div className="bg-gray-100 p-6 rounded-full mb-4">
-                                    <span className="material-symbols-outlined text-6xl text-gray-400">add_a_photo</span>
+                                    <span className="material-symbols-outlined text-6xl text-gray-500">add_a_photo</span>
                                 </div>
                                 <h3 className="text-2xl font-bold text-gray-700 mb-2">Upload Harvest Photo</h3>
                                 <p className="text-gray-500 mb-6 text-center max-w-md">
@@ -480,7 +524,7 @@ export const ProductUploadPage: React.FC<ProductUploadPageProps> = ({ onBack, on
                                     <span className="material-symbols-outlined">photo_camera</span>
                                     Take Photo or Upload
                                 </button>
-                                <p className="text-sm text-gray-400 mt-4">Supports JPG, PNG up to 10MB</p>
+                                <p className="text-sm text-gray-500 mt-4">Supports JPG, PNG up to 10MB</p>
                             </>
                         )}
                     </div>
@@ -507,7 +551,7 @@ export const ProductUploadPage: React.FC<ProductUploadPageProps> = ({ onBack, on
                                 <div className="absolute bottom-6 left-0 right-0 flex justify-center">
                                     <button 
                                         onClick={handleRetake}
-                                        className="flex items-center gap-2 bg-white/90 backdrop-blur-md text-gray-900 px-6 py-3 rounded-full font-bold shadow-lg hover:bg-white transition-transform active:scale-95 border border-gray-200"
+                                        className="flex items-center gap-2 bg-white text-gray-900 px-6 py-3 rounded-full font-bold shadow-lg hover:bg-gray-50 transition-transform active:scale-95 border border-gray-200"
                                     >
                                         <span className="material-symbols-outlined text-primary">photo_camera</span>
                                         <span>Retake Photo</span>
@@ -535,7 +579,7 @@ export const ProductUploadPage: React.FC<ProductUploadPageProps> = ({ onBack, on
                                         <p className="text-sm text-gray-500">JPG, PNG up to 10MB</p>
                                     </div>
                                 </div>
-                                <span className="material-symbols-outlined text-gray-400">chevron_right</span>
+                                <span className="material-symbols-outlined text-gray-500">chevron_right</span>
                             </div>
                         </div>
 
@@ -634,7 +678,7 @@ export const ProductUploadPage: React.FC<ProductUploadPageProps> = ({ onBack, on
                                 {/* Price Engine Pills */}
                                 {priceLoading && (
                                     <div className="flex items-center gap-2 mt-3 p-2 bg-gray-50 rounded-2xl animate-pulse">
-                                        <span className="material-symbols-outlined text-gray-400 text-sm animate-spin">sync</span>
+                                        <span className="material-symbols-outlined text-gray-500 text-sm animate-spin">sync</span>
                                         <span className="text-xs text-gray-500">Fetching live market prices...</span>
                                     </div>
                                 )}
@@ -734,7 +778,7 @@ export const ProductUploadPage: React.FC<ProductUploadPageProps> = ({ onBack, on
                                         arrow_forward
                                     </span>
                                 </button>
-                                <p className="text-center text-xs text-gray-400 mt-3 font-medium">
+                                <p className="text-center text-xs text-gray-500 mt-3 font-medium">
                                     By confirming, you agree to the marketplace terms.
                                 </p>
                             </div>
@@ -796,15 +840,96 @@ export const ProductUploadPage: React.FC<ProductUploadPageProps> = ({ onBack, on
                         ) : (
                             <>
                                 <div className="bg-gray-100 p-6 rounded-full mb-4">
-                                    <span className="material-symbols-outlined text-6xl text-gray-400">task_alt</span>
+                                    <span className="material-symbols-outlined text-6xl text-gray-500">task_alt</span>
                                 </div>
                                 <h3 className="text-2xl font-bold text-gray-500">Confirm Listing</h3>
-                                <p className="text-gray-400 mt-2">The confirmation summary will appear here.</p>
+                                <p className="text-gray-500 mt-2">The confirmation summary will appear here.</p>
                             </>
                         )}
                     </div>
                 )}
             </main>
+
+            {/* Manual Location Modal */}
+            {showManualLocation && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                                <span className="material-symbols-outlined text-primary">location_on</span>
+                                Set Your Location
+                            </h3>
+                            <button 
+                                onClick={() => setShowManualLocation(false)}
+                                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                            >
+                                <span className="material-symbols-outlined text-gray-500">close</span>
+                            </button>
+                        </div>
+                        
+                        <div className="space-y-4">
+                            {/* Retry Auto-detect Button */}
+                            <button
+                                onClick={() => {
+                                    setShowManualLocation(false);
+                                    tryDetectLocation();
+                                }}
+                                className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-blue-50 text-blue-700 rounded-xl hover:bg-blue-100 transition-colors border border-blue-200"
+                            >
+                                <span className="material-symbols-outlined">my_location</span>
+                                <span className="font-medium">Auto-detect my location</span>
+                            </button>
+                            
+                            <div className="flex items-center gap-3 text-gray-500">
+                                <div className="flex-1 h-px bg-gray-200"></div>
+                                <span className="text-sm">or enter manually</span>
+                                <div className="flex-1 h-px bg-gray-200"></div>
+                            </div>
+                            
+                            {/* State Dropdown */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+                                <select
+                                    value={manualState}
+                                    onChange={(e) => setManualState(e.target.value)}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary bg-white"
+                                >
+                                    <option value="">Select State</option>
+                                    {INDIAN_STATES.map(state => (
+                                        <option key={state} value={state}>{state}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            
+                            {/* District Input */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">District</label>
+                                <input
+                                    type="text"
+                                    value={manualDistrict}
+                                    onChange={(e) => setManualDistrict(e.target.value)}
+                                    placeholder="e.g., Kolkata, Howrah, Murshidabad"
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary"
+                                />
+                            </div>
+                            
+                            {/* Submit Button */}
+                            <button
+                                onClick={handleManualLocationSubmit}
+                                disabled={!manualState || !manualDistrict.trim()}
+                                className="w-full py-3 px-4 bg-primary text-white rounded-xl font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            >
+                                <span className="material-symbols-outlined">check</span>
+                                Confirm Location
+                            </button>
+                        </div>
+                        
+                        <p className="mt-4 text-xs text-gray-500 text-center">
+                            Your location helps us show accurate local mandi prices.
+                        </p>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

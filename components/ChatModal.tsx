@@ -57,7 +57,7 @@ export const ChatModal = ({ isOpen, onClose, negotiation, messages, currentUserI
                             <p className="text-sm text-stone-500">Negotiation ID: {negotiation.id.slice(0, 8)}...</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="text-stone-400 hover:text-stone-600"><XIcon className="h-6 w-6" /></button>
+                    <button onClick={onClose} className="text-gray-500 hover:text-gray-700"><XIcon className="h-6 w-6" /></button>
                 </div>
                 
                 {/* Messages Body */}

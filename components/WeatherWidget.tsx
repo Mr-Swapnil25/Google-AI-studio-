@@ -37,7 +37,7 @@ const getWeatherGradient = (condition: string): string => {
 const WeatherSkeleton: React.FC = () => (
     <div className="xl:col-span-4 relative group">
         <div className="absolute inset-0 bg-gradient-to-br from-secondary/40 to-primary/20 rounded-[2.5rem] blur-xl opacity-20"></div>
-        <div className="relative h-full flex flex-col justify-between rounded-[2rem] p-8 overflow-hidden bg-white/50 backdrop-blur-xl border border-white/60 shadow-card animate-pulse">
+        <div className="relative h-full flex flex-col justify-between rounded-2xl p-8 overflow-hidden bg-white border border-gray-200 shadow-sm animate-pulse">
             <div className="flex justify-between items-start">
                 <div className="space-y-3">
                     <div className="h-6 w-32 bg-stone-200 rounded-2xl"></div>
@@ -63,7 +63,7 @@ const WeatherSkeleton: React.FC = () => (
 const WeatherError: React.FC<{ onRetry: () => void; isRetrying: boolean }> = ({ onRetry, isRetrying }) => (
     <div className="xl:col-span-4 relative group">
         <div className="absolute inset-0 bg-gradient-to-br from-red-400/20 to-stone-400/20 rounded-[2.5rem] blur-xl opacity-20"></div>
-        <div className="relative h-full flex flex-col items-center justify-center rounded-[2rem] p-8 bg-white/50 backdrop-blur-xl border border-white/60 shadow-card text-center gap-4">
+        <div className="relative h-full flex flex-col items-center justify-center rounded-2xl p-8 bg-white border border-gray-200 shadow-sm text-center gap-4">
             <div className="h-16 w-16 rounded-full bg-red-100 flex items-center justify-center">
                 <span className="material-symbols-outlined text-3xl text-red-500">cloud_off</span>
             </div>
@@ -179,7 +179,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({
     return (
         <div className="xl:col-span-4 relative group">
             <div className={`absolute inset-0 bg-gradient-to-br ${conditionGradient} rounded-[2.5rem] blur-xl opacity-20 group-hover:opacity-30 transition-opacity`}></div>
-            <div className="relative h-full flex flex-col justify-between rounded-[2rem] p-8 overflow-hidden bg-white/50 backdrop-blur-xl border border-white/60 shadow-card">
+            <div className="relative h-full flex flex-col justify-between rounded-2xl p-8 overflow-hidden bg-white border border-gray-200 shadow-sm">
                 <div className="absolute -top-10 -right-10 w-40 h-40 bg-accent/20 rounded-full blur-2xl"></div>
 
                 {/* Header with refresh button */}
