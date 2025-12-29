@@ -225,10 +225,6 @@ export function loadGoogleMapsAPI(): Promise<void> {
   });
 }
 
-    document.head.appendChild(script);
-  });
-}
-
 /**
  * Get current position from Browser Geolocation API
  * Uses high accuracy mode with configured timeout and maximumAge

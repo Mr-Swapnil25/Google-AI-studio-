@@ -334,3 +334,172 @@ export interface DodoPaymentRecord {
   /** Last update timestamp */
   updatedAt?: Date;
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DISTANCE & DELIVERY PRICING
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Coordinates for GPS location
+ */
+export interface Coordinates {
+  lat: number;
+  lng: number;
+}
+
+/**
+ * Stored location with metadata for Farmer/Buyer profiles
+ */
+export interface StoredLocation {
+  /** GPS coordinates */
+  coordinates: Coordinates;
+  /** State name */
+  state: string;
+  /** District name */
+  district: string;
+  /** City/Town name */
+  city?: string;
+  /** Locality/Area name */
+  locality?: string;
+  /** Country */
+  country?: string;
+  /** Postal/PIN code */
+  postalCode?: string;
+  /** Full formatted address */
+  formattedAddress?: string;
+  /** Location accuracy in meters */
+  accuracy?: number;
+  /** When location was captured */
+  timestamp: number;
+  /** Source of location data */
+  source: 'gps' | 'manual' | 'ip-fallback';
+}
+
+/**
+ * Distance Matrix API result
+ */
+export interface DistanceResult {
+  /** Distance in meters (raw API value) */
+  distanceMeters: number;
+  /** Distance in kilometers */
+  distanceKm: number;
+  /** Human-readable distance */
+  distanceText: string;
+  /** Duration in seconds (without traffic) */
+  durationSeconds: number;
+  /** Duration in minutes */
+  durationMinutes: number;
+  /** Human-readable duration */
+  durationText: string;
+  /** Traffic-adjusted duration in seconds */
+  durationInTrafficSeconds?: number;
+  /** Traffic-adjusted duration in minutes */
+  durationInTrafficMinutes?: number;
+  /** Traffic-adjusted duration text */
+  durationInTrafficText?: string;
+  /** API status */
+  status: 'OK' | 'NOT_FOUND' | 'ZERO_RESULTS' | 'INVALID_REQUEST';
+  /** Origin coordinates */
+  origin: Coordinates;
+  /** Destination coordinates */
+  destination: Coordinates;
+  /** Whether from cache */
+  fromCache: boolean;
+  /** Calculation timestamp */
+  calculatedAt: number;
+}
+
+/**
+ * Delivery pricing tier configuration
+ */
+export interface DeliveryPricingTier {
+  /** Minimum distance for this tier (km) */
+  minKm: number;
+  /** Maximum distance for this tier (km) */
+  maxKm: number;
+  /** Base delivery fee (₹) */
+  baseFee: number;
+  /** Rate per km (₹/km) */
+  ratePerKm: number;
+}
+
+/**
+ * Complete delivery quote with pricing breakdown
+ */
+export interface DeliveryQuote {
+  /** Total delivery fee in ₹ */
+  deliveryFee: number;
+  /** Distance in km */
+  distanceKm: number;
+  /** Estimated delivery time in minutes */
+  estimatedMinutes: number;
+  /** Traffic-adjusted delivery time */
+  trafficAdjustedMinutes?: number;
+  /** Pricing tier name */
+  tier: string;
+  /** Price breakdown */
+  breakdown: {
+    baseFee: number;
+    distanceCharge: number;
+    trafficPremium: number;
+  };
+  /** Whether delivery is possible */
+  isDeliverable: boolean;
+  /** Reason if not deliverable */
+  unavailableReason?: string;
+  /** Price lock expiry timestamp */
+  priceLockExpiresAt: number;
+}
+
+/**
+ * Order with delivery pricing
+ */
+export interface OrderWithDelivery {
+  /** Order ID */
+  orderId: string;
+  /** Product subtotal in ₹ */
+  productSubtotal: number;
+  /** Delivery fee in ₹ */
+  deliveryFee: number;
+  /** Total amount in ₹ */
+  totalAmount: number;
+  /** Distance between farmer and buyer */
+  distanceKm: number;
+  /** Estimated delivery time in minutes */
+  estimatedDeliveryMinutes: number;
+  /** Farmer coordinates */
+  farmerCoordinates: Coordinates;
+  /** Buyer coordinates */
+  buyerCoordinates: Coordinates;
+  /** When distance was calculated */
+  distanceCalculatedAt: number;
+  /** Delivery quote details */
+  deliveryQuote: DeliveryQuote;
+}
+
+/**
+ * Farmer profile with location data
+ */
+export interface FarmerLocationProfile {
+  farmerId: string;
+  farmerName: string;
+  /** Current stored location */
+  location: StoredLocation;
+  /** Whether location is verified */
+  isLocationVerified: boolean;
+  /** Last location update */
+  lastLocationUpdate: number;
+}
+
+/**
+ * Buyer session location (current session only)
+ */
+export interface BuyerSessionLocation {
+  buyerId: string;
+  /** Current session location */
+  location: StoredLocation;
+  /** Session start time */
+  sessionStartedAt: number;
+  /** Whether location was manually entered */
+  isManualEntry: boolean;
+}

@@ -380,3 +380,190 @@ export function getGradeLabel(grade: string): string {
   };
   return labels[grade.toUpperCase()] || 'Standard Quality';
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DISTANCE-BASED DELIVERY PRICING
+// ═══════════════════════════════════════════════════════════════════════════════
+
+import {
+  calculateDistance,
+  getDeliveryQuote,
+  calculateDeliveryFee,
+  calculateHaversineDistance,
+  type Coordinates,
+  type DeliveryQuote,
+  type DistanceResult,
+} from '../services/distanceMatrixService';
+
+export interface TotalOrderPricing {
+  /** Product price per kg */
+  pricePerKg: number;
+  /** Quantity in kg */
+  quantityKg: number;
+  /** Product subtotal (price × quantity) */
+  productSubtotal: number;
+  /** Delivery fee based on distance */
+  deliveryFee: number;
+  /** Grand total (product + delivery) */
+  totalAmount: number;
+  /** Distance in km between farmer and buyer */
+  distanceKm: number;
+  /** Estimated delivery time in minutes */
+  estimatedDeliveryMinutes: number;
+  /** Traffic-adjusted delivery time */
+  trafficAdjustedMinutes?: number;
+  /** Delivery tier name */
+  deliveryTier: string;
+  /** Whether delivery is available */
+  isDeliverable: boolean;
+  /** Reason if not deliverable */
+  unavailableReason?: string;
+  /** Price breakdown for display */
+  breakdown: {
+    productPrice: number;
+    quantity: number;
+    productSubtotal: number;
+    deliveryBaseFee: number;
+    deliveryDistanceCharge: number;
+    deliveryTrafficPremium: number;
+    deliveryTotal: number;
+    grandTotal: number;
+  };
+  /** Price lock expiry timestamp */
+  priceLockExpiresAt: number;
+}
+
+/**
+ * Calculate complete order pricing including distance-based delivery
+ * 
+ * @param pricePerKg - Product price per kg
+ * @param quantityKg - Quantity in kg
+ * @param farmerCoords - Farmer's GPS coordinates
+ * @param buyerCoords - Buyer's GPS coordinates
+ */
+export async function calculateTotalOrderPrice(
+  pricePerKg: number,
+  quantityKg: number,
+  farmerCoords: Coordinates,
+  buyerCoords: Coordinates
+): Promise<TotalOrderPricing> {
+  console.log('[PricingEngine] Calculating total order price with delivery...');
+  
+  // Calculate product subtotal
+  const productSubtotal = Math.round(pricePerKg * quantityKg * 100) / 100;
+  
+  // Get delivery quote (includes distance calculation)
+  const deliveryQuote = await getDeliveryQuote(farmerCoords, buyerCoords);
+  
+  // Calculate grand total
+  const totalAmount = productSubtotal + deliveryQuote.deliveryFee;
+  
+  console.log('[PricingEngine] Order pricing complete:', {
+    productSubtotal: `₹${productSubtotal}`,
+    deliveryFee: `₹${deliveryQuote.deliveryFee}`,
+    total: `₹${totalAmount}`,
+    distance: `${deliveryQuote.distanceKm}km`,
+  });
+  
+  return {
+    pricePerKg,
+    quantityKg,
+    productSubtotal,
+    deliveryFee: deliveryQuote.deliveryFee,
+    totalAmount,
+    distanceKm: deliveryQuote.distanceKm,
+    estimatedDeliveryMinutes: deliveryQuote.estimatedMinutes,
+    trafficAdjustedMinutes: deliveryQuote.trafficAdjustedMinutes,
+    deliveryTier: deliveryQuote.tier,
+    isDeliverable: deliveryQuote.isDeliverable,
+    unavailableReason: deliveryQuote.unavailableReason,
+    breakdown: {
+      productPrice: pricePerKg,
+      quantity: quantityKg,
+      productSubtotal,
+      deliveryBaseFee: deliveryQuote.breakdown.baseFee,
+      deliveryDistanceCharge: deliveryQuote.breakdown.distanceCharge,
+      deliveryTrafficPremium: deliveryQuote.breakdown.trafficPremium,
+      deliveryTotal: deliveryQuote.deliveryFee,
+      grandTotal: totalAmount,
+    },
+    priceLockExpiresAt: deliveryQuote.priceLockExpiresAt,
+  };
+}
+
+/**
+ * Quick estimate delivery fee without API call (uses Haversine)
+ * Good for UI previews before final calculation
+ */
+export function estimateDeliveryFee(
+  farmerCoords: Coordinates,
+  buyerCoords: Coordinates
+): { estimatedFee: number; estimatedDistanceKm: number; tier: string } {
+  const straightLineKm = calculateHaversineDistance(farmerCoords, buyerCoords);
+  const estimatedRoadKm = straightLineKm * 1.4; // Road factor
+  
+  const { fee, tier } = calculateDeliveryFee(estimatedRoadKm);
+  
+  return {
+    estimatedFee: fee,
+    estimatedDistanceKm: Math.round(estimatedRoadKm * 100) / 100,
+    tier,
+  };
+}
+
+/**
+ * Recalculate delivery when buyer location changes
+ * Returns updated pricing with new delivery fee
+ */
+export async function recalculateDeliveryForNewLocation(
+  existingPricing: TotalOrderPricing,
+  newBuyerCoords: Coordinates,
+  farmerCoords: Coordinates
+): Promise<TotalOrderPricing> {
+  console.log('[PricingEngine] Recalculating delivery for new buyer location...');
+  
+  return calculateTotalOrderPrice(
+    existingPricing.pricePerKg,
+    existingPricing.quantityKg,
+    farmerCoords,
+    newBuyerCoords
+  );
+}
+
+/**
+ * Format total price breakdown for display
+ */
+export function formatPriceBreakdown(pricing: TotalOrderPricing): string[] {
+  const lines: string[] = [];
+  
+  lines.push(`Product: ₹${pricing.breakdown.productPrice.toFixed(2)}/kg × ${pricing.breakdown.quantity}kg = ₹${pricing.breakdown.productSubtotal.toFixed(2)}`);
+  
+  if (pricing.deliveryFee > 0) {
+    lines.push(`Delivery (${pricing.distanceKm.toFixed(1)}km): ₹${pricing.deliveryFee.toFixed(2)}`);
+    if (pricing.breakdown.deliveryTrafficPremium > 0) {
+      lines.push(`  └ Traffic premium: ₹${pricing.breakdown.deliveryTrafficPremium.toFixed(2)}`);
+    }
+  } else if (pricing.isDeliverable) {
+    lines.push('Delivery: FREE (within 10km)');
+  }
+  
+  lines.push(`Total: ₹${pricing.breakdown.grandTotal.toFixed(2)}`);
+  
+  if (pricing.estimatedDeliveryMinutes > 0) {
+    const time = pricing.trafficAdjustedMinutes || pricing.estimatedDeliveryMinutes;
+    lines.push(`Estimated delivery: ~${time} minutes`);
+  }
+  
+  return lines;
+}
+
+// Re-export distance functions for convenience
+export {
+  calculateDistance,
+  getDeliveryQuote,
+  calculateDeliveryFee,
+  calculateHaversineDistance,
+  type Coordinates,
+  type DeliveryQuote,
+  type DistanceResult,
+};

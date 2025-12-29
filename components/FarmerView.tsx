@@ -378,10 +378,12 @@ export const FarmerView = ({ products, negotiations, messages, currentUserId, cu
                 negotiations={negotiations}
                 messages={messages}
                 currentUserId={currentUserId}
+                currentUser={currentUser}
                 onClose={() => setShowNegotiationChat(false)}
                 onSendMessage={onSendMessage}
                 onRespond={onRespond}
                 onCounter={onCounter}
+                onStartCall={onAcceptCall}
                 initialNegotiationId={selectedNegotiationId}
             />
         );

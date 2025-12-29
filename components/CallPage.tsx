@@ -19,6 +19,11 @@ import { firebaseService } from '../services/firebaseService';
 // ═══════════════════════════════════════════════════════════════════════════════
 const ZEGO_APP_ID = 272124016;
 const ZEGO_SERVER_SECRET = '769c2e05bf965406f95e8d218ffc1a2e';
+const ZEGO_APP_SIGN = 'a0fad9c1a970a8ae95986cc21575c5cfd2d6d2e708cc1db01fab611830c783cb';
+const ZEGO_CALLBACK_SECRET = 'a0fad9c1a970a8ae95986cc21575c5cf';
+// WebSocket endpoints (for reference - SDK handles these automatically)
+// Primary WS: wss://webliveroom272124016-api.coolzcloud.com/ws
+// Backup WS: wss://webliveroom272124016-api-bak.coolzcloud.com/ws
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // INTERFACES

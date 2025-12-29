@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Product, Negotiation, ProductType, NegotiationStatus, ProductCategory, Farmer, ChatMessage, User, CartItem, UserRole } from '../types';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { Product, Negotiation, ProductType, NegotiationStatus, ProductCategory, Farmer, ChatMessage, User, CartItem, UserRole, CallStatus } from '../types';
 import { XIcon, ShoppingCartIcon } from './icons';
 import { ProductDetailPage } from './ProductDetailPage';
 import { BuyerNegotiationConsole } from './BuyerNegotiationConsole';
@@ -7,6 +7,7 @@ import { ProductCardSkeleton } from './ProductCardSkeleton';
 import { firebaseService } from '../services/firebaseService';
 import { CartDrawer } from './CartDrawer';
 import { ModeSelector } from './ModeSelector';
+import { IncomingCallOverlay } from './IncomingCallOverlay';
 
 // B2B Platform - Cart functionality for bulk orders
 interface BuyerViewProps {
@@ -73,6 +74,7 @@ export const BuyerView = ({
     const [showNegotiationsPanel, setShowNegotiationsPanel] = useState(false);
     const [activeNegotiationId, setActiveNegotiationId] = useState<string | null>(null);
     const [isCartOpen, setIsCartOpen] = useState(false);
+    const [incomingCall, setIncomingCall] = useState<Negotiation | null>(null);
 
     const farmerMap = useMemo(() => new Map(farmers.map(f => [f.id, f])), [farmers]);
     
@@ -80,6 +82,64 @@ export const BuyerView = ({
     const cartMap = useMemo(() => new Map(cart.map(item => [item.id, item])), [cart]);
     const cartCount = cart.length;
     const cartTotal = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.cartQuantity, 0), [cart]);
+
+    // -------------------------------------------------------------------------------
+    // INCOMING CALL LISTENER FOR BUYER
+    // -------------------------------------------------------------------------------
+    useEffect(() => {
+        if (!currentUserId) return;
+        
+        const unsubscribe = firebaseService.subscribeToIncomingCallsForBuyer(
+            currentUserId,
+            (incomingCalls) => {
+                // Show the first incoming call if any (where caller is the farmer, not the buyer)
+                if (incomingCalls.length > 0) {
+                    const call = incomingCalls.find(c => c.callerId !== currentUserId);
+                    if (call) {
+                        setIncomingCall(call);
+                    } else {
+                        setIncomingCall(null);
+                    }
+                } else {
+                    setIncomingCall(null);
+                }
+            },
+            (error) => {
+                console.error('[BuyerView] Incoming call subscription error:', error);
+            }
+        );
+        
+        return () => unsubscribe();
+    }, [currentUserId]);
+
+    /**
+     * Handle accepting an incoming call from farmer
+     */
+    const handleAcceptCall = useCallback(async () => {
+        if (!incomingCall || !onStartCall) return;
+        
+        try {
+            await firebaseService.acceptCall(incomingCall.id);
+            setIncomingCall(null);
+            onStartCall(incomingCall.id);
+        } catch (error) {
+            console.error('[BuyerView] Error accepting call:', error);
+        }
+    }, [incomingCall, onStartCall]);
+
+    /**
+     * Handle declining an incoming call from farmer
+     */
+    const handleDeclineCall = useCallback(async () => {
+        if (!incomingCall) return;
+        
+        try {
+            await firebaseService.declineCall(incomingCall.id);
+            setIncomingCall(null);
+        } catch (error) {
+            console.error('[BuyerView] Error declining call:', error);
+        }
+    }, [incomingCall]);
 
     const displayedProducts = useMemo(() => {
         let filtered = [...products];
@@ -690,6 +750,17 @@ export const BuyerView = ({
                     setIsCartOpen(false);
                 }}
             />
+
+            {/* Incoming Call Overlay from Farmer */}
+            {incomingCall && incomingCall.callerId && (
+                <IncomingCallOverlay
+                    negotiation={incomingCall}
+                    callerName={incomingCall.callerName || 'Farmer'}
+                    productName={incomingCall.productName || 'Product'}
+                    onAccept={handleAcceptCall}
+                    onDecline={handleDeclineCall}
+                />
+            )}
         </div>
     );
 };

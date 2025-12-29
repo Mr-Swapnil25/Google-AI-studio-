@@ -1,12 +1,17 @@
 /**
  * CartDrawer - Slide-over cart panel
  * Shows cart items, quantities, totals, and checkout button
+ * 
+ * Now includes real-time distance-based delivery pricing
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { CartItem } from '../types';
 import { XIcon, TrashIcon, ShoppingCartIcon } from './icons';
 import { PaymentGateway } from './PaymentGateway';
+import { useDeliveryPricing } from '../hooks/useDeliveryPricing';
+import { firebaseService } from '../services/firebaseService';
+import type { Coordinates } from '../services/distanceMatrixService';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -30,10 +35,57 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   onPaymentSuccess,
 }) => {
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+  const [farmerCoords, setFarmerCoords] = useState<Coordinates | null>(null);
+  const [loadingFarmerLocation, setLoadingFarmerLocation] = useState(false);
+
+  // Get primary farmer from cart (first item's farmer for simplicity)
+  const primaryFarmerId = cart.length > 0 ? cart[0].farmerId : null;
+
+  // Load farmer location when cart changes
+  useEffect(() => {
+    const loadFarmerLocation = async () => {
+      if (!primaryFarmerId) {
+        setFarmerCoords(null);
+        return;
+      }
+
+      setLoadingFarmerLocation(true);
+      try {
+        const location = await firebaseService.getFarmerLocation(primaryFarmerId);
+        if (location?.coordinates) {
+          setFarmerCoords(location.coordinates);
+          console.log('[CartDrawer] Farmer location loaded:', location.coordinates);
+        }
+      } catch (error) {
+        console.error('[CartDrawer] Failed to load farmer location:', error);
+      } finally {
+        setLoadingFarmerLocation(false);
+      }
+    };
+
+    loadFarmerLocation();
+  }, [primaryFarmerId]);
+
+  // Use delivery pricing hook
+  const {
+    deliveryQuote,
+    loading: deliveryLoading,
+    error: deliveryError,
+    buyerLocation,
+    detectingLocation,
+    distanceResult,
+    priceLockRemainingSeconds,
+  } = useDeliveryPricing({
+    farmerCoords,
+    autoDetectLocation: isOpen, // Only detect when drawer is open
+    useCache: true,
+  });
 
   // Calculate totals
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.cartQuantity, 0);
-  const deliveryFee = subtotal > 5000 ? 0 : 200;
+  
+  // Use distance-based delivery fee if available, otherwise fallback
+  const deliveryFee = deliveryQuote?.deliveryFee ?? (subtotal > 5000 ? 0 : 200);
   const total = subtotal + deliveryFee;
   const itemCount = cart.length;
 
@@ -126,6 +178,64 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 </p>
               </div>
 
+              {/* Delivery Location Status */}
+              {(detectingLocation || deliveryLoading || loadingFarmerLocation) && (
+                <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200 animate-pulse">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-amber-600 animate-spin">sync</span>
+                    <span className="text-sm text-amber-700">
+                      {detectingLocation ? 'Detecting your location...' : 
+                       loadingFarmerLocation ? 'Loading farmer location...' :
+                       'Calculating delivery distance...'}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Distance & Delivery Info */}
+              {deliveryQuote && !deliveryLoading && distanceResult && (
+                <div className="p-3 bg-green-50 rounded-2xl border border-green-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-green-700">
+                      <span className="material-symbols-outlined">location_on</span>
+                      <span className="text-sm font-medium">{distanceResult.distanceKm.toFixed(1)} km away</span>
+                    </div>
+                    <span className="text-xs text-green-600">
+                      ~{distanceResult.durationInTrafficMinutes || distanceResult.durationMinutes} mins
+                    </span>
+                  </div>
+                  <p className="text-xs text-green-600 mt-1">
+                    {deliveryQuote.tier}
+                    {priceLockRemainingSeconds && priceLockRemainingSeconds > 0 && (
+                      <span className="ml-2">• Price locked for {Math.floor(priceLockRemainingSeconds / 60)}m {priceLockRemainingSeconds % 60}s</span>
+                    )}
+                  </p>
+                </div>
+              )}
+
+              {/* Delivery Error */}
+              {deliveryError && (
+                <div className="p-3 bg-red-50 rounded-2xl border border-red-200">
+                  <div className="flex items-center gap-2 text-red-700">
+                    <span className="material-symbols-outlined">error</span>
+                    <span className="text-sm">{deliveryError}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Not Deliverable Warning */}
+              {deliveryQuote && !deliveryQuote.isDeliverable && (
+                <div className="p-3 bg-orange-50 rounded-2xl border border-orange-200">
+                  <div className="flex items-center gap-2 text-orange-700">
+                    <span className="material-symbols-outlined">warning</span>
+                    <span className="text-sm font-medium">Out of Delivery Zone</span>
+                  </div>
+                  <p className="text-xs text-orange-600 mt-1">
+                    {deliveryQuote.unavailableReason || 'This location is outside our delivery range. Consider pickup.'}
+                  </p>
+                </div>
+              )}
+
               {/* Cart Items */}
               {cart.map((item) => (
                 <div
@@ -210,17 +320,79 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 <span>Subtotal</span>
                 <span className="font-semibold text-gray-800">₹{subtotal.toLocaleString('en-IN')}</span>
               </div>
-              <div className="flex justify-between text-sm text-gray-600">
-                <span>Delivery</span>
-                <span className={`font-semibold ${deliveryFee === 0 ? 'text-green-600' : 'text-gray-800'}`}>
-                  {deliveryFee === 0 ? 'FREE' : `₹${deliveryFee}`}
-                </span>
-              </div>
-              {deliveryFee > 0 && (
-                <p className="text-xs text-green-600">
-                  Add ₹{(5000 - subtotal).toLocaleString('en-IN')} more for free delivery!
-                </p>
+              
+              {/* Distance-based delivery breakdown */}
+              {deliveryQuote && distanceResult ? (
+                <>
+                  <div className="flex justify-between text-sm text-gray-600">
+                    <span className="flex items-center gap-1">
+                      Delivery
+                      <span className="text-xs text-gray-400">({distanceResult.distanceKm.toFixed(1)} km)</span>
+                    </span>
+                    <span className={`font-semibold ${deliveryQuote.deliveryFee === 0 ? 'text-green-600' : 'text-gray-800'}`}>
+                      {deliveryQuote.deliveryFee === 0 ? 'FREE' : `₹${deliveryQuote.deliveryFee.toLocaleString('en-IN')}`}
+                    </span>
+                  </div>
+                  
+                  {/* Delivery breakdown details */}
+                  {deliveryQuote.deliveryFee > 0 && (
+                    <div className="pl-4 space-y-1 text-xs text-gray-500">
+                      {deliveryQuote.breakdown.baseFee > 0 && (
+                        <div className="flex justify-between">
+                          <span>Base fee</span>
+                          <span>₹{deliveryQuote.breakdown.baseFee}</span>
+                        </div>
+                      )}
+                      {deliveryQuote.breakdown.distanceCharge > 0 && (
+                        <div className="flex justify-between">
+                          <span>Distance charge</span>
+                          <span>₹{deliveryQuote.breakdown.distanceCharge}</span>
+                        </div>
+                      )}
+                      {deliveryQuote.breakdown.trafficPremium > 0 && (
+                        <div className="flex justify-between text-amber-600">
+                          <span>Traffic premium</span>
+                          <span>₹{deliveryQuote.breakdown.trafficPremium}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Free delivery hint */}
+                  {deliveryQuote.deliveryFee === 0 && distanceResult.distanceKm <= 10 && (
+                    <p className="text-xs text-green-600 flex items-center gap-1">
+                      <span className="material-symbols-outlined text-sm">celebration</span>
+                      Free delivery within 10km!
+                    </p>
+                  )}
+                </>
+              ) : (
+                // Fallback static delivery display
+                <>
+                  <div className="flex justify-between text-sm text-gray-600">
+                    <span>Delivery</span>
+                    <span className={`font-semibold ${deliveryFee === 0 ? 'text-green-600' : 'text-gray-800'}`}>
+                      {deliveryFee === 0 ? 'FREE' : `₹${deliveryFee}`}
+                    </span>
+                  </div>
+                  {deliveryFee > 0 && (
+                    <p className="text-xs text-green-600">
+                      Add ₹{(5000 - subtotal).toLocaleString('en-IN')} more for free delivery!
+                    </p>
+                  )}
+                </>
               )}
+              
+              {/* Estimated delivery time */}
+              {deliveryQuote && distanceResult && deliveryQuote.isDeliverable && (
+                <div className="flex justify-between text-sm text-gray-600">
+                  <span>Est. delivery time</span>
+                  <span className="font-medium text-gray-700">
+                    ~{distanceResult.durationInTrafficMinutes || distanceResult.durationMinutes} mins
+                  </span>
+                </div>
+              )}
+              
               <div className="flex justify-between pt-2 border-t border-gray-200">
                 <span className="font-bold text-gray-800">Total</span>
                 <span className="text-2xl font-bold text-primary font-heading">
@@ -232,14 +404,22 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
             {/* Checkout Button */}
             <button
               onClick={handleCheckout}
-              className="w-full py-4 bg-accent text-gray-900 rounded-2xl font-bold text-lg hover:bg-yellow-400 hover:shadow-lg transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2"
+              disabled={deliveryQuote && !deliveryQuote.isDeliverable}
+              className={`w-full py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 transition-all transform
+                ${deliveryQuote && !deliveryQuote.isDeliverable 
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                  : 'bg-accent text-gray-900 hover:bg-yellow-400 hover:shadow-lg hover:scale-[1.02]'
+                }`}
             >
               <span className="material-symbols-outlined">lock</span>
-              Proceed to Checkout
+              {deliveryQuote && !deliveryQuote.isDeliverable ? 'Delivery Unavailable' : 'Proceed to Checkout'}
             </button>
 
             <p className="text-xs text-center text-gray-500">
-              Secure checkout powered by Dodo Payments
+              {distanceResult 
+                ? `Distance: ${distanceResult.distanceKm.toFixed(1)}km • Secure checkout powered by Dodo Payments`
+                : 'Secure checkout powered by Dodo Payments'
+              }
             </p>
           </div>
         )}
@@ -254,6 +434,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
         deliveryFee={deliveryFee}
         buyerId={currentUserId}
         cartItems={cart}
+        distanceKm={distanceResult?.distanceKm}
+        deliveryTier={deliveryQuote?.tier}
+        estimatedDeliveryMinutes={distanceResult?.durationInTrafficMinutes || distanceResult?.durationMinutes}
         onPaymentComplete={handlePaymentComplete}
       />
     </>

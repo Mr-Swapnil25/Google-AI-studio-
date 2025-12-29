@@ -1171,4 +1171,325 @@ export const firebaseService = {
       }
     );
   },
+
+  /**
+   * Subscribe to incoming calls for a buyer
+   * Returns negotiations where the user is the buyer and callStatus is 'ringing'
+   */
+  subscribeToIncomingCallsForBuyer(
+    buyerId: string,
+    onChange: (incomingCalls: Negotiation[]) => void,
+    onError?: (error: Error) => void
+  ): () => void {
+    const q = query(
+      collection(db, 'negotiations'),
+      where('buyerId', '==', buyerId),
+      where('callStatus', '==', CallStatus.Ringing)
+    );
+
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        const calls: Negotiation[] = snapshot.docs.map((docSnap) => {
+          const data = docSnap.data();
+          return {
+            id: docSnap.id,
+            productId: data.productId,
+            productName: data.productName,
+            productImageUrl: data.productImageUrl,
+            buyerId: data.buyerId,
+            farmerId: data.farmerId,
+            initialPrice: data.initialPrice,
+            offeredPrice: data.offeredPrice,
+            counterPrice: data.counterPrice,
+            quantity: data.quantity,
+            status: data.status,
+            notes: data.notes,
+            lastUpdated: toDate(data.lastUpdated),
+            floorPrice: data.floorPrice,
+            targetPrice: data.targetPrice,
+            priceSource: data.priceSource,
+            priceVerified: data.priceVerified,
+            qualityGrade: data.qualityGrade,
+            farmerLocation: data.farmerLocation,
+            callStatus: data.callStatus,
+            callerId: data.callerId,
+            callerName: data.callerName,
+            callStartedAt: toDate(data.callStartedAt),
+          } as Negotiation;
+        });
+        onChange(calls);
+      },
+      (error) => {
+        console.error('[Firebase] Error subscribing to buyer incoming calls:', error);
+        onError?.(error);
+      }
+    );
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // FARMER LOCATION STORAGE (for Distance Matrix API)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Store/update farmer's location with coordinates for distance calculation
+   */
+  async saveFarmerLocation(
+    farmerId: string,
+    locationData: {
+      coordinates: { lat: number; lng: number };
+      state: string;
+      district: string;
+      city?: string;
+      locality?: string;
+      country?: string;
+      postalCode?: string;
+      formattedAddress?: string;
+      accuracy?: number;
+      source: 'gps' | 'manual' | 'ip-fallback';
+    }
+  ): Promise<void> {
+    console.log('[Firebase] Saving farmer location:', farmerId);
+    
+    await setDoc(
+      doc(db, 'farmerLocations', farmerId),
+      {
+        farmerId,
+        ...locationData,
+        timestamp: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        isVerified: locationData.source === 'gps',
+      },
+      { merge: true }
+    );
+
+    // Also update farmer profile with location summary
+    await updateDoc(doc(db, 'farmers', farmerId), {
+      location: locationData.formattedAddress || `${locationData.district}, ${locationData.state}`,
+      locationState: locationData.state,
+      locationDistrict: locationData.district,
+      hasCoordinates: true,
+      updatedAt: serverTimestamp(),
+    });
+
+    console.log('[Firebase] Farmer location saved successfully');
+  },
+
+  /**
+   * Get farmer's stored location with coordinates
+   */
+  async getFarmerLocation(farmerId: string): Promise<{
+    coordinates: { lat: number; lng: number };
+    state: string;
+    district: string;
+    city?: string;
+    locality?: string;
+    country?: string;
+    postalCode?: string;
+    formattedAddress?: string;
+    accuracy?: number;
+    timestamp: Date;
+    source: 'gps' | 'manual' | 'ip-fallback';
+    isVerified: boolean;
+  } | null> {
+    try {
+      const snap = await getDoc(doc(db, 'farmerLocations', farmerId));
+      if (!snap.exists()) return null;
+      
+      const data = snap.data();
+      return {
+        coordinates: data.coordinates,
+        state: data.state,
+        district: data.district,
+        city: data.city,
+        locality: data.locality,
+        country: data.country,
+        postalCode: data.postalCode,
+        formattedAddress: data.formattedAddress,
+        accuracy: data.accuracy,
+        timestamp: toDate(data.timestamp),
+        source: data.source || 'manual',
+        isVerified: data.isVerified ?? false,
+      };
+    } catch (error) {
+      console.error('[Firebase] Error getting farmer location:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Check if farmer's location is still valid (not stale)
+   * Max age: 30 days
+   */
+  async isFarmerLocationFresh(farmerId: string): Promise<boolean> {
+    const location = await this.getFarmerLocation(farmerId);
+    if (!location) return false;
+    
+    const maxAgeMs = 30 * 24 * 60 * 60 * 1000; // 30 days
+    const age = Date.now() - location.timestamp.getTime();
+    
+    return age < maxAgeMs;
+  },
+
+  /**
+   * Get multiple farmers' locations for proximity sorting
+   */
+  async getMultipleFarmerLocations(farmerIds: string[]): Promise<Map<string, {
+    coordinates: { lat: number; lng: number };
+    state: string;
+    district: string;
+    formattedAddress?: string;
+  }>> {
+    const locationMap = new Map();
+    
+    // Batch in chunks of 10 (Firestore 'in' query limit)
+    for (const batch of chunk(farmerIds, 10)) {
+      try {
+        const q = query(
+          collection(db, 'farmerLocations'),
+          where('farmerId', 'in', batch)
+        );
+        const snap = await getDocs(q);
+        
+        snap.docs.forEach((docSnap) => {
+          const data = docSnap.data();
+          if (data.coordinates?.lat && data.coordinates?.lng) {
+            locationMap.set(data.farmerId, {
+              coordinates: data.coordinates,
+              state: data.state,
+              district: data.district,
+              formattedAddress: data.formattedAddress,
+            });
+          }
+        });
+      } catch (error) {
+        console.error('[Firebase] Error fetching batch locations:', error);
+      }
+    }
+    
+    return locationMap;
+  },
+
+  /**
+   * Store buyer's delivery location for an order
+   */
+  async saveBuyerDeliveryLocation(
+    buyerId: string,
+    orderId: string,
+    locationData: {
+      coordinates: { lat: number; lng: number };
+      state: string;
+      district: string;
+      city?: string;
+      formattedAddress: string;
+      source: 'gps' | 'manual';
+    }
+  ): Promise<void> {
+    await setDoc(
+      doc(db, 'deliveryLocations', orderId),
+      {
+        buyerId,
+        orderId,
+        ...locationData,
+        timestamp: serverTimestamp(),
+      }
+    );
+    
+    console.log('[Firebase] Buyer delivery location saved for order:', orderId);
+  },
+
+  /**
+   * Get delivery location for an order
+   */
+  async getDeliveryLocation(orderId: string): Promise<{
+    coordinates: { lat: number; lng: number };
+    state: string;
+    district: string;
+    formattedAddress: string;
+    timestamp: Date;
+  } | null> {
+    try {
+      const snap = await getDoc(doc(db, 'deliveryLocations', orderId));
+      if (!snap.exists()) return null;
+      
+      const data = snap.data();
+      return {
+        coordinates: data.coordinates,
+        state: data.state,
+        district: data.district,
+        formattedAddress: data.formattedAddress,
+        timestamp: toDate(data.timestamp),
+      };
+    } catch (error) {
+      console.error('[Firebase] Error getting delivery location:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Store distance and delivery pricing for an order
+   */
+  async saveOrderDeliveryDetails(
+    orderId: string,
+    details: {
+      farmerId: string;
+      buyerId: string;
+      farmerCoordinates: { lat: number; lng: number };
+      buyerCoordinates: { lat: number; lng: number };
+      distanceKm: number;
+      durationMinutes: number;
+      durationInTrafficMinutes?: number;
+      deliveryFee: number;
+      deliveryTier: string;
+      productSubtotal: number;
+      totalAmount: number;
+      priceBreakdown: {
+        baseFee: number;
+        distanceCharge: number;
+        trafficPremium: number;
+      };
+    }
+  ): Promise<void> {
+    await setDoc(
+      doc(db, 'orderDeliveryDetails', orderId),
+      {
+        ...details,
+        calculatedAt: serverTimestamp(),
+        priceLockedAt: serverTimestamp(),
+        priceLockExpiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
+      }
+    );
+    
+    console.log('[Firebase] Order delivery details saved:', orderId);
+  },
+
+  /**
+   * Get order delivery details
+   */
+  async getOrderDeliveryDetails(orderId: string): Promise<{
+    distanceKm: number;
+    durationMinutes: number;
+    deliveryFee: number;
+    deliveryTier: string;
+    totalAmount: number;
+    calculatedAt: Date;
+  } | null> {
+    try {
+      const snap = await getDoc(doc(db, 'orderDeliveryDetails', orderId));
+      if (!snap.exists()) return null;
+      
+      const data = snap.data();
+      return {
+        distanceKm: data.distanceKm,
+        durationMinutes: data.durationMinutes,
+        deliveryFee: data.deliveryFee,
+        deliveryTier: data.deliveryTier,
+        totalAmount: data.totalAmount,
+        calculatedAt: toDate(data.calculatedAt),
+      };
+    } catch (error) {
+      console.error('[Firebase] Error getting order delivery details:', error);
+      return null;
+    }
+  },
 };

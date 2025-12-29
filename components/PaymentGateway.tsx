@@ -34,6 +34,12 @@ interface PaymentGatewayProps {
   buyerId?: string;
   buyerEmail?: string;
   cartItems?: CartItem[];
+  /** Distance in km between farmer and buyer */
+  distanceKm?: number;
+  /** Delivery pricing tier name */
+  deliveryTier?: string;
+  /** Estimated delivery time in minutes */
+  estimatedDeliveryMinutes?: number;
   onPaymentComplete: (success: boolean, transactionId?: string) => void;
 }
 

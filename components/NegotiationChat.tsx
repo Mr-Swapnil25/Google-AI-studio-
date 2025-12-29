@@ -1,15 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Negotiation, NegotiationStatus, ChatMessage } from '../types';
+import { Negotiation, NegotiationStatus, ChatMessage, User } from '../types';
 import { XIcon } from './icons';
+import { firebaseService } from '../services/firebaseService';
 
 interface NegotiationChatProps {
     negotiations: Negotiation[];
     messages: ChatMessage[];
     currentUserId: string;
+    currentUser?: User;
     onClose: () => void;
     onSendMessage: (negotiationId: string, text: string) => void;
     onRespond: (negotiationId: string, response: 'Accepted' | 'Rejected') => void;
     onCounter: (negotiation: Negotiation) => void;
+    onStartCall?: (negotiationId: string) => void;
     initialNegotiationId?: string;
 }
 
@@ -17,10 +20,12 @@ export const NegotiationChat: React.FC<NegotiationChatProps> = ({
     negotiations,
     messages,
     currentUserId,
+    currentUser,
     onClose,
     onSendMessage,
     onRespond,
     onCounter,
+    onStartCall,
     initialNegotiationId,
 }) => {
     const [selectedNegotiation, setSelectedNegotiation] = useState<Negotiation | null>(
@@ -30,6 +35,7 @@ export const NegotiationChat: React.FC<NegotiationChatProps> = ({
     );
     const [messageInput, setMessageInput] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
+    const [isStartingCall, setIsStartingCall] = useState(false);
     const chatContainerRef = useRef<HTMLDivElement>(null);
 
     const filteredNegotiations = negotiations.filter(n => 
@@ -49,6 +55,33 @@ export const NegotiationChat: React.FC<NegotiationChatProps> = ({
         if (!messageInput.trim() || !selectedNegotiation) return;
         onSendMessage(selectedNegotiation.id, messageInput.trim());
         setMessageInput('');
+    };
+
+    /**
+     * Start a video/voice call with the buyer
+     */
+    const handleStartCall = async () => {
+        if (!selectedNegotiation || !onStartCall || isStartingCall) return;
+        
+        setIsStartingCall(true);
+        try {
+            // Update Firestore to indicate call is ringing
+            const result = await firebaseService.startCall(
+                selectedNegotiation.id,
+                currentUserId,
+                currentUser?.name || 'Farmer'
+            );
+            
+            if (result.success) {
+                onStartCall(selectedNegotiation.id);
+            } else {
+                console.error('[NegotiationChat] Failed to start call:', result.error);
+            }
+        } catch (error) {
+            console.error('[NegotiationChat] Error starting call:', error);
+        } finally {
+            setIsStartingCall(false);
+        }
     };
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -195,9 +228,21 @@ export const NegotiationChat: React.FC<NegotiationChatProps> = ({
                                     <p className="text-sm text-[#5e7c8d] font-medium">{selectedNegotiation.productName}</p>
                                 </div>
                             </div>
-                            <button className="bg-[#f0f3f5] hover:bg-[#e0e3e5] rounded-full p-3 text-[#101618] transition-colors">
-                                <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>call</span>
-                            </button>
+                            {onStartCall && (
+                                <button 
+                                    onClick={handleStartCall}
+                                    disabled={isStartingCall}
+                                    className="bg-[#2E7D32] hover:bg-[#256029] disabled:bg-gray-300 rounded-full p-3 text-white transition-colors flex items-center gap-2"
+                                    title="Call Buyer"
+                                >
+                                    {isStartingCall ? (
+                                        <div className="size-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    ) : (
+                                        <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>videocam</span>
+                                    )}
+                                    <span className="text-sm font-semibold pr-1">Call Buyer</span>
+                                </button>
+                            )}
                         </div>
 
                         {/* Chat Content */}
