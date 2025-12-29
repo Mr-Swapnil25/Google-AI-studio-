@@ -4,6 +4,8 @@ import { useToast } from '../context/ToastContext';
 import { firebaseService } from '../services/firebaseService';
 import { User } from '../types';
 import { NeonProgressBar, KYC_STEPS } from './ui/NeonProgressBar';
+import { useGeolocation } from '../hooks/useGeolocation';
+import { GeoLocation } from '../services/geolocationService';
 
 interface FarmerKYCProps {
     isOpen: boolean;
@@ -23,6 +25,16 @@ interface PersonalInfo {
     village: string;
     photoFile: File | null;
     photoPreview: string | null;
+    // Extended location fields
+    latitude: string;
+    longitude: string;
+    state: string;
+    district: string;
+    city: string;
+    country: string;
+    postalCode: string;
+    fullAddress: string;
+    isLocationAutoDetected: boolean;
 }
 
 interface DocumentInfo {
@@ -51,6 +63,7 @@ export const FarmerKYC = ({ isOpen, currentUser, onClose, onComplete, required =
     const [step, setStep] = useState<KYCStep>(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('right');
+    const [locationMode, setLocationMode] = useState<'auto' | 'manual'>('auto');
 
     const [personalInfo, setPersonalInfo] = useState<PersonalInfo>({
         fullName: currentUser.name || '',
@@ -59,6 +72,56 @@ export const FarmerKYC = ({ isOpen, currentUser, onClose, onComplete, required =
         village: currentUser.location || '',
         photoFile: null,
         photoPreview: currentUser.avatarUrl || null,
+        // Extended location fields
+        latitude: '',
+        longitude: '',
+        state: '',
+        district: '',
+        city: '',
+        country: 'India',
+        postalCode: '',
+        fullAddress: '',
+        isLocationAutoDetected: false,
+    });
+
+    // Location detection hook
+    const handleLocationSuccess = useCallback((location: GeoLocation) => {
+        console.log('[FarmerKYC] Location detected successfully:', location);
+        setPersonalInfo(prev => ({
+            ...prev,
+            latitude: location.coordinates.lat.toFixed(8),
+            longitude: location.coordinates.lng.toFixed(8),
+            state: location.state,
+            district: location.district,
+            city: location.city || location.locality || '',
+            country: location.country || 'India',
+            postalCode: location.postalCode || '',
+            fullAddress: location.formattedAddress || '',
+            village: location.locality || location.district || prev.village,
+            isLocationAutoDetected: true,
+        }));
+        showToast('Location auto-detected successfully! ✓', 'success');
+    }, []);
+
+    const handleLocationError = useCallback((error: unknown) => {
+        console.error('[FarmerKYC] Location detection failed:', error);
+        // Don't show error toast immediately - let user try manual entry
+    }, []);
+
+    const {
+        location: detectedLocation,
+        loading: locationLoading,
+        error: locationError,
+        errorMessage: locationErrorMessage,
+        isSupported: isLocationSupported,
+        isAutoDetected,
+        refresh: refreshLocation,
+    } = useGeolocation({
+        autoDetect: isOpen && locationMode === 'auto',
+        useCache: true,
+        useFallback: true,
+        onSuccess: handleLocationSuccess,
+        onError: handleLocationError,
     });
 
     const photoInputRef = useRef<HTMLInputElement>(null);
@@ -84,6 +147,7 @@ export const FarmerKYC = ({ isOpen, currentUser, onClose, onComplete, required =
     useEffect(() => {
         if (isOpen) {
             setStep(1);
+            setLocationMode('auto');
             setPersonalInfo({
                 fullName: currentUser.name || '',
                 mobile: currentUser.phone || '',
@@ -91,6 +155,16 @@ export const FarmerKYC = ({ isOpen, currentUser, onClose, onComplete, required =
                 village: currentUser.location || '',
                 photoFile: null,
                 photoPreview: currentUser.avatarUrl || null,
+                // Extended location fields
+                latitude: '',
+                longitude: '',
+                state: '',
+                district: '',
+                city: '',
+                country: 'India',
+                postalCode: '',
+                fullAddress: '',
+                isLocationAutoDetected: false,
             });
             setDocuments({ aadhaarFile: null, aadhaarPreview: null, kisanFile: null, kisanPreview: null });
             setBankInfo({ accountHolder: currentUser.name || '', accountNumber: '', ifscCode: '', bankName: '' });
@@ -156,6 +230,15 @@ export const FarmerKYC = ({ isOpen, currentUser, onClose, onComplete, required =
             showToast('Please enter your village/locality.', 'error');
             return false;
         }
+        // Validate location fields
+        if (!personalInfo.state.trim()) {
+            showToast('Please enter your state. Use "Use My Location" or enter manually.', 'error');
+            return false;
+        }
+        if (!personalInfo.district.trim()) {
+            showToast('Please enter your district. Use "Use My Location" or enter manually.', 'error');
+            return false;
+        }
         return true;
     };
 
@@ -219,9 +302,28 @@ export const FarmerKYC = ({ isOpen, currentUser, onClose, onComplete, required =
                 kisanUrl = await firebaseService.uploadKYCDocument(documents.kisanFile, currentUser.uid, 'kisan');
             }
 
-            // Save KYC data to Firestore
+            // Prepare location data for storage
+            const locationData = {
+                latitude: personalInfo.latitude ? parseFloat(personalInfo.latitude) : null,
+                longitude: personalInfo.longitude ? parseFloat(personalInfo.longitude) : null,
+                state: personalInfo.state,
+                district: personalInfo.district,
+                city: personalInfo.city,
+                country: personalInfo.country,
+                postalCode: personalInfo.postalCode,
+                fullAddress: personalInfo.fullAddress,
+                isAutoDetected: personalInfo.isLocationAutoDetected,
+                capturedAt: new Date(),
+            };
+
+            console.log('[FarmerKYC] Saving location data:', locationData);
+
+            // Save KYC data to Firestore with extended location
             await firebaseService.saveFarmerKYC(currentUser.uid, {
-                personalInfo,
+                personalInfo: {
+                    ...personalInfo,
+                    location: locationData,
+                },
                 documents: {
                     aadhaarUrl,
                     kisanUrl,
@@ -231,12 +333,16 @@ export const FarmerKYC = ({ isOpen, currentUser, onClose, onComplete, required =
                 submittedAt: new Date(),
             });
 
-            // Update user profile with location
+            // Update user profile with location (formatted as "District, State")
+            const formattedLocation = [personalInfo.district, personalInfo.state]
+                .filter(Boolean)
+                .join(', ') || personalInfo.village;
+            
             await firebaseService.upsertUserProfile({
                 ...currentUser,
                 name: personalInfo.fullName,
                 phone: personalInfo.mobile,
-                location: personalInfo.village,
+                location: formattedLocation,
             });
 
             showToast('KYC submitted successfully! We will verify your details shortly.', 'success');
@@ -405,6 +511,241 @@ export const FarmerKYC = ({ isOpen, currentUser, onClose, onComplete, required =
                                                 className="input-classic pl-10"
                                                 placeholder="Village name"
                                             />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Location Detection Section */}
+                                <div className="mt-6 pt-6 border-t border-gray-200">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="flex items-center gap-2">
+                                            <span className="material-symbols-outlined text-primary">my_location</span>
+                                            <span className="text-sm font-semibold text-gray-700">Location Details</span>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setLocationMode('auto')}
+                                                className={`px-3 py-1 text-xs rounded-full font-medium transition-colors ${
+                                                    locationMode === 'auto'
+                                                        ? 'bg-primary text-white'
+                                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                                }`}
+                                            >
+                                                Use My Location
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setLocationMode('manual')}
+                                                className={`px-3 py-1 text-xs rounded-full font-medium transition-colors ${
+                                                    locationMode === 'manual'
+                                                        ? 'bg-primary text-white'
+                                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                                }`}
+                                            >
+                                                Enter Manually
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Location Status Banner */}
+                                    {locationMode === 'auto' && (
+                                        <div className={`mb-4 p-3 rounded-xl flex items-center gap-3 ${
+                                            locationLoading
+                                                ? 'bg-blue-50 text-blue-700'
+                                                : personalInfo.isLocationAutoDetected
+                                                    ? 'bg-green-50 text-green-700'
+                                                    : locationError
+                                                        ? 'bg-amber-50 text-amber-700'
+                                                        : 'bg-gray-50 text-gray-600'
+                                        }`}>
+                                            {locationLoading ? (
+                                                <>
+                                                    <LoaderIcon className="h-5 w-5 animate-spin" />
+                                                    <span className="text-sm">Detecting your location...</span>
+                                                </>
+                                            ) : personalInfo.isLocationAutoDetected ? (
+                                                <>
+                                                    <span className="material-symbols-outlined text-green-600">check_circle</span>
+                                                    <span className="text-sm font-medium">Location auto-detected ✓</span>
+                                                </>
+                                            ) : locationError ? (
+                                                <>
+                                                    <span className="material-symbols-outlined text-amber-600">warning</span>
+                                                    <div className="flex-1">
+                                                        <span className="text-sm">{locationErrorMessage}</span>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => refreshLocation()}
+                                                        className="text-xs font-medium underline"
+                                                    >
+                                                        Retry
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span className="material-symbols-outlined">info</span>
+                                                    <span className="text-sm">We need your location to show nearby services</span>
+                                                </>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Location Fields */}
+                                    <div className="space-y-4">
+                                        {/* Coordinates - Read only when auto-detected */}
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1.5">
+                                                    Latitude
+                                                    {personalInfo.isLocationAutoDetected && <span className="text-green-600 ml-1">✓</span>}
+                                                </label>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 text-lg">south</span>
+                                                    <input
+                                                        type="text"
+                                                        name="latitude"
+                                                        value={personalInfo.latitude}
+                                                        onChange={handlePersonalInfoChange}
+                                                        className={`input-classic pl-10 ${personalInfo.isLocationAutoDetected ? 'bg-green-50' : ''}`}
+                                                        placeholder="e.g., 22.572646"
+                                                        readOnly={personalInfo.isLocationAutoDetected && locationMode === 'auto'}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1.5">
+                                                    Longitude
+                                                    {personalInfo.isLocationAutoDetected && <span className="text-green-600 ml-1">✓</span>}
+                                                </label>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 text-lg">east</span>
+                                                    <input
+                                                        type="text"
+                                                        name="longitude"
+                                                        value={personalInfo.longitude}
+                                                        onChange={handlePersonalInfoChange}
+                                                        className={`input-classic pl-10 ${personalInfo.isLocationAutoDetected ? 'bg-green-50' : ''}`}
+                                                        placeholder="e.g., 88.363895"
+                                                        readOnly={personalInfo.isLocationAutoDetected && locationMode === 'auto'}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* State and District */}
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1.5">
+                                                    State *
+                                                    {personalInfo.isLocationAutoDetected && <span className="text-green-600 ml-1">✓</span>}
+                                                </label>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 text-lg">map</span>
+                                                    <input
+                                                        type="text"
+                                                        name="state"
+                                                        value={personalInfo.state}
+                                                        onChange={handlePersonalInfoChange}
+                                                        className={`input-classic pl-10 ${personalInfo.isLocationAutoDetected ? 'bg-green-50' : ''}`}
+                                                        placeholder="e.g., West Bengal"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1.5">
+                                                    District *
+                                                    {personalInfo.isLocationAutoDetected && <span className="text-green-600 ml-1">✓</span>}
+                                                </label>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 text-lg">location_city</span>
+                                                    <input
+                                                        type="text"
+                                                        name="district"
+                                                        value={personalInfo.district}
+                                                        onChange={handlePersonalInfoChange}
+                                                        className={`input-classic pl-10 ${personalInfo.isLocationAutoDetected ? 'bg-green-50' : ''}`}
+                                                        placeholder="e.g., Kolkata"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* City and Postal Code */}
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1.5">
+                                                    City
+                                                    {personalInfo.isLocationAutoDetected && personalInfo.city && <span className="text-green-600 ml-1">✓</span>}
+                                                </label>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 text-lg">apartment</span>
+                                                    <input
+                                                        type="text"
+                                                        name="city"
+                                                        value={personalInfo.city}
+                                                        onChange={handlePersonalInfoChange}
+                                                        className={`input-classic pl-10 ${personalInfo.isLocationAutoDetected && personalInfo.city ? 'bg-green-50' : ''}`}
+                                                        placeholder="City name"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1.5">
+                                                    Postal Code
+                                                    {personalInfo.isLocationAutoDetected && personalInfo.postalCode && <span className="text-green-600 ml-1">✓</span>}
+                                                </label>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 text-lg">markunread_mailbox</span>
+                                                    <input
+                                                        type="text"
+                                                        name="postalCode"
+                                                        value={personalInfo.postalCode}
+                                                        onChange={handlePersonalInfoChange}
+                                                        className={`input-classic pl-10 ${personalInfo.isLocationAutoDetected && personalInfo.postalCode ? 'bg-green-50' : ''}`}
+                                                        placeholder="e.g., 700001"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Country */}
+                                        <div>
+                                            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1.5">
+                                                Country
+                                                {personalInfo.isLocationAutoDetected && <span className="text-green-600 ml-1">✓</span>}
+                                            </label>
+                                            <div className="relative">
+                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 text-lg">public</span>
+                                                <input
+                                                    type="text"
+                                                    name="country"
+                                                    value={personalInfo.country}
+                                                    onChange={handlePersonalInfoChange}
+                                                    className={`input-classic pl-10 ${personalInfo.isLocationAutoDetected ? 'bg-green-50' : ''}`}
+                                                    placeholder="India"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Full Address */}
+                                        <div>
+                                            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1.5">
+                                                Full Address
+                                                {personalInfo.isLocationAutoDetected && personalInfo.fullAddress && <span className="text-green-600 ml-1">✓</span>}
+                                            </label>
+                                            <div className="relative">
+                                                <span className="absolute left-3 top-3 material-symbols-outlined text-gray-400 text-lg">location_on</span>
+                                                <textarea
+                                                    name="fullAddress"
+                                                    value={personalInfo.fullAddress}
+                                                    onChange={(e) => setPersonalInfo(prev => ({ ...prev, fullAddress: e.target.value }))}
+                                                    className={`input-classic pl-10 min-h-[80px] resize-none ${personalInfo.isLocationAutoDetected && personalInfo.fullAddress ? 'bg-green-50' : ''}`}
+                                                    placeholder="Complete address from reverse geocoding"
+                                                    rows={3}
+                                                />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
