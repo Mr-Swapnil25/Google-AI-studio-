@@ -1,7 +1,7 @@
 import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
 import fetch from 'node-fetch';
-import * as cors from 'cors';
+import cors from 'cors';
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -295,6 +295,71 @@ export const dodoWebhookHandler = functions.https.onRequest(async (req, res) => 
 
 // =============================================================================
 // GET PAYMENT STATUS (for polling from frontend)
+// =============================================================================
+
+// =============================================================================
+// WEATHER API PROXY
+// =============================================================================
+
+export const getWeather = functions.https.onRequest(async (req, res) => {
+  corsHandler(req, res, async () => {
+    if (req.method !== 'GET') {
+      res.status(405).json({ error: 'Method not allowed' });
+      return;
+    }
+
+    const location = req.query.q as string;
+    
+    if (!location) {
+      res.status(400).json({ error: 'Missing location parameter "q"' });
+      return;
+    }
+
+    try {
+      const apiKey = process.env.WEATHER_API_KEY;
+      if (!apiKey) {
+        console.error('WEATHER_API_KEY is not set in environment');
+        res.status(500).json({ error: 'Server configuration error' });
+        return;
+      }
+
+      // Using forecast.json to get rain chance data as well
+      const weatherUrl = `https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${encodeURIComponent(location)}&days=1&aqi=no&alerts=no`;
+      
+      const weatherResponse = await fetch(weatherUrl);
+
+      if (!weatherResponse.ok) {
+        const errorText = await weatherResponse.text();
+        console.error('WeatherAPI error:', weatherResponse.status, errorText);
+        
+        if (weatherResponse.status === 401) {
+          res.status(500).json({ error: 'Weather service authentication failed' });
+        } else if (weatherResponse.status === 400) {
+          res.status(400).json({ error: 'Invalid location' });
+        } else if (weatherResponse.status === 429) {
+          res.status(429).json({ error: 'Weather service rate limit exceeded' });
+        } else {
+          res.status(502).json({ error: 'Weather service unavailable' });
+        }
+        return;
+      }
+
+      const data = await weatherResponse.json();
+      
+      // Return the full weather data (frontend will normalize it)
+      res.status(200).json(data);
+
+    } catch (error) {
+      console.error('Error fetching weather:', error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : 'Internal server error' 
+      });
+    }
+  });
+});
+
+// =============================================================================
+// PAYMENT STATUS
 // =============================================================================
 
 export const getPaymentStatus = functions.https.onRequest(async (req, res) => {

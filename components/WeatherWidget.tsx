@@ -102,16 +102,8 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({
     const [hasError, setHasError] = useState(false);
     const { showToast } = useToast();
 
-    // API key from environment (for development - should be Cloud Function in production)
-    const apiKey = import.meta.env.VITE_WEATHER_API_KEY || '';
-
     // Handle manual refresh
     const handleRefresh = useCallback(async (useGPS = false) => {
-        if (!apiKey) {
-            showToast('Weather API key not configured', 'error');
-            return;
-        }
-
         setIsRefreshing(true);
         setHasError(false);
 
@@ -127,7 +119,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({
                 }
             }
 
-            await refreshWeatherForFarmer(farmerId, location, apiKey);
+            await refreshWeatherForFarmer(farmerId, location);
             showToast('Weather updated!', 'success');
         } catch (error) {
             console.error('Weather refresh failed:', error);
@@ -136,7 +128,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({
         } finally {
             setIsRefreshing(false);
         }
-    }, [farmerId, farmerLocation, apiKey, showToast]);
+    }, [farmerId, farmerLocation, showToast]);
 
     // Fallback weather data
     const displayWeather = useMemo<FarmerDashboardWeather>(() => {
