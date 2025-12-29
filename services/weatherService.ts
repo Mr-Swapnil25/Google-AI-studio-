@@ -1,12 +1,10 @@
 /**
  * Weather Service for Anna Bazaar Farmer Dashboard
  * 
- * This service handles weather data fetching from WeatherAPI.com
- * and caching in Firestore. For production, the API call should be
- * made via Firebase Cloud Functions to keep the API key secure.
+ * This service handles weather data fetching via Firebase Cloud Functions
+ * which proxies to WeatherAPI.com. The API key is stored securely on the backend.
  * 
- * Current implementation: Direct API call (for development)
- * Production: Should migrate to Cloud Function endpoint
+ * Weather data is cached in Firestore to minimize API calls.
  */
 
 import { doc, getDoc, setDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
@@ -16,8 +14,9 @@ import { FarmerDashboardWeather } from '../types';
 // Cache validity duration in milliseconds (30 minutes)
 const CACHE_DURATION_MS = 30 * 60 * 1000;
 
-// WeatherAPI endpoint
-const WEATHER_API_BASE = 'https://api.weatherapi.com/v1';
+// Backend Cloud Function URL for weather proxy
+// Always use production URL (emulator requires manual startup)
+const WEATHER_FUNCTION_URL = 'https://us-central1-annabazaarhackspire.cloudfunctions.net/getWeather';
 
 /**
  * Weather API response interfaces (mapped from WeatherAPI.com)
@@ -74,25 +73,22 @@ const isCacheFresh = (updatedAt: Date | null): boolean => {
 };
 
 /**
- * Fetch weather data from WeatherAPI.com
+ * Fetch weather data from Backend Cloud Function (secure proxy)
  * 
  * @param location - City/village name or coordinates (lat,lng)
- * @param apiKey - WeatherAPI key
  * @returns Normalized weather data
  */
 export const fetchWeatherFromAPI = async (
-    location: string,
-    apiKey: string
+    location: string
 ): Promise<Omit<FarmerDashboardWeather, 'updatedAt'>> => {
-    // Use forecast endpoint to get rain chance
-    const url = `${WEATHER_API_BASE}/forecast.json?key=${apiKey}&q=${encodeURIComponent(location)}&days=1&aqi=no&alerts=no`;
+    const url = `${WEATHER_FUNCTION_URL}?q=${encodeURIComponent(location)}`;
 
     const response = await fetch(url);
 
     if (!response.ok) {
-        const errorText = await response.text();
-        console.error('WeatherAPI error:', errorText);
-        throw new Error(`Weather API error: ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Weather backend error:', response.status, errorData);
+        throw new Error(errorData.error || `Weather service error: ${response.status}`);
     }
 
     const data: WeatherAPIResponse = await response.json();
@@ -104,13 +100,11 @@ export const fetchWeatherFromAPI = async (
  * 
  * @param farmerId - Farmer's user ID
  * @param location - Location to fetch weather for
- * @param apiKey - WeatherAPI key (should come from secure source)
  * @param forceRefresh - Skip cache check and fetch new data
  */
 export const getWeatherForFarmer = async (
     farmerId: string,
     location: string,
-    apiKey: string,
     forceRefresh = false
 ): Promise<FarmerDashboardWeather> => {
     const farmerRef = doc(db, 'farmers', farmerId);
@@ -148,7 +142,7 @@ export const getWeatherForFarmer = async (
 
     // Fetch fresh data
     console.log('[WeatherService] Fetching fresh weather data for:', location);
-    const freshData = await fetchWeatherFromAPI(location, apiKey);
+    const freshData = await fetchWeatherFromAPI(location);
     const now = new Date();
 
     // Cache the result in Firestore
@@ -181,10 +175,9 @@ export const getWeatherForFarmer = async (
  */
 export const refreshWeatherForFarmer = async (
     farmerId: string,
-    location: string,
-    apiKey: string
+    location: string
 ): Promise<FarmerDashboardWeather> => {
-    return getWeatherForFarmer(farmerId, location, apiKey, true);
+    return getWeatherForFarmer(farmerId, location, true);
 };
 
 /**
