@@ -42,11 +42,6 @@
   <img src="https://img.shields.io/badge/Status-Production%20Ready-brightgreen?style=flat-square" alt="Status"/>
 </p>
 
-<!-- Agricultural Crop Border -->
-<p align="center">
-🌾🌽🥕🍅🥬🌶️🧅🥔🍆🫑🥒🌾🌽🥕🍅🥬🌶️🧅🥔🍆🫑🥒🌾🌽🥕🍅🥬🌶️🧅🥔🍆🫑🥒
-</p>
-
 </div>
 
 ---
@@ -497,12 +492,6 @@ We welcome contributions! See our workflow:
 
 <div align="center">
 
-```
-╔══════════════════════════════════════════════════════════════╗
-║  🌾  Built with ❤️ for Indian Farmers & Agricultural Growth  🌾  ║
-╚══════════════════════════════════════════════════════════════╝
-```
-
 ### Swapnil Debnath
 **Full Stack Developer | AgriTech Enthusiast**
 
@@ -534,22 +523,12 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 <div align="center">
 
-```
-🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾
-🌾                                                                   🌾
-🌾   🚜  A N N A   B A Z A A R  -  Every Harvest, Directly Connected  🚜   🌾
-🌾                                                                   🌾
-🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾
-```
+### 🌾 Anna Bazaar - Every Harvest, Directly Connected
 
 <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=2,16,22,27,30&height=120&section=footer&animation=fadeIn" width="100%"/>
 
 **Made in India 🇮🇳 | Empowering 150M+ Farmers**
 
 ⭐ **Star this repo if you found it helpful!** ⭐
-
-<p align="center">
-🥕🍅🥬🌶️🧅🥔🍆🫑🥒🌽🌾🥕🍅🥬🌶️🧅🥔🍆🫑🥒🌽🌾🥕🍅🥬🌶️🧅🥔🍆🫑🥒🌽🌾
-</p>
 
 </div>
