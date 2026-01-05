@@ -6,6 +6,10 @@
 <!-- Typing Animation -->
 <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=28&duration=3000&pause=1000&color=16A34A&center=true&vCenter=true&multiline=true&repeat=true&width=800&height=100&lines=Connecting+Farmers+Directly+to+Bulk+Buyers;AI-Powered+Quality+Grading+%F0%9F%A4%96;Real-time+Mandi+Price+Integration+%F0%9F%93%88;Voice%2FVideo+Negotiation+%F0%9F%8E%A4" alt="Typing SVG" />
 
+
+
+
+
 <!-- Tech Stack Badges -->
 <p align="center">
   <img src="https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React"/>
