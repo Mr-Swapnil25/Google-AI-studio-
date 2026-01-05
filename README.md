@@ -38,8 +38,13 @@
   <a href="https://github.com/Mr-Swapnil25/Google-AI-studio-/network/members">
     <img src="https://img.shields.io/github/forks/Mr-Swapnil25/Google-AI-studio-?style=social" alt="Forks"/>
   </a>
-  <img src="https://img.shields.io/badge/Hackathon-Calcutta%20Hacks%202025-orange?style=flat-square" alt="Hackathon"/>
+  <img src="https://img.shields.io/badge/Made_in-India_🇮🇳-orange?style=flat-square" alt="Made in India"/>
   <img src="https://img.shields.io/badge/Status-Production%20Ready-brightgreen?style=flat-square" alt="Status"/>
+</p>
+
+<!-- Agricultural Crop Border -->
+<p align="center">
+🌾🌽🥕🍅🥬🌶️🧅🥔🍆🫑🥒🌾🌽🥕🍅🥬🌶️🧅🥔🍆🫑🥒🌾🌽🥕🍅🥬🌶️🧅🥔🍆🫑🥒
 </p>
 
 </div>
@@ -372,21 +377,33 @@ netlify deploy --prod
 
 <div align="center">
 
+<!-- Decorative Farm Border -->
+```
+🚜═══════════════════════════════════════════════════════════════════════🚜
+║  🌾  🌻  🌾  🌻  🌾  🌻  🌾  🌻  🌾  🌻  🌾  🌻  🌾  🌻  🌾  🌻  🌾  ║
+🚜═══════════════════════════════════════════════════════════════════════🚜
+```
+
 ### 🌐 Live Application
-**[Launch Anna Bazaar →](https://annabazaarhackspire.web.app)**
 
-### 📺 Video Walkthrough
-[![Demo Video](https://img.shields.io/badge/Watch-Demo_Video-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtube.com/your-demo)
+<a href="https://annabazaarhackspire.web.app">
+  <img src="https://img.shields.io/badge/🌾_Launch_Anna_Bazaar-Visit_Live_App-16A34A?style=for-the-badge&logoColor=white" alt="Live App"/>
+</a>
 
-### 📱 Screenshots
+### 🎥 Platform Features
 
-| Landing Page | Farmer Dashboard | Buyer Marketplace |
-|:------------:|:----------------:|:-----------------:|
-| ![Landing](https://via.placeholder.com/300x200/16a34a/ffffff?text=Landing+Page) | ![Farmer](https://via.placeholder.com/300x200/22c55e/ffffff?text=Farmer+Dashboard) | ![Buyer](https://via.placeholder.com/300x200/15803d/ffffff?text=Marketplace) |
+| 👨‍🌾 Farmer Features | 🛒 Buyer Features | 🤖 AI Features |
+|:------------------:|:-----------------:|:--------------:|
+| Product Upload | Smart Search | Quality Grading |
+| AI Pricing | Negotiation Chat | Auto Description |
+| Wallet System | Voice/Video Calls | Price Prediction |
+| Weather Alerts | Secure Payments | Fraud Detection |
 
-| Product Upload | Negotiation Chat | Payment Gateway |
-|:--------------:|:----------------:|:---------------:|
-| ![Upload](https://via.placeholder.com/300x200/059669/ffffff?text=AI+Upload) | ![Chat](https://via.placeholder.com/300x200/0d9488/ffffff?text=Live+Chat) | ![Payment](https://via.placeholder.com/300x200/0891b2/ffffff?text=Checkout) |
+```
+🌱═══════════════════════════════════════════════════════════════════════🌱
+║  🥕  🍅  🥬  🌶️  🧅  🥔  🍆  🫑  🥒  🌽  🥕  🍅  🥬  🌶️  🧅  🥔  🍆  ║
+🌱═══════════════════════════════════════════════════════════════════════🌱
+```
 
 </div>
 
@@ -476,18 +493,25 @@ We welcome contributions! See our workflow:
 
 ---
 
-## 👨‍💻 Team
+## 👨‍💻 Developer
 
 <div align="center">
 
-**Built with ❤️ for Calcutta Hacks 2025**
+```
+╔══════════════════════════════════════════════════════════════╗
+║  🌾  Built with ❤️ for Indian Farmers & Agricultural Growth  🌾  ║
+╚══════════════════════════════════════════════════════════════╝
+```
 
-| Developer | Role |
-|:---------:|:----:|
-| [Mr-Swapnil25](https://github.com/Mr-Swapnil25) | Full Stack Developer |
+### Swapnil Debnath
+**Full Stack Developer | AgriTech Enthusiast**
 
-[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Mr-Swapnil25)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/your-profile)
+<a href="https://github.com/Mr-Swapnil25">
+  <img src="https://img.shields.io/badge/GitHub-Mr--Swapnil25-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"/>
+</a>
+<a href="https://www.linkedin.com/in/swapnil-debnath-8a0149340/">
+  <img src="https://img.shields.io/badge/LinkedIn-Swapnil_Debnath-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/>
+</a>
 
 </div>
 
@@ -504,19 +528,28 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 - 🌾 Indian Farmers who inspired this project
 - 🔥 Firebase for real-time infrastructure
 - 🤖 Google Gemini AI for intelligent features
-- 🏆 Calcutta Hacks 2025 organizers
 - 💚 Open source community
 
 ---
 
 <div align="center">
 
-### 🌾 Anna Bazaar - Every Harvest, Directly Connected
+```
+🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾
+🌾                                                                   🌾
+🌾   🚜  A N N A   B A Z A A R  -  Every Harvest, Directly Connected  🚜   🌾
+🌾                                                                   🌾
+🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾🌾
+```
 
 <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=2,16,22,27,30&height=120&section=footer&animation=fadeIn" width="100%"/>
 
 **Made in India 🇮🇳 | Empowering 150M+ Farmers**
 
 ⭐ **Star this repo if you found it helpful!** ⭐
+
+<p align="center">
+🥕🍅🥬🌶️🧅🥔🍆🫑🥒🌽🌾🥕🍅🥬🌶️🧅🥔🍆🫑🥒🌽🌾🥕🍅🥬🌶️🧅🥔🍆🫑🥒🌽🌾
+</p>
 
 </div>
