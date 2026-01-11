@@ -3,20 +3,151 @@
 
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/png" href="/logo.png" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#15803D" />
+  <meta name="description" content="India's Premier B2B AgriTech Marketplace connecting farmers directly to bulk buyers" />
+  <meta name="application-name" content="Anna Bazaar" />
+  
+  <!-- Apple PWA Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Anna Bazaar" />
+  
+  <!-- Microsoft Tile Meta Tags -->
+  <meta name="msapplication-TileColor" content="#15803D" />
+  <meta name="msapplication-TileImage" content="/icons/icon-144.png" />
+  <meta name="msapplication-config" content="none" />
+  
+  <!-- Mobile Optimization -->
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  
   <title>Anna Bazaar</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/logo.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/logo.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/logo.png" />
+  
+  <!-- Apple Touch Icons -->
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+  <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152.png" />
+  <link rel="apple-touch-icon" sizes="144x144" href="/icons/icon-144.png" />
+  <link rel="apple-touch-icon" sizes="120x120" href="/icons/icon-120.png" />
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="/manifest.json" />
+  
+  <!-- Preconnect to external resources -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  
   <!-- Typography System: Syne (Headings) + Inter (Body) + JetBrains Mono (Data/Numbers) -->
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  
+  <!-- Apple Splash Screens (Optional - for iOS) -->
+  <link rel="apple-touch-startup-image" href="/icons/icon-512.png" />
 </head>
 
 <body class="bg-background text-stone-800 font-sans">
   <div id="root"></div>
   <div id="recaptcha-container"></div>
   <script type="module" src="/index.tsx"></script>
+  
+  <!-- Service Worker Registration -->
+  <script>
+    // Register Service Worker for PWA functionality
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', async () => {
+        try {
+          const registration = await navigator.serviceWorker.register('/sw.js', {
+            scope: '/'
+          });
+          
+          console.log('[PWA] Service Worker registered successfully:', registration.scope);
+          
+          // Handle updates
+          registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing;
+            if (newWorker) {
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  // New content is available, show update notification if needed
+                  console.log('[PWA] New content available, refresh to update');
+                  
+                  // Optional: Dispatch custom event for the app to handle
+                  window.dispatchEvent(new CustomEvent('swUpdate', { detail: registration }));
+                }
+              });
+            }
+          });
+        } catch (error) {
+          console.error('[PWA] Service Worker registration failed:', error);
+        }
+      });
+      
+      // Handle controller change (when new SW takes over)
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        console.log('[PWA] New service worker activated');
+      });
+    }
+    
+    // PWA Install Prompt Handling
+    let deferredInstallPrompt = null;
+    
+    window.addEventListener('beforeinstallprompt', (event) => {
+      // Prevent the default browser install prompt
+      event.preventDefault();
+      
+      // Store the event for later use
+      deferredInstallPrompt = event;
+      
+      // Dispatch custom event for the app to show custom install UI
+      window.dispatchEvent(new CustomEvent('pwaInstallAvailable', { detail: event }));
+      
+      console.log('[PWA] Install prompt available');
+    });
+    
+    // Track successful installs
+    window.addEventListener('appinstalled', () => {
+      deferredInstallPrompt = null;
+      console.log('[PWA] App was installed successfully');
+      
+      // Optional: Track installation analytics
+      window.dispatchEvent(new CustomEvent('pwaInstalled'));
+    });
+    
+    // Expose install prompt function globally for the app to use
+    window.showPWAInstallPrompt = async () => {
+      if (!deferredInstallPrompt) {
+        console.log('[PWA] Install prompt not available');
+        return { outcome: 'unavailable' };
+      }
+      
+      // Show the install prompt
+      deferredInstallPrompt.prompt();
+      
+      // Wait for the user's response
+      const result = await deferredInstallPrompt.userChoice;
+      
+      // Clear the stored prompt
+      deferredInstallPrompt = null;
+      
+      console.log('[PWA] Install prompt result:', result.outcome);
+      return result;
+    };
+    
+    // Check if app is running in standalone mode (installed)
+    window.isPWAInstalled = () => {
+      return window.matchMedia('(display-mode: standalone)').matches ||
+             window.navigator.standalone === true ||
+             document.referrer.includes('android-app://');
+    };
+  </script>
 </body>
 
 </html>

@@ -18,6 +18,18 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve(__dirname, '.'),
         }
+      },
+      // PWA Configuration
+      publicDir: 'public',
+      build: {
+        // Ensure service worker and other PWA files are copied to dist
+        rollupOptions: {
+          input: {
+            main: path.resolve(__dirname, 'index.html'),
+          }
+        },
+        // Generate source maps for debugging
+        sourcemap: mode !== 'production',
       }
     };
 });
