@@ -377,9 +377,7 @@ netlify deploy --prod
 <div align="center">
 
 <!-- Decorative Farm Border -->
-```
-🚜═══════════════════════════════════════════════════════════════════════🚜
-```
+
 
 ### 🌐 Live Application
 
@@ -397,7 +395,7 @@ netlify deploy --prod
 | Weather Alerts | Secure Payments | Fraud Detection |
 
 ```
-🌱═══════════════════════════════════════════════════════════════════════🌱
+
 ```
 
 </div>
